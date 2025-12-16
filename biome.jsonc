@@ -7,5 +7,11 @@
       "trailingCommas": "all",
       "semicolons": "asNeeded"
     }
+  },
+  "files": {
+    "includes": [
+      "**/*",
+      "!components/ui/*"
+    ]
   }
 }
