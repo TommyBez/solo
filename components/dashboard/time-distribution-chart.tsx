@@ -1,8 +1,18 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Cell, Pie, PieChart } from "recharts"
+import { Cell, Pie, PieChart } from 'recharts'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
 
 interface TimeDistributionChartProps {
   data: Array<{
@@ -15,7 +25,7 @@ interface TimeDistributionChartProps {
 export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
   const chartConfig = {
     hours: {
-      label: "Hours",
+      label: 'Hours',
     },
   }
 
@@ -40,25 +50,32 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
         <CardDescription>Weekly distribution across areas</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+        <ChartContainer
+          className="aspect-auto h-[300px] w-full"
+          config={chartConfig}
+        >
           <PieChart>
             <Pie
-              data={data}
               cx="50%"
               cy="50%"
+              data={data}
+              dataKey="hours"
               innerRadius={60}
+              label={({ name, percent }) =>
+                `${name} (${(percent * 100).toFixed(0)}%)`
+              }
+              labelLine={false}
+              nameKey="name"
               outerRadius={100}
               paddingAngle={2}
-              dataKey="hours"
-              nameKey="name"
-              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-              labelLine={false}
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell fill={entry.color} key={`cell-${index}`} />
               ))}
             </Pie>
-            <ChartTooltip content={<ChartTooltipContent labelKey="name" nameKey="name" />} />
+            <ChartTooltip
+              content={<ChartTooltipContent labelKey="name" nameKey="name" />}
+            />
           </PieChart>
         </ChartContainer>
       </CardContent>

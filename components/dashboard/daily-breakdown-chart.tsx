@@ -1,8 +1,18 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
 
 interface DailyBreakdownChartProps {
   data: Array<{
@@ -15,8 +25,8 @@ interface DailyBreakdownChartProps {
 export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
   const chartConfig = {
     hours: {
-      label: "Hours",
-      color: "var(--primary)",
+      label: 'Hours',
+      color: 'var(--primary)',
     },
   }
 
@@ -27,13 +37,33 @@ export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
         <CardDescription>Hours tracked per day this week</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="dayName" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
+        <ChartContainer
+          className="aspect-auto h-[300px] w-full"
+          config={chartConfig}
+        >
+          <BarChart
+            data={data}
+            margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+          >
+            <CartesianGrid className="stroke-muted" strokeDasharray="3 3" />
+            <XAxis
+              axisLine={false}
+              dataKey="dayName"
+              tick={{ fontSize: 12 }}
+              tickLine={false}
+            />
+            <YAxis
+              axisLine={false}
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => `${value}h`}
+              tickLine={false}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="hours" fill="var(--color-hours)" radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="hours"
+              fill="var(--color-hours)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

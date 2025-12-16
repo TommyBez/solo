@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { TimeEntryForm } from "./time-entry-form"
-import type { Project, Area } from "@/lib/db/schema"
+} from '@/components/ui/dialog'
+import type { Area, Project } from '@/lib/db/schema'
+import { TimeEntryForm } from './time-entry-form'
 
 interface AddTimeEntryDialogProps {
   projects: (Project & { area: Area })[]
@@ -31,7 +31,7 @@ export function AddTimeEntryDialog({ projects }: AddTimeEntryDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 size-4" />
@@ -43,7 +43,7 @@ export function AddTimeEntryDialog({ projects }: AddTimeEntryDialogProps) {
           <DialogTitle>Add Time Entry</DialogTitle>
           <DialogDescription>Log time spent on a project.</DialogDescription>
         </DialogHeader>
-        <TimeEntryForm projects={projects} onSuccess={() => setOpen(false)} />
+        <TimeEntryForm onSuccess={() => setOpen(false)} projects={projects} />
       </DialogContent>
     </Dialog>
   )

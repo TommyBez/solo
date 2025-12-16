@@ -1,20 +1,15 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { MoreHorizontal, Pencil, Archive, Trash2, FolderKanban } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+  Archive,
+  FolderKanban,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,9 +19,26 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { AreaForm } from "./area-form"
-import { updateArea, deleteArea } from "@/lib/actions/areas"
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Progress } from '@/components/ui/progress'
+import { deleteArea, updateArea } from '@/lib/actions/areas'
+import { AreaForm } from './area-form'
 
 interface AreaCardProps {
   area: {
@@ -49,35 +61,42 @@ export function AreaCard({ area }: AreaCardProps) {
   async function handleArchive() {
     try {
       await updateArea(area.id, { archived: true })
-      toast.success("Area archived")
+      toast.success('Area archived')
       router.refresh()
     } catch {
-      toast.error("Failed to archive area")
+      toast.error('Failed to archive area')
     }
   }
 
   async function handleDelete() {
     try {
       await deleteArea(area.id)
-      toast.success("Area deleted")
+      toast.success('Area deleted')
       router.refresh()
     } catch {
-      toast.error("Failed to delete area")
+      toast.error('Failed to delete area')
     }
   }
 
   return (
     <>
       <Card className="relative overflow-hidden">
-        <div className="absolute left-0 top-0 h-full w-1" style={{ backgroundColor: area.color }} />
+        <div
+          className="absolute top-0 left-0 h-full w-1"
+          style={{ backgroundColor: area.color }}
+        />
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle className="text-lg">{area.name}</CardTitle>
-            {area.description && <p className="text-sm text-muted-foreground line-clamp-1">{area.description}</p>}
+            {area.description && (
+              <p className="line-clamp-1 text-muted-foreground text-sm">
+                {area.description}
+              </p>
+            )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
+              <Button className="size-8" size="icon" variant="ghost">
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -92,7 +111,10 @@ export function AreaCard({ area }: AreaCardProps) {
                 Archive
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => setIsDeleteOpen(true)}
+              >
                 <Trash2 className="mr-2 size-4" />
                 Delete
               </DropdownMenuItem>
@@ -100,7 +122,7 @@ export function AreaCard({ area }: AreaCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-muted-foreground text-sm">
             <div className="flex items-center gap-1">
               <FolderKanban className="size-4" />
               <span>{area.projectCount} projects</span>
@@ -114,21 +136,26 @@ export function AreaCard({ area }: AreaCardProps) {
                 {area.hoursThisWeek}h / {area.expectedHoursPerWeek}h
               </span>
             </div>
-            <Progress value={Math.min(area.percentageComplete, 100)} className="h-2" />
-            <p className="text-xs text-muted-foreground">
+            <Progress
+              className="h-2"
+              value={Math.min(area.percentageComplete, 100)}
+            />
+            <p className="text-muted-foreground text-xs">
               {area.percentageComplete >= 100
-                ? "Goal reached!"
+                ? 'Goal reached!'
                 : `${area.expectedHoursPerWeek - area.hoursThisWeek}h remaining`}
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <Dialog onOpenChange={setIsEditOpen} open={isEditOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Area</DialogTitle>
-            <DialogDescription>Update the area details below.</DialogDescription>
+            <DialogDescription>
+              Update the area details below.
+            </DialogDescription>
           </DialogHeader>
           <AreaForm
             area={{
@@ -146,18 +173,21 @@ export function AreaCard({ area }: AreaCardProps) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Area</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{area.name}" and all its projects and time entries. This action cannot be
-              undone.
+              This will permanently delete "{area.name}" and all its projects
+              and time entries. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
+              onClick={handleDelete}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

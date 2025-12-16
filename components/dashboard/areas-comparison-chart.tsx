@@ -1,14 +1,20 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+} from '@/components/ui/chart'
 
 interface AreasComparisonChartProps {
   data: Array<{
@@ -22,12 +28,12 @@ interface AreasComparisonChartProps {
 export function AreasComparisonChart({ data }: AreasComparisonChartProps) {
   const chartConfig = {
     expected: {
-      label: "Expected",
-      color: "var(--muted-foreground)",
+      label: 'Expected',
+      color: 'var(--muted-foreground)',
     },
     actual: {
-      label: "Actual",
-      color: "var(--primary)",
+      label: 'Actual',
+      color: 'var(--primary)',
     },
   }
 
@@ -52,21 +58,49 @@ export function AreasComparisonChart({ data }: AreasComparisonChartProps) {
         <CardDescription>Weekly goal progress by area</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
-          <BarChart data={data} layout="vertical" margin={{ top: 10, right: 30, left: 80, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
+        <ChartContainer
+          className="aspect-auto h-[300px] w-full"
+          config={chartConfig}
+        >
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 10, right: 30, left: 80, bottom: 0 }}
+          >
+            <CartesianGrid
+              className="stroke-muted"
+              horizontal={false}
+              strokeDasharray="3 3"
+            />
             <XAxis
+              axisLine={false}
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => `${value}h`}
+              tickLine={false}
               type="number"
+            />
+            <YAxis
+              axisLine={false}
+              dataKey="name"
               tick={{ fontSize: 12 }}
               tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}h`}
+              type="category"
+              width={70}
             />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={70} />
             <ChartTooltip content={<ChartTooltipContent labelKey="name" />} />
             <ChartLegend content={<ChartLegendContent />} />
-            <Bar dataKey="expected" fill="var(--color-expected)" radius={[0, 4, 4, 0]} name="Expected" />
-            <Bar dataKey="actual" fill="var(--color-actual)" radius={[0, 4, 4, 0]} name="Actual" />
+            <Bar
+              dataKey="expected"
+              fill="var(--color-expected)"
+              name="Expected"
+              radius={[0, 4, 4, 0]}
+            />
+            <Bar
+              dataKey="actual"
+              fill="var(--color-actual)"
+              name="Actual"
+              radius={[0, 4, 4, 0]}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

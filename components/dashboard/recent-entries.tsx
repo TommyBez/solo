@@ -1,6 +1,12 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 interface RecentEntriesProps {
   entries: Array<{
@@ -35,26 +41,40 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No recent entries</p>
+          <p className="py-8 text-center text-muted-foreground">
+            No recent entries
+          </p>
         ) : (
           <div className="space-y-4">
             {entries.map((entry) => (
-              <div key={entry.id} className="flex items-start justify-between gap-4 rounded-lg border p-3">
+              <div
+                className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                key={entry.id}
+              >
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <div className="size-2 rounded-full" style={{ backgroundColor: entry.project.area.color }} />
-                    <span className="text-sm font-medium">{entry.project.name}</span>
+                    <div
+                      className="size-2 rounded-full"
+                      style={{ backgroundColor: entry.project.area.color }}
+                    />
+                    <span className="font-medium text-sm">
+                      {entry.project.name}
+                    </span>
                   </div>
                   {entry.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-1">{entry.description}</p>
+                    <p className="line-clamp-1 text-muted-foreground text-sm">
+                      {entry.description}
+                    </p>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {formatDistanceToNow(new Date(entry.startTime), {
                       addSuffix: true,
                     })}
                   </p>
                 </div>
-                <Badge variant="secondary">{formatDuration(entry.durationMinutes)}</Badge>
+                <Badge variant="secondary">
+                  {formatDuration(entry.durationMinutes)}
+                </Badge>
               </div>
             ))}
           </div>

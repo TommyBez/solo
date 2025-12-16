@@ -1,32 +1,39 @@
-import { Suspense } from "react"
-import Link from "next/link"
-import { getTimeEntries } from "@/lib/actions/time-entries"
-import { getProjects } from "@/lib/actions/projects"
-import { TimerWidget } from "@/components/time/timer-widget"
-import { TimeEntriesList } from "@/components/time/time-entries-list"
-import { AddTimeEntryDialog } from "@/components/time/add-time-entry-dialog"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
+import Link from 'next/link'
+import { Suspense } from 'react'
+import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
+import { TimeEntriesList } from '@/components/time/time-entries-list'
+import { TimerWidget } from '@/components/time/timer-widget'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { getProjects } from '@/lib/actions/projects'
+import { getTimeEntries } from '@/lib/actions/time-entries'
 
 async function TimeTrackingContent() {
-  const [entries, projects] = await Promise.all([getTimeEntries(undefined, 50), getProjects()])
+  const [entries, projects] = await Promise.all([
+    getTimeEntries(undefined, 50),
+    getProjects(),
+  ])
 
-  const activeProjects = projects.filter((p) => p.status === "active")
+  const activeProjects = projects.filter((p) => p.status === 'active')
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Time Tracking</h1>
-          <p className="text-muted-foreground">Track your work hours and manage time entries</p>
+          <h1 className="font-bold text-3xl tracking-tight">Time Tracking</h1>
+          <p className="text-muted-foreground">
+            Track your work hours and manage time entries
+          </p>
         </div>
         <AddTimeEntryDialog projects={activeProjects} />
       </div>
 
       {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <h3 className="text-lg font-semibold">Create a project first</h3>
-          <p className="mb-4 text-sm text-muted-foreground">You need to create a project before tracking time</p>
+          <h3 className="font-semibold text-lg">Create a project first</h3>
+          <p className="mb-4 text-muted-foreground text-sm">
+            You need to create a project before tracking time
+          </p>
           <Button asChild>
             <Link href="/projects">Go to Projects</Link>
           </Button>

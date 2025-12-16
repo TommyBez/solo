@@ -1,9 +1,9 @@
-"use server"
+'use server'
 
-import { db } from "@/lib/db"
-import { projects, timeEntries } from "@/lib/db/schema"
-import { eq, desc } from "drizzle-orm"
-import { revalidateTag } from "next/cache"
+import { desc, eq } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
+import { db } from '@/lib/db'
+import { projects, timeEntries } from '@/lib/db/schema'
 
 export async function getProjects(areaId?: number, includeArchived = false) {
   const result = await db.query.projects.findMany({
@@ -45,7 +45,7 @@ export async function createProject(data: {
   deadline?: Date
 }) {
   const result = await db.insert(projects).values(data).returning()
-  revalidateTag("projects", "max")
+  revalidateTag('projects', 'max')
   return result[0]
 }
 
@@ -65,13 +65,13 @@ export async function updateProject(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(projects.id, id))
     .returning()
-  revalidateTag("projects", "max")
+  revalidateTag('projects', 'max')
   return result[0]
 }
 
 export async function deleteProject(id: number) {
   await db.delete(projects).where(eq(projects.id, id))
-  revalidateTag("projects", "max")
+  revalidateTag('projects', 'max')
 }
 
 export async function getProjectsWithStats() {
@@ -88,7 +88,10 @@ export async function getProjectsWithStats() {
   })
 
   return projectsData.map((project) => {
-    const totalMinutes = project.timeEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0)
+    const totalMinutes = project.timeEntries.reduce(
+      (sum, entry) => sum + entry.durationMinutes,
+      0,
+    )
     const weekMinutes = project.timeEntries
       .filter((entry) => entry.startTime >= weekAgo)
       .reduce((sum, entry) => sum + entry.durationMinutes, 0)
@@ -96,7 +99,8 @@ export async function getProjectsWithStats() {
     const totalHours = Math.round((totalMinutes / 60) * 10) / 10
     const hoursThisWeek = Math.round((weekMinutes / 60) * 10) / 10
     const expectedHours = project.expectedHours
-    const percentageComplete = expectedHours > 0 ? Math.round((totalHours / expectedHours) * 100) : 0
+    const percentageComplete =
+      expectedHours > 0 ? Math.round((totalHours / expectedHours) * 100) : 0
 
     return {
       ...project,

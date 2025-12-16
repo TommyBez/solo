@@ -1,15 +1,16 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { JetBrains_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { Toaster } from "sonner"
-import "./globals.css"
+import { Analytics } from '@vercel/analytics/next'
+import type { Metadata } from 'next'
+import { JetBrains_Mono } from 'next/font/google'
+import type React from 'react'
+import { Toaster } from 'sonner'
+import './globals.css'
 
-const fontSans = JetBrains_Mono({subsets:['latin'],variable:'--font-sans'})
+const fontSans = JetBrains_Mono({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
-  title: "Solo",
-  description: "Solo is a tool for solo developers to track their time and projects",
+  title: 'Solo',
+  description:
+    'Solo is a tool for solo developers to track their time and projects',
 }
 
 export default function RootLayout({
@@ -18,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={fontSans.variable}>
-      <body className={`antialiased`}>
+    <html className={fontSans.variable} lang="en">
+      <body className={'antialiased'}>
         {children}
         <Toaster position="bottom-right" richColors />
         <Analytics />

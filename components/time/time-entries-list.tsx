@@ -1,15 +1,10 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { format } from "date-fns"
-import { Pencil, Trash2, MoreHorizontal } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { format } from 'date-fns'
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +14,32 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { TimeEntryForm } from "./time-entry-form"
-import { deleteTimeEntry } from "@/lib/actions/time-entries"
-import type { Project, Area } from "@/lib/db/schema"
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { deleteTimeEntry } from '@/lib/actions/time-entries'
+import type { Area, Project } from '@/lib/db/schema'
+import { TimeEntryForm } from './time-entry-form'
 
 interface TimeEntry {
   id: number
@@ -57,10 +74,10 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
     if (!deleteEntryId) return
     try {
       await deleteTimeEntry(deleteEntryId)
-      toast.success("Entry deleted")
+      toast.success('Entry deleted')
       router.refresh()
     } catch {
-      toast.error("Failed to delete entry")
+      toast.error('Failed to delete entry')
     }
     setDeleteEntryId(null)
   }
@@ -68,7 +85,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
   // Group entries by date
   const entriesByDate = entries.reduce(
     (acc, entry) => {
-      const dateKey = format(new Date(entry.startTime), "yyyy-MM-dd")
+      const dateKey = format(new Date(entry.startTime), 'yyyy-MM-dd')
       if (!acc[dateKey]) {
         acc[dateKey] = []
       }
@@ -78,7 +95,9 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
     {} as Record<string, TimeEntry[]>,
   )
 
-  const sortedDates = Object.keys(entriesByDate).sort((a, b) => b.localeCompare(a))
+  const sortedDates = Object.keys(entriesByDate).sort((a, b) =>
+    b.localeCompare(a),
+  )
 
   return (
     <>
@@ -89,53 +108,82 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
         </CardHeader>
         <CardContent>
           {entries.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No time entries yet. Start tracking!</p>
+            <p className="py-8 text-center text-muted-foreground">
+              No time entries yet. Start tracking!
+            </p>
           ) : (
             <div className="space-y-6">
               {sortedDates.map((dateKey) => {
                 const dayEntries = entriesByDate[dateKey]
-                const totalMinutes = dayEntries.reduce((sum, e) => sum + e.durationMinutes, 0)
+                const totalMinutes = dayEntries.reduce(
+                  (sum, e) => sum + e.durationMinutes,
+                  0,
+                )
 
                 return (
-                  <div key={dateKey} className="space-y-3">
+                  <div className="space-y-3" key={dateKey}>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium">{format(new Date(dateKey), "EEEE, MMMM d, yyyy")}</h3>
-                      <Badge variant="secondary">{formatDuration(totalMinutes)}</Badge>
+                      <h3 className="font-medium text-sm">
+                        {format(new Date(dateKey), 'EEEE, MMMM d, yyyy')}
+                      </h3>
+                      <Badge variant="secondary">
+                        {formatDuration(totalMinutes)}
+                      </Badge>
                     </div>
                     <div className="space-y-2">
                       {dayEntries.map((entry) => (
-                        <div key={entry.id} className="flex items-start justify-between gap-4 rounded-lg border p-3">
+                        <div
+                          className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                          key={entry.id}
+                        >
                           <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2">
                               <div
                                 className="size-2 rounded-full"
-                                style={{ backgroundColor: entry.project.area.color }}
+                                style={{
+                                  backgroundColor: entry.project.area.color,
+                                }}
                               />
-                              <span className="text-sm font-medium">{entry.project.name}</span>
+                              <span className="font-medium text-sm">
+                                {entry.project.name}
+                              </span>
                             </div>
-                            {entry.description && <p className="text-sm text-muted-foreground">{entry.description}</p>}
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(entry.startTime), "h:mm a")}
-                              {entry.endTime && ` - ${format(new Date(entry.endTime), "h:mm a")}`}
+                            {entry.description && (
+                              <p className="text-muted-foreground text-sm">
+                                {entry.description}
+                              </p>
+                            )}
+                            <p className="text-muted-foreground text-xs">
+                              {format(new Date(entry.startTime), 'h:mm a')}
+                              {entry.endTime &&
+                                ` - ${format(new Date(entry.endTime), 'h:mm a')}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline">{formatDuration(entry.durationMinutes)}</Badge>
+                            <Badge variant="outline">
+                              {formatDuration(entry.durationMinutes)}
+                            </Badge>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8">
+                                <Button
+                                  className="size-8"
+                                  size="icon"
+                                  variant="ghost"
+                                >
                                   <MoreHorizontal className="size-4" />
                                   <span className="sr-only">Open menu</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setEditEntry(entry)}>
+                                <DropdownMenuItem
+                                  onClick={() => setEditEntry(entry)}
+                                >
                                   <Pencil className="mr-2 size-4" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => setDeleteEntryId(entry.id)}
                                   className="text-destructive"
+                                  onClick={() => setDeleteEntryId(entry.id)}
                                 >
                                   <Trash2 className="mr-2 size-4" />
                                   Delete
@@ -154,11 +202,16 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)}>
+      <Dialog
+        onOpenChange={(open) => !open && setEditEntry(null)}
+        open={!!editEntry}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Time Entry</DialogTitle>
-            <DialogDescription>Update the time entry details.</DialogDescription>
+            <DialogDescription>
+              Update the time entry details.
+            </DialogDescription>
           </DialogHeader>
           {editEntry && (
             <TimeEntryForm
@@ -171,24 +224,31 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                 durationMinutes: editEntry.durationMinutes,
                 createdAt: editEntry.createdAt,
               }}
-              projects={projects}
               onSuccess={() => setEditEntry(null)}
+              projects={projects}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteEntryId} onOpenChange={(open) => !open && setDeleteEntryId(null)}>
+      <AlertDialog
+        onOpenChange={(open) => !open && setDeleteEntryId(null)}
+        open={!!deleteEntryId}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this time entry. This action cannot be undone.
+              This will permanently delete this time entry. This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
+              onClick={handleDelete}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

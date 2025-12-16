@@ -1,22 +1,17 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { format } from "date-fns"
-import { MoreHorizontal, Pencil, Archive, Trash2, Clock, Calendar } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
+import { format } from 'date-fns'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+  Archive,
+  Calendar,
+  Clock,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +21,28 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { ProjectForm } from "./project-form"
-import { updateProject, deleteProject } from "@/lib/actions/projects"
-import type { Area } from "@/lib/db/schema"
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Progress } from '@/components/ui/progress'
+import { deleteProject, updateProject } from '@/lib/actions/projects'
+import type { Area } from '@/lib/db/schema'
+import { ProjectForm } from './project-form'
 
 interface ProjectCardProps {
   project: {
@@ -47,10 +60,10 @@ interface ProjectCardProps {
   areas: Area[]
 }
 
-const statusVariants: Record<string, "default" | "secondary" | "outline"> = {
-  active: "default",
-  "on-hold": "secondary",
-  completed: "outline",
+const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
+  active: 'default',
+  'on-hold': 'secondary',
+  completed: 'outline',
 }
 
 export function ProjectCard({ project, areas }: ProjectCardProps) {
@@ -61,38 +74,43 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
   async function handleArchive() {
     try {
       await updateProject(project.id, { archived: true })
-      toast.success("Project archived")
+      toast.success('Project archived')
       router.refresh()
     } catch {
-      toast.error("Failed to archive project")
+      toast.error('Failed to archive project')
     }
   }
 
   async function handleDelete() {
     try {
       await deleteProject(project.id)
-      toast.success("Project deleted")
+      toast.success('Project deleted')
       router.refresh()
     } catch {
-      toast.error("Failed to delete project")
+      toast.error('Failed to delete project')
     }
   }
 
   return (
     <>
       <Card className="relative overflow-hidden">
-        <div className="absolute left-0 top-0 h-full w-1" style={{ backgroundColor: project.area.color }} />
+        <div
+          className="absolute top-0 left-0 h-full w-1"
+          style={{ backgroundColor: project.area.color }}
+        />
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg">{project.name}</CardTitle>
-              <Badge variant={statusVariants[project.status]}>{project.status}</Badge>
+              <Badge variant={statusVariants[project.status]}>
+                {project.status}
+              </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">{project.area.name}</p>
+            <p className="text-muted-foreground text-sm">{project.area.name}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
+              <Button className="size-8" size="icon" variant="ghost">
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -107,7 +125,10 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
                 Archive
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => setIsDeleteOpen(true)}
+              >
                 <Trash2 className="mr-2 size-4" />
                 Delete
               </DropdownMenuItem>
@@ -115,9 +136,13 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="space-y-4">
-          {project.description && <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>}
+          {project.description && (
+            <p className="line-clamp-2 text-muted-foreground text-sm">
+              {project.description}
+            </p>
+          )}
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-muted-foreground text-sm">
             <div className="flex items-center gap-1">
               <Clock className="size-4" />
               <span>{project.hoursThisWeek}h this week</span>
@@ -125,7 +150,7 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
             {project.deadline && (
               <div className="flex items-center gap-1">
                 <Calendar className="size-4" />
-                <span>{format(new Date(project.deadline), "MMM d, yyyy")}</span>
+                <span>{format(new Date(project.deadline), 'MMM d, yyyy')}</span>
               </div>
             )}
           </div>
@@ -138,19 +163,26 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
                   {project.totalHours}h / {project.expectedHours}h
                 </span>
               </div>
-              <Progress value={Math.min(project.percentageComplete, 100)} className="h-2" />
+              <Progress
+                className="h-2"
+                value={Math.min(project.percentageComplete, 100)}
+              />
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <Dialog onOpenChange={setIsEditOpen} open={isEditOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>Update the project details below.</DialogDescription>
+            <DialogDescription>
+              Update the project details below.
+            </DialogDescription>
           </DialogHeader>
           <ProjectForm
+            areas={areas}
+            onSuccess={() => setIsEditOpen(false)}
             project={{
               id: project.id,
               areaId: project.area.id,
@@ -163,23 +195,25 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
               createdAt: new Date(),
               updatedAt: new Date(),
             }}
-            areas={areas}
-            onSuccess={() => setIsEditOpen(false)}
           />
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Project</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{project.name}" and all its time entries. This action cannot be undone.
+              This will permanently delete "{project.name}" and all its time
+              entries. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
+              onClick={handleDelete}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

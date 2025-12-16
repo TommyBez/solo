@@ -1,28 +1,32 @@
-import { Suspense } from "react"
-import { getDashboardStats } from "@/lib/actions/time-entries"
-import { getTimeEntries } from "@/lib/actions/time-entries"
-import { StatsCards } from "@/components/dashboard/stats-cards"
-import { TimeDistributionChart } from "@/components/dashboard/time-distribution-chart"
-import { DailyBreakdownChart } from "@/components/dashboard/daily-breakdown-chart"
-import { AreasComparisonChart } from "@/components/dashboard/areas-comparison-chart"
-import { RecentEntries } from "@/components/dashboard/recent-entries"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Suspense } from 'react'
+import { AreasComparisonChart } from '@/components/dashboard/areas-comparison-chart'
+import { DailyBreakdownChart } from '@/components/dashboard/daily-breakdown-chart'
+import { RecentEntries } from '@/components/dashboard/recent-entries'
+import { StatsCards } from '@/components/dashboard/stats-cards'
+import { TimeDistributionChart } from '@/components/dashboard/time-distribution-chart'
+import { Skeleton } from '@/components/ui/skeleton'
+import { getDashboardStats, getTimeEntries } from '@/lib/actions/time-entries'
 
 async function DashboardContent() {
-  const [stats, recentEntries] = await Promise.all([getDashboardStats(), getTimeEntries(undefined, 5)])
+  const [stats, recentEntries] = await Promise.all([
+    getDashboardStats(),
+    getTimeEntries(undefined, 5),
+  ])
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your freelance activity and time tracking</p>
+        <h1 className="font-bold text-3xl tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Overview of your freelance activity and time tracking
+        </p>
       </div>
 
       <StatsCards
-        weeklyHours={stats.weeklyHours}
-        monthlyHours={stats.monthlyHours}
         activeAreasCount={stats.activeAreasCount}
         activeProjectsCount={stats.activeProjectsCount}
+        monthlyHours={stats.monthlyHours}
+        weeklyHours={stats.weeklyHours}
       />
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -49,7 +53,7 @@ function DashboardSkeleton() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-32" />
+          <Skeleton className="h-32" key={i} />
         ))}
       </div>
       <div className="grid gap-6 md:grid-cols-2">

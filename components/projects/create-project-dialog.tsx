@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { ProjectForm } from "./project-form"
-import type { Area } from "@/lib/db/schema"
+} from '@/components/ui/dialog'
+import type { Area } from '@/lib/db/schema'
+import { ProjectForm } from './project-form'
 
 interface CreateProjectDialogProps {
   areas: Area[]
@@ -31,7 +31,7 @@ export function CreateProjectDialog({ areas }: CreateProjectDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 size-4" />
@@ -42,7 +42,8 @@ export function CreateProjectDialog({ areas }: CreateProjectDialogProps) {
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Projects are specific endeavors within an area, like "CTO for XY Agency" or "Build Mobile App".
+            Projects are specific endeavors within an area, like "CTO for XY
+            Agency" or "Build Mobile App".
           </DialogDescription>
         </DialogHeader>
         <ProjectForm areas={areas} onSuccess={() => setOpen(false)} />

@@ -1,9 +1,9 @@
-"use server"
+'use server'
 
-import { db } from "@/lib/db"
-import { areas, projects, timeEntries } from "@/lib/db/schema"
-import { eq, desc, gte } from "drizzle-orm"
-import { revalidateTag } from "next/cache"
+import { desc, eq, gte } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
+import { db } from '@/lib/db'
+import { areas, projects, timeEntries } from '@/lib/db/schema'
 
 export async function getAreas(includeArchived = false) {
   const conditions = includeArchived ? undefined : eq(areas.archived, false)
@@ -42,7 +42,7 @@ export async function createArea(data: {
   expectedHoursPerWeek: number
 }) {
   const result = await db.insert(areas).values(data).returning()
-  revalidateTag("areas", "max")
+  revalidateTag('areas', 'max')
   return result[0]
 }
 
@@ -61,13 +61,13 @@ export async function updateArea(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(areas.id, id))
     .returning()
-  revalidateTag("areas", "max")
+  revalidateTag('areas', 'max')
   return result[0]
 }
 
 export async function deleteArea(id: number) {
   await db.delete(areas).where(eq(areas.id, id))
-  revalidateTag("areas", "max")
+  revalidateTag('areas', 'max')
 }
 
 export async function getAreasWithStats() {
@@ -90,13 +90,20 @@ export async function getAreasWithStats() {
   })
 
   return areasData.map((area) => {
-    const totalMinutesThisWeek = area.projects.reduce((acc, project) => {
-      return acc + project.timeEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0)
-    }, 0)
+    const totalMinutesThisWeek = area.projects.reduce(
+      (acc, project) =>
+        acc +
+        project.timeEntries.reduce(
+          (sum, entry) => sum + entry.durationMinutes,
+          0,
+        ),
+      0,
+    )
 
     const hoursThisWeek = Math.round((totalMinutesThisWeek / 60) * 10) / 10
     const expectedHours = area.expectedHoursPerWeek
-    const percentageComplete = expectedHours > 0 ? Math.round((hoursThisWeek / expectedHours) * 100) : 0
+    const percentageComplete =
+      expectedHours > 0 ? Math.round((hoursThisWeek / expectedHours) * 100) : 0
 
     return {
       ...area,

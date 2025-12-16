@@ -1,9 +1,9 @@
-"use server"
+'use server'
 
-import { db } from "@/lib/db"
-import { timeEntries, projects, areas } from "@/lib/db/schema"
-import { eq, desc, gte, and, lte } from "drizzle-orm"
-import { revalidateTag } from "next/cache"
+import { and, desc, eq, gte, lte } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
+import { db } from '@/lib/db'
+import { areas, projects, timeEntries } from '@/lib/db/schema'
 
 export async function getTimeEntries(projectId?: number, limit = 50) {
   const result = await db.query.timeEntries.findMany({
@@ -30,7 +30,7 @@ export async function createTimeEntry(data: {
   durationMinutes: number
 }) {
   const result = await db.insert(timeEntries).values(data).returning()
-  revalidateTag("time-entries", "max")
+  revalidateTag('time-entries', 'max')
   return result[0]
 }
 
@@ -43,19 +43,29 @@ export async function updateTimeEntry(
     durationMinutes?: number
   },
 ) {
-  const result = await db.update(timeEntries).set(data).where(eq(timeEntries.id, id)).returning()
-  revalidateTag("time-entries", "max")
+  const result = await db
+    .update(timeEntries)
+    .set(data)
+    .where(eq(timeEntries.id, id))
+    .returning()
+  revalidateTag('time-entries', 'max')
   return result[0]
 }
 
 export async function deleteTimeEntry(id: number) {
   await db.delete(timeEntries).where(eq(timeEntries.id, id))
-  revalidateTag("time-entries", "max")
+  revalidateTag('time-entries', 'max')
 }
 
-export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date) {
+export async function getTimeEntriesForDateRange(
+  startDate: Date,
+  endDate: Date,
+) {
   const result = await db.query.timeEntries.findMany({
-    where: and(gte(timeEntries.startTime, startDate), lte(timeEntries.startTime, endDate)),
+    where: and(
+      gte(timeEntries.startTime, startDate),
+      lte(timeEntries.startTime, endDate),
+    ),
     orderBy: [desc(timeEntries.startTime)],
     with: {
       project: {
@@ -98,15 +108,21 @@ export async function getDashboardStats() {
   })
 
   // Calculate weekly totals
-  const weeklyMinutes = weekEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0)
-  const monthlyMinutes = monthEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0)
+  const weeklyMinutes = weekEntries.reduce(
+    (sum, entry) => sum + entry.durationMinutes,
+    0,
+  )
+  const monthlyMinutes = monthEntries.reduce(
+    (sum, entry) => sum + entry.durationMinutes,
+    0,
+  )
 
   // Get active areas and projects count
   const activeAreas = await db.query.areas.findMany({
     where: eq(areas.archived, false),
   })
   const activeProjects = await db.query.projects.findMany({
-    where: and(eq(projects.archived, false), eq(projects.status, "active")),
+    where: and(eq(projects.archived, false), eq(projects.status, 'active')),
   })
 
   // Calculate time by area for the week
@@ -129,7 +145,11 @@ export async function getDashboardStats() {
       const projectName = entry.project.name
       const areaColor = entry.project.area.color
       if (!acc[projectName]) {
-        acc[projectName] = { minutes: 0, color: areaColor, areaName: entry.project.area.name }
+        acc[projectName] = {
+          minutes: 0,
+          color: areaColor,
+          areaName: entry.project.area.name,
+        }
       }
       acc[projectName].minutes += entry.durationMinutes
       return acc
@@ -144,12 +164,14 @@ export async function getDashboardStats() {
     const dayEnd = new Date(date.setHours(23, 59, 59, 999))
 
     const dayMinutes = weekEntries
-      .filter((entry) => entry.startTime >= dayStart && entry.startTime <= dayEnd)
+      .filter(
+        (entry) => entry.startTime >= dayStart && entry.startTime <= dayEnd,
+      )
       .reduce((sum, entry) => sum + entry.durationMinutes, 0)
 
     return {
-      date: dayStart.toISOString().split("T")[0],
-      dayName: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+      date: dayStart.toISOString().split('T')[0],
+      dayName: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
       hours: Math.round((dayMinutes / 60) * 10) / 10,
     }
   })
