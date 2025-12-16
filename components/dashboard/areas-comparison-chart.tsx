@@ -23,11 +23,11 @@ export function AreasComparisonChart({ data }: AreasComparisonChartProps) {
   const chartConfig = {
     expected: {
       label: "Expected",
-      color: "hsl(var(--muted-foreground))",
+      color: "var(--muted-foreground)",
     },
     actual: {
       label: "Actual",
-      color: "hsl(var(--primary))",
+      color: "var(--primary)",
     },
   }
 

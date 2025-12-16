@@ -16,7 +16,7 @@ export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
   const chartConfig = {
     hours: {
       label: "Hours",
-      color: "hsl(var(--primary))",
+      color: "var(--primary)",
     },
   }
 
