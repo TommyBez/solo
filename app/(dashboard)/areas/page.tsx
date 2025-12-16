@@ -1,10 +1,8 @@
-import { Suspense } from 'react'
 import { AreaCard } from '@/components/areas/area-card'
 import { CreateAreaDialog } from '@/components/areas/create-area-dialog'
-import { Skeleton } from '@/components/ui/skeleton'
-import { getAreasWithStats } from '@/lib/actions/areas'
+import { getAreasWithStats } from '@/lib/queries/areas'
 
-async function AreasContent() {
+export default async function AreasPage() {
   const areas = await getAreasWithStats()
 
   return (
@@ -35,32 +33,5 @@ async function AreasContent() {
         </div>
       )}
     </div>
-  )
-}
-
-function AreasSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Skeleton className="h-9 w-32" />
-          <Skeleton className="mt-2 h-5 w-64" />
-        </div>
-        <Skeleton className="h-10 w-28" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {['skeleton-area-1', 'skeleton-area-2', 'skeleton-area-3'].map((id) => (
-          <Skeleton className="h-48" key={id} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export default function AreasPage() {
-  return (
-    <Suspense fallback={<AreasSkeleton />}>
-      <AreasContent />
-    </Suspense>
   )
 }
