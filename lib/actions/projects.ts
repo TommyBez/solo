@@ -1,19 +1,29 @@
 'use server'
 
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
 import { projects, timeEntries } from '@/lib/db/schema'
 
 export async function getProjects(areaId?: number, includeArchived = false) {
+  let whereCondition: ReturnType<typeof eq> | ReturnType<typeof and> | undefined
+  if (areaId) {
+    if (includeArchived) {
+      whereCondition = eq(projects.areaId, areaId)
+    } else {
+      whereCondition = and(
+        eq(projects.areaId, areaId),
+        eq(projects.archived, false),
+      )
+    }
+  } else if (includeArchived) {
+    whereCondition = undefined
+  } else {
+    whereCondition = eq(projects.archived, false)
+  }
+
   const result = await db.query.projects.findMany({
-    where: areaId
-      ? includeArchived
-        ? eq(projects.areaId, areaId)
-        : eq(projects.areaId, areaId) && eq(projects.archived, false)
-      : includeArchived
-        ? undefined
-        : eq(projects.archived, false),
+    where: whereCondition,
     orderBy: [desc(projects.createdAt)],
     with: {
       area: true,
@@ -24,7 +34,7 @@ export async function getProjects(areaId?: number, includeArchived = false) {
   return result
 }
 
-export async function getProjectById(id: number) {
+export function getProjectById(id: number) {
   return db.query.projects.findFirst({
     where: eq(projects.id, id),
     with: {

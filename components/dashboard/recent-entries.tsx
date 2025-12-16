@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-interface RecentEntriesProps {
+type RecentEntriesProps = {
   entries: Array<{
     id: number
     description: string | null
@@ -28,8 +28,12 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    if (hours === 0) return `${mins}m`
-    if (mins === 0) return `${hours}h`
+    if (hours === 0) {
+      return `${mins}m`
+    }
+    if (mins === 0) {
+      return `${hours}h`
+    }
     return `${hours}h ${mins}m`
   }
 
@@ -61,11 +65,11 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
                       {entry.project.name}
                     </span>
                   </div>
-                  {entry.description && (
+                  {entry.description ? (
                     <p className="line-clamp-1 text-muted-foreground text-sm">
                       {entry.description}
                     </p>
-                  )}
+                  ) : null}
                   <p className="text-muted-foreground text-xs">
                     {formatDistanceToNow(new Date(entry.startTime), {
                       addSuffix: true,

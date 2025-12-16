@@ -14,7 +14,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
-interface TimeDistributionChartProps {
+type TimeDistributionChartProps = {
   data: Array<{
     name: string
     hours: number
@@ -69,8 +69,8 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
               outerRadius={100}
               paddingAngle={2}
             >
-              {data.map((entry, index) => (
-                <Cell fill={entry.color} key={`cell-${index}`} />
+              {data.map((entry) => (
+                <Cell fill={entry.color} key={`cell-${entry.name}`} />
               ))}
             </Pie>
             <ChartTooltip

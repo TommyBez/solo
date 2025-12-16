@@ -27,7 +27,7 @@ import { createProject, updateProject } from '@/lib/actions/projects'
 import type { Area, Project } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
-interface ProjectFormProps {
+type ProjectFormProps = {
   project?: Project & { area?: Area }
   areas: Area[]
   onSuccess?: () => void
@@ -73,7 +73,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
         toast.success('Project updated successfully')
       } else {
         await createProject({
-          areaId: Number.parseInt(areaId),
+          areaId: Number.parseInt(areaId, 10),
           name: name.trim(),
           description: description.trim() || undefined,
           status,
@@ -91,6 +91,13 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  let buttonText = 'Create Project'
+  if (isLoading) {
+    buttonText = 'Saving...'
+  } else if (isEditing) {
+    buttonText = 'Update Project'
   }
 
   return (
@@ -183,7 +190,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
             <Calendar
-              initialFocus
+              autoFocus
               mode="single"
               onSelect={setDeadline}
               selected={deadline}
@@ -194,11 +201,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
 
       <div className="flex justify-end gap-2 pt-4">
         <Button disabled={isLoading} type="submit">
-          {isLoading
-            ? 'Saving...'
-            : isEditing
-              ? 'Update Project'
-              : 'Create Project'}
+          {buttonText}
         </Button>
       </div>
     </form>

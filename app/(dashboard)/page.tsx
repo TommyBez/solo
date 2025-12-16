@@ -52,8 +52,13 @@ function DashboardSkeleton() {
         <Skeleton className="mt-2 h-5 w-72" />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton className="h-32" key={i} />
+        {[
+          'skeleton-stats-1',
+          'skeleton-stats-2',
+          'skeleton-stats-3',
+          'skeleton-stats-4',
+        ].map((id) => (
+          <Skeleton className="h-32" key={id} />
         ))}
       </div>
       <div className="grid gap-6 md:grid-cols-2">

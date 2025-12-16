@@ -21,7 +21,7 @@ export async function getAreas(includeArchived = false) {
   return result
 }
 
-export async function getAreaById(id: number) {
+export function getAreaById(id: number) {
   return db.query.areas.findFirst({
     where: eq(areas.id, id),
     with: {

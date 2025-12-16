@@ -26,7 +26,7 @@ const PRESET_COLORS = [
   '#3b82f6', // blue
 ]
 
-interface AreaFormProps {
+type AreaFormProps = {
   area?: Area
   onSuccess?: () => void
 }
@@ -76,6 +76,13 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  let buttonText = 'Create Area'
+  if (isLoading) {
+    buttonText = 'Saving...'
+  } else if (isEditing) {
+    buttonText = 'Update Area'
   }
 
   return (
@@ -139,7 +146,7 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
 
       <div className="flex justify-end gap-2 pt-4">
         <Button disabled={isLoading} type="submit">
-          {isLoading ? 'Saving...' : isEditing ? 'Update Area' : 'Create Area'}
+          {buttonText}
         </Button>
       </div>
     </form>

@@ -146,7 +146,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
           value={description}
         />
 
-        {selectedProject && (
+        {selectedProject ? (
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <div
               className="size-2 rounded-full"
@@ -154,7 +154,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
             />
             <span>{selectedProject.area.name}</span>
           </div>
-        )}
+        ) : null}
 
         <div className="flex items-center justify-between">
           <span className="font-bold font-mono text-3xl tabular-nums">

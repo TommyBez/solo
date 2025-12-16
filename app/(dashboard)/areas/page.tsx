@@ -49,8 +49,8 @@ function AreasSkeleton() {
         <Skeleton className="h-10 w-28" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton className="h-48" key={i} />
+        {['skeleton-area-1', 'skeleton-area-2', 'skeleton-area-3'].map((id) => (
+          <Skeleton className="h-48" key={id} />
         ))}
       </div>
     </div>

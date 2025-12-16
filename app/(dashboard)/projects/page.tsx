@@ -44,7 +44,7 @@ async function ProjectsContent() {
         <CreateProjectDialog areas={areas} />
       </div>
 
-      {areas.length === 0 ? (
+      {areas.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <h3 className="font-semibold text-lg">Create an area first</h3>
           <p className="mb-4 text-muted-foreground text-sm">
@@ -54,7 +54,8 @@ async function ProjectsContent() {
             <Link href="/areas">Go to Areas</Link>
           </Button>
         </div>
-      ) : projects.length === 0 ? (
+      )}
+      {areas.length > 0 && projects.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <h3 className="font-semibold text-lg">No projects yet</h3>
           <p className="mb-4 text-muted-foreground text-sm">
@@ -62,7 +63,8 @@ async function ProjectsContent() {
           </p>
           <CreateProjectDialog areas={areas} />
         </div>
-      ) : (
+      )}
+      {areas.length > 0 && projects.length > 0 && (
         <div className="space-y-8">
           {Object.entries(projectsByArea).map(
             ([areaName, { area, projects: areaProjects }]) => (
@@ -96,6 +98,11 @@ async function ProjectsContent() {
 }
 
 function ProjectsSkeleton() {
+  const skeletonGroups = [
+    { id: 'group-1', cards: ['card-1', 'card-2', 'card-3'] },
+    { id: 'group-2', cards: ['card-4', 'card-5', 'card-6'] },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -106,12 +113,12 @@ function ProjectsSkeleton() {
         <Skeleton className="h-10 w-32" />
       </div>
       <div className="space-y-8">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div className="space-y-4" key={i}>
+        {skeletonGroups.map((group) => (
+          <div className="space-y-4" key={group.id}>
             <Skeleton className="h-7 w-48" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, j) => (
-                <Skeleton className="h-52" key={j} />
+              {group.cards.map((cardId) => (
+                <Skeleton className="h-52" key={cardId} />
               ))}
             </div>
           </div>

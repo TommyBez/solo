@@ -40,7 +40,7 @@ import { Progress } from '@/components/ui/progress'
 import { deleteArea, updateArea } from '@/lib/actions/areas'
 import { AreaForm } from './area-form'
 
-interface AreaCardProps {
+type AreaCardProps = {
   area: {
     id: number
     name: string
@@ -88,11 +88,11 @@ export function AreaCard({ area }: AreaCardProps) {
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle className="text-lg">{area.name}</CardTitle>
-            {area.description && (
+            {area.description ? (
               <p className="line-clamp-1 text-muted-foreground text-sm">
                 {area.description}
               </p>
-            )}
+            ) : null}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

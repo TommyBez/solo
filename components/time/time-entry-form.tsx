@@ -27,7 +27,7 @@ import { createTimeEntry, updateTimeEntry } from '@/lib/actions/time-entries'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
-interface TimeEntryFormProps {
+type TimeEntryFormProps = {
   entry?: TimeEntry
   projects: (Project & { area: Area })[]
   onSuccess?: () => void
@@ -97,7 +97,7 @@ export function TimeEntryForm({
         toast.success('Time entry updated')
       } else {
         await createTimeEntry({
-          projectId: Number.parseInt(projectId),
+          projectId: Number.parseInt(projectId, 10),
           description: description.trim() || undefined,
           startTime,
           endTime,
@@ -112,6 +112,13 @@ export function TimeEntryForm({
     } finally {
       setIsLoading(false)
     }
+  }
+
+  let buttonText = 'Add Entry'
+  if (isLoading) {
+    buttonText = 'Saving...'
+  } else if (isEditing) {
+    buttonText = 'Update Entry'
   }
 
   return (
@@ -170,9 +177,13 @@ export function TimeEntryForm({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
             <Calendar
-              initialFocus
+              autoFocus
               mode="single"
-              onSelect={(d) => d && setDate(d)}
+              onSelect={(d) => {
+                if (d) {
+                  setDate(d)
+                }
+              }}
               selected={date}
             />
           </PopoverContent>
@@ -211,7 +222,7 @@ export function TimeEntryForm({
 
       <div className="flex justify-end gap-2 pt-4">
         <Button disabled={isLoading} type="submit">
-          {isLoading ? 'Saving...' : isEditing ? 'Update Entry' : 'Add Entry'}
+          {buttonText}
         </Button>
       </div>
     </form>

@@ -44,7 +44,7 @@ import { deleteProject, updateProject } from '@/lib/actions/projects'
 import type { Area } from '@/lib/db/schema'
 import { ProjectForm } from './project-form'
 
-interface ProjectCardProps {
+type ProjectCardProps = {
   project: {
     id: number
     name: string
@@ -136,23 +136,23 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="space-y-4">
-          {project.description && (
+          {project.description ? (
             <p className="line-clamp-2 text-muted-foreground text-sm">
               {project.description}
             </p>
-          )}
+          ) : null}
 
           <div className="flex items-center gap-4 text-muted-foreground text-sm">
             <div className="flex items-center gap-1">
               <Clock className="size-4" />
               <span>{project.hoursThisWeek}h this week</span>
             </div>
-            {project.deadline && (
+            {project.deadline ? (
               <div className="flex items-center gap-1">
                 <Calendar className="size-4" />
                 <span>{format(new Date(project.deadline), 'MMM d, yyyy')}</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {project.expectedHours > 0 && (

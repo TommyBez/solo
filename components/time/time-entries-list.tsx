@@ -41,7 +41,7 @@ import { deleteTimeEntry } from '@/lib/actions/time-entries'
 import type { Area, Project } from '@/lib/db/schema'
 import { TimeEntryForm } from './time-entry-form'
 
-interface TimeEntry {
+type TimeEntry = {
   id: number
   projectId: number
   description: string | null
@@ -52,7 +52,7 @@ interface TimeEntry {
   project: Project & { area: Area }
 }
 
-interface TimeEntriesListProps {
+type TimeEntriesListProps = {
   entries: TimeEntry[]
   projects: (Project & { area: Area })[]
 }
@@ -65,13 +65,19 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    if (hours === 0) return `${mins}m`
-    if (mins === 0) return `${hours}h`
+    if (hours === 0) {
+      return `${mins}m`
+    }
+    if (mins === 0) {
+      return `${hours}h`
+    }
     return `${hours}h ${mins}m`
   }
 
   async function handleDelete() {
-    if (!deleteEntryId) return
+    if (!deleteEntryId) {
+      return
+    }
     try {
       await deleteTimeEntry(deleteEntryId)
       toast.success('Entry deleted')
@@ -148,15 +154,16 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                                 {entry.project.name}
                               </span>
                             </div>
-                            {entry.description && (
+                            {entry.description ? (
                               <p className="text-muted-foreground text-sm">
                                 {entry.description}
                               </p>
-                            )}
+                            ) : null}
                             <p className="text-muted-foreground text-xs">
                               {format(new Date(entry.startTime), 'h:mm a')}
-                              {entry.endTime &&
-                                ` - ${format(new Date(entry.endTime), 'h:mm a')}`}
+                              {entry.endTime
+                                ? ` - ${format(new Date(entry.endTime), 'h:mm a')}`
+                                : null}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -213,7 +220,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
               Update the time entry details.
             </DialogDescription>
           </DialogHeader>
-          {editEntry && (
+          {editEntry ? (
             <TimeEntryForm
               entry={{
                 id: editEntry.id,
@@ -227,7 +234,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
               onSuccess={() => setEditEntry(null)}
               projects={projects}
             />
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
 
