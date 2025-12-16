@@ -1,7 +1,8 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Cell, Pie, PieChart } from "recharts"
 
 interface TimeDistributionChartProps {
   data: Array<{
@@ -12,6 +13,12 @@ interface TimeDistributionChartProps {
 }
 
 export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
+  const chartConfig = {
+    hours: {
+      label: "Hours",
+    },
+  }
+
   if (data.length === 0) {
     return (
       <Card>
@@ -33,36 +40,27 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
         <CardDescription>Weekly distribution across areas</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={2}
-                dataKey="hours"
-                nameKey="name"
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                labelLine={false}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => [`${value}h`, "Hours"]}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "var(--radius)",
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              paddingAngle={2}
+              dataKey="hours"
+              nameKey="name"
+              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+              labelLine={false}
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <ChartTooltip content={<ChartTooltipContent labelKey="name" nameKey="name" />} />
+          </PieChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   )
