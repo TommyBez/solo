@@ -1,14 +1,37 @@
+import {
+  endOfMonth,
+  endOfWeek,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns'
 import Link from 'next/link'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
+import { CalendarView } from '@/components/time/calendar-view'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { getProjects } from '@/lib/queries/projects'
-import { getTimeEntries } from '@/lib/queries/time-entries'
+import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
 
-export default async function TimeTrackingPage() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+
+export default async function TimeTrackingPage(props: {
+  searchParams: SearchParams
+}) {
+  const searchParams = await props.searchParams
+  const dateParam =
+    typeof searchParams.date === 'string' ? searchParams.date : undefined
+  const currentDate = dateParam ? parseISO(dateParam) : new Date()
+
+  // Calculate range for the calendar view (including padding days)
+  const monthStart = startOfMonth(currentDate)
+  const monthEnd = endOfMonth(monthStart)
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+
   const [entries, projects] = await Promise.all([
-    getTimeEntries(undefined, 50),
+    getTimeEntriesForDateRange(startDate, endDate),
     getProjects(),
   ])
 
@@ -25,6 +48,8 @@ export default async function TimeTrackingPage() {
         </div>
         <AddTimeEntryDialog projects={activeProjects} />
       </div>
+
+      <CalendarView currentDate={currentDate} entries={entries} />
 
       {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
