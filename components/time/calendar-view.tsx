@@ -2,6 +2,7 @@
 
 import {
   addMonths,
+  addWeeks,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -11,10 +12,12 @@ import {
   startOfMonth,
   startOfWeek,
   subMonths,
+  subWeeks,
 } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
@@ -27,41 +30,69 @@ type TimeEntryWithDetails = TimeEntry & {
 type CalendarViewProps = {
   entries: TimeEntryWithDetails[]
   currentDate: Date
+  view: 'month' | 'week'
 }
 
-export function CalendarView({ entries, currentDate }: CalendarViewProps) {
+export function CalendarView({
+  entries,
+  currentDate,
+  view,
+}: CalendarViewProps) {
   const router = useRouter()
 
-  const monthStart = startOfMonth(currentDate)
-  const monthEnd = endOfMonth(monthStart)
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }) // Monday start
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
-
-  const dateFormat = 'd'
-  const days = eachDayOfInterval({
-    start: startDate,
-    end: endDate,
-  })
-
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate =
-      direction === 'prev'
-        ? subMonths(currentDate, 1)
-        : addMonths(currentDate, 1)
+  const navigateDate = (direction: 'prev' | 'next') => {
+    let newDate: Date
+    if (view === 'week') {
+      newDate =
+        direction === 'prev'
+          ? subWeeks(currentDate, 1)
+          : addWeeks(currentDate, 1)
+    } else {
+      newDate =
+        direction === 'prev'
+          ? subMonths(currentDate, 1)
+          : addMonths(currentDate, 1)
+    }
     const dateString = format(newDate, 'yyyy-MM-dd')
     const params = new URLSearchParams(window.location.search)
     params.set('date', dateString)
     router.push(`/time?${params.toString()}`)
   }
 
-  // Calculate monthly stats
-  const monthlyEntries = entries.filter((entry) =>
-    isSameMonth(new Date(entry.startTime), currentDate),
-  )
+  const handleViewChange = (newView: string) => {
+    const params = new URLSearchParams(window.location.search)
+    params.set('view', newView)
+    router.push(`/time?${params.toString()}`)
+  }
 
-  const totalMinutes = monthlyEntries.reduce(
+  // Calculate days to display
+  let days: Date[]
+  let headerTitle: string
+
+  if (view === 'week') {
+    const startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
+    const endDate = endOfWeek(currentDate, { weekStartsOn: 1 })
+    days = eachDayOfInterval({ start: startDate, end: endDate })
+
+    // Format: "Jul 29 - Aug 04, 2024"
+    if (isSameMonth(startDate, endDate)) {
+      headerTitle = `${format(startDate, 'MMM d')} - ${format(endDate, 'd, yyyy')}`
+    } else {
+      headerTitle = `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
+    }
+  } else {
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(monthStart)
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+    days = eachDayOfInterval({ start: startDate, end: endDate })
+    headerTitle = format(currentDate, 'MMMM yyyy')
+  }
+
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+  // Calculate stats for current view
+  const totalMinutes = entries.reduce(
     (acc, entry) => acc + entry.durationMinutes,
     0,
   )
@@ -73,26 +104,36 @@ export function CalendarView({ entries, currentDate }: CalendarViewProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-bold text-3xl">{totalHours}h</h2>
-          <p className="text-muted-foreground">Total time this month</p>
+          <p className="text-muted-foreground">
+            Total time this {view === 'week' ? 'week' : 'month'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => navigateMonth('prev')}
-            size="icon"
-            variant="outline"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="min-w-[140px] text-center font-medium">
-            {format(currentDate, 'MMMM yyyy')}
-          </span>
-          <Button
-            onClick={() => navigateMonth('next')}
-            size="icon"
-            variant="outline"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-4">
+          <Tabs onValueChange={handleViewChange} value={view}>
+            <TabsList>
+              <TabsTrigger value="month">Month</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => navigateDate('prev')}
+              size="icon"
+              variant="outline"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="min-w-[160px] text-center font-medium">
+              {headerTitle}
+            </span>
+            <Button
+              onClick={() => navigateDate('next')}
+              size="icon"
+              variant="outline"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -116,8 +157,11 @@ export function CalendarView({ entries, currentDate }: CalendarViewProps) {
             const dayEntries = entries.filter((entry) =>
               isSameDay(new Date(entry.startTime), day),
             )
-            const isCurrentMonth = isSameMonth(day, monthStart)
             const isToday = isSameDay(day, new Date())
+
+            // For month view, we dim outside days. For week view, all days are "current".
+            const isCurrentMonth =
+              view === 'week' || isSameMonth(day, startOfMonth(currentDate))
 
             // Determine border classes
             const isLastRow = dayIdx >= days.length - 7
@@ -140,7 +184,7 @@ export function CalendarView({ entries, currentDate }: CalendarViewProps) {
                       isToday ? 'bg-primary text-primary-foreground' : '',
                     )}
                   >
-                    {format(day, dateFormat)}
+                    {format(day, 'd')}
                   </span>
                 </div>
 

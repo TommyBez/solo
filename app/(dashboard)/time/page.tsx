@@ -22,13 +22,24 @@ export default async function TimeTrackingPage(props: {
   const searchParams = await props.searchParams
   const dateParam =
     typeof searchParams.date === 'string' ? searchParams.date : undefined
+  const viewParam =
+    typeof searchParams.view === 'string' ? searchParams.view : 'month'
   const currentDate = dateParam ? parseISO(dateParam) : new Date()
 
-  // Calculate range for the calendar view (including padding days)
-  const monthStart = startOfMonth(currentDate)
-  const monthEnd = endOfMonth(monthStart)
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+  // Calculate range for the calendar view
+  let startDate: Date
+  let endDate: Date
+
+  if (viewParam === 'week') {
+    startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
+    endDate = endOfWeek(currentDate, { weekStartsOn: 1 })
+  } else {
+    // Month view - include padding days
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(monthStart)
+    startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
+    endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+  }
 
   const [entries, projects] = await Promise.all([
     getTimeEntriesForDateRange(startDate, endDate),
@@ -49,7 +60,11 @@ export default async function TimeTrackingPage(props: {
         <AddTimeEntryDialog projects={activeProjects} />
       </div>
 
-      <CalendarView currentDate={currentDate} entries={entries} />
+      <CalendarView
+        currentDate={currentDate}
+        entries={entries}
+        view={viewParam as 'month' | 'week'}
+      />
 
       {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
