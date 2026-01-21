@@ -10,6 +10,7 @@ export async function createArea(data: {
   description?: string
   color: string
   expectedHoursPerWeek: number
+  clientId?: number
 }) {
   const result = await db.insert(areas).values(data).returning()
   revalidateTag('areas', 'max')
@@ -23,6 +24,7 @@ export async function updateArea(
     description?: string
     color?: string
     expectedHoursPerWeek?: number
+    clientId?: number | null
     archived?: boolean
   },
 ) {

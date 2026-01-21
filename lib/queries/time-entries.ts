@@ -44,11 +44,28 @@ export async function getTimeEntriesForDateRange(
 export async function getDashboardStats() {
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
-  // Get all time entries for stats
+  // Get all time entries for stats (including previous periods for comparison)
   const weekEntries = await db.query.timeEntries.findMany({
     where: gte(timeEntries.startTime, weekAgo),
+    with: {
+      project: {
+        with: {
+          area: true,
+        },
+      },
+    },
+  })
+
+  // Previous week entries (for comparison)
+  const prevWeekEntries = await db.query.timeEntries.findMany({
+    where: and(
+      gte(timeEntries.startTime, twoWeeksAgo),
+      lte(timeEntries.startTime, weekAgo),
+    ),
     with: {
       project: {
         with: {
@@ -69,8 +86,27 @@ export async function getDashboardStats() {
     },
   })
 
+  // Previous month entries (for comparison)
+  const prevMonthEntries = await db.query.timeEntries.findMany({
+    where: and(
+      gte(timeEntries.startTime, twoMonthsAgo),
+      lte(timeEntries.startTime, monthAgo),
+    ),
+    with: {
+      project: {
+        with: {
+          area: true,
+        },
+      },
+    },
+  })
+
   // Calculate weekly totals
   const weeklyMinutes = weekEntries.reduce(
+    (sum, entry) => sum + entry.durationMinutes,
+    0,
+  )
+  const prevWeeklyMinutes = prevWeekEntries.reduce(
     (sum, entry) => sum + entry.durationMinutes,
     0,
   )
@@ -78,6 +114,20 @@ export async function getDashboardStats() {
     (sum, entry) => sum + entry.durationMinutes,
     0,
   )
+  const prevMonthlyMinutes = prevMonthEntries.reduce(
+    (sum, entry) => sum + entry.durationMinutes,
+    0,
+  )
+
+  // Calculate percentage changes
+  const calculateChange = (current: number, previous: number): number => {
+    if (previous > 0) {
+      return Math.round(((current - previous) / previous) * 100)
+    }
+    return current > 0 ? 100 : 0
+  }
+  const weeklyChange = calculateChange(weeklyMinutes, prevWeeklyMinutes)
+  const monthlyChange = calculateChange(monthlyMinutes, prevMonthlyMinutes)
 
   // Get active areas and projects count
   const activeAreas = await db.query.areas.findMany({
@@ -152,11 +202,22 @@ export async function getDashboardStats() {
     }
   })
 
+  // Calculate total expected hours for goal tracking
+  const totalExpectedWeeklyHours = activeAreas.reduce(
+    (sum, area) => sum + area.expectedHoursPerWeek,
+    0,
+  )
+
   return {
     weeklyHours: Math.round((weeklyMinutes / 60) * 10) / 10,
+    prevWeeklyHours: Math.round((prevWeeklyMinutes / 60) * 10) / 10,
+    weeklyChange,
     monthlyHours: Math.round((monthlyMinutes / 60) * 10) / 10,
+    prevMonthlyHours: Math.round((prevMonthlyMinutes / 60) * 10) / 10,
+    monthlyChange,
     activeAreasCount: activeAreas.length,
     activeProjectsCount: activeProjects.length,
+    totalExpectedWeeklyHours,
     timeByArea: Object.entries(timeByArea).map(([name, data]) => ({
       name,
       hours: Math.round((data.minutes / 60) * 10) / 10,

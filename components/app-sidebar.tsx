@@ -1,11 +1,13 @@
 'use client'
 import {
   Clock,
+  FileText,
   FolderKanban,
   Layers,
   LayoutDashboard,
   Settings,
   Timer,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -44,6 +46,16 @@ const navigationItems = [
     title: 'Time Tracking',
     url: '/time',
     icon: Clock,
+  },
+  {
+    title: 'Clients',
+    url: '/clients',
+    icon: Users,
+  },
+  {
+    title: 'Invoices',
+    url: '/invoices',
+    icon: FileText,
   },
 ]
 

@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { CalendarIcon, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -18,14 +18,25 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { createTimeEntry, updateTimeEntry } from '@/lib/actions/time-entries'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
+import {
+  addRecentProject,
+  getRecentProjects,
+} from '@/lib/hooks/use-persisted-timer'
 import { cn } from '@/lib/utils'
+import {
+  formatDurationForInput,
+  parseDuration,
+} from '@/lib/utils/duration-parser'
 
 type TimeEntryFormProps = {
   entry?: TimeEntry
@@ -45,12 +56,18 @@ export function TimeEntryForm({
   const [date, setDate] = useState<Date>(
     entry?.startTime ? new Date(entry.startTime) : new Date(),
   )
-  const [hours, setHours] = useState(
-    entry ? Math.floor(entry.durationMinutes / 60) : 1,
+  const [durationInput, setDurationInput] = useState(
+    entry ? formatDurationForInput(entry.durationMinutes) : '1h',
   )
-  const [minutes, setMinutes] = useState(entry ? entry.durationMinutes % 60 : 0)
+  const [durationError, setDurationError] = useState<string | null>(null)
+  const [recentProjectIds, setRecentProjectIds] = useState<string[]>([])
 
   const isEditing = !!entry
+
+  // Load recent projects on mount
+  useEffect(() => {
+    setRecentProjectIds(getRecentProjects())
+  }, [])
 
   // Group projects by area
   const projectsByArea = projects.reduce(
@@ -68,6 +85,23 @@ export function TimeEntryForm({
     {} as Record<string, { area: Area; projects: typeof projects }>,
   )
 
+  // Get recent projects that still exist
+  const recentProjects = recentProjectIds
+    .map((id) => projects.find((p) => p.id.toString() === id))
+    .filter((p): p is Project & { area: Area } => p !== undefined)
+
+  const handleDurationChange = (value: string) => {
+    setDurationInput(value)
+    const parsed = parseDuration(value)
+    if (value.trim() && !parsed.isValid) {
+      setDurationError('Invalid format. Try "1h 30m", "90m", or "1.5h"')
+    } else if (parsed.isValid && parsed.minutes <= 0 && value.trim()) {
+      setDurationError('Duration must be greater than 0')
+    } else {
+      setDurationError(null)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!projectId) {
@@ -75,12 +109,13 @@ export function TimeEntryForm({
       return
     }
 
-    const durationMinutes = hours * 60 + minutes
-    if (durationMinutes <= 0) {
-      toast.error('Duration must be greater than 0')
+    const parsed = parseDuration(durationInput)
+    if (!parsed.isValid || parsed.minutes <= 0) {
+      toast.error('Please enter a valid duration')
       return
     }
 
+    const durationMinutes = parsed.minutes
     const startTime = new Date(date)
     startTime.setHours(9, 0, 0, 0)
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000)
@@ -103,6 +138,8 @@ export function TimeEntryForm({
           endTime,
           durationMinutes,
         })
+        // Add to recent projects
+        addRecentProject(projectId)
         toast.success('Time entry added')
       }
       router.refresh()
@@ -121,6 +158,11 @@ export function TimeEntryForm({
     buttonText = 'Update Entry'
   }
 
+  // Get duration preview
+  const parsed = parseDuration(durationInput)
+  const durationPreview =
+    parsed.isValid && parsed.minutes > 0 ? parsed.formatted : null
+
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
@@ -130,22 +172,47 @@ export function TimeEntryForm({
             <SelectValue placeholder="Select a project" />
           </SelectTrigger>
           <SelectContent>
+            {recentProjects.length > 0 && (
+              <>
+                <SelectGroup>
+                  <SelectLabel className="flex items-center gap-2">
+                    <Clock className="size-3" />
+                    Recent
+                  </SelectLabel>
+                  {recentProjects.map((project) => (
+                    <SelectItem
+                      key={`recent-${project.id}`}
+                      value={project.id.toString()}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="size-2 rounded-full"
+                          style={{ backgroundColor: project.area.color }}
+                        />
+                        {project.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                <Separator className="my-1" />
+              </>
+            )}
             {Object.entries(projectsByArea).map(
               ([areaName, { area, projects: areaProjects }]) => (
-                <div key={areaName}>
-                  <div className="flex items-center gap-2 px-2 py-1.5 font-semibold text-muted-foreground text-xs">
+                <SelectGroup key={areaName}>
+                  <SelectLabel className="flex items-center gap-2">
                     <div
                       className="size-2 rounded-full"
                       style={{ backgroundColor: area.color }}
                     />
                     {areaName}
-                  </div>
+                  </SelectLabel>
                   {areaProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id.toString()}>
                       {project.name}
                     </SelectItem>
                   ))}
-                </div>
+                </SelectGroup>
               ),
             )}
           </SelectContent>
@@ -191,37 +258,37 @@ export function TimeEntryForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Duration</Label>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <Input
-              className="w-20"
-              max={23}
-              min={0}
-              onChange={(e) => setHours(Number(e.target.value))}
-              type="number"
-              value={hours}
-            />
-            <span className="text-muted-foreground text-sm">h</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Input
-              className="w-20"
-              max={59}
-              min={0}
-              onChange={(e) => setMinutes(Number(e.target.value))}
-              step={5}
-              type="number"
-              value={minutes}
-            />
-            <span className="text-muted-foreground text-sm">m</span>
-          </div>
-          <Clock className="ml-2 size-4 text-muted-foreground" />
+        <Label htmlFor="duration">Duration</Label>
+        <div className="relative">
+          <Input
+            className={cn(
+              'pr-20',
+              durationError &&
+                'border-destructive focus-visible:ring-destructive',
+            )}
+            id="duration"
+            onChange={(e) => handleDurationChange(e.target.value)}
+            placeholder="e.g. 1h 30m, 90m, 1.5h"
+            value={durationInput}
+          />
+          {durationPreview ? (
+            <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
+              <Clock className="size-3.5" />
+              <span>{durationPreview}</span>
+            </div>
+          ) : null}
         </div>
+        {durationError ? (
+          <p className="text-destructive text-sm">{durationError}</p>
+        ) : null}
+        <p className="text-muted-foreground text-xs">
+          Examples: &quot;1h 30m&quot;, &quot;90m&quot;, &quot;1.5h&quot;,
+          &quot;1:30&quot;
+        </p>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button disabled={isLoading} type="submit">
+        <Button disabled={isLoading || !!durationError} type="submit">
           {buttonText}
         </Button>
       </div>

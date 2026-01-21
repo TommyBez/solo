@@ -1,9 +1,13 @@
 import { AreaCard } from '@/components/areas/area-card'
 import { CreateAreaDialog } from '@/components/areas/create-area-dialog'
 import { getAreasWithStats } from '@/lib/queries/areas'
+import { getClients } from '@/lib/queries/clients'
 
 export default async function AreasPage() {
-  const areas = await getAreasWithStats()
+  const [areas, clients] = await Promise.all([
+    getAreasWithStats(),
+    getClients(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -14,7 +18,7 @@ export default async function AreasPage() {
             Manage your broad focus contexts and weekly goals
           </p>
         </div>
-        <CreateAreaDialog />
+        <CreateAreaDialog clients={clients} />
       </div>
 
       {areas.length === 0 ? (
@@ -23,12 +27,12 @@ export default async function AreasPage() {
           <p className="mb-4 text-muted-foreground text-sm">
             Create your first area to start organizing your freelance work
           </p>
-          <CreateAreaDialog />
+          <CreateAreaDialog clients={clients} />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {areas.map((area) => (
-            <AreaCard area={area} key={area.id} />
+            <AreaCard area={area} clients={clients} key={area.id} />
           ))}
         </div>
       )}

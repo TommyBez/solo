@@ -55,6 +55,7 @@ type ProjectCardProps = {
     totalHours: number
     hoursThisWeek: number
     percentageComplete: number
+    hourlyRate: string | null
     area: Area
   }
   areas: Area[]
@@ -191,6 +192,7 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
               status: project.status,
               expectedHours: project.expectedHours,
               deadline: project.deadline,
+              hourlyRate: project.hourlyRate,
               archived: false,
               createdAt: new Date(),
               updatedAt: new Date(),

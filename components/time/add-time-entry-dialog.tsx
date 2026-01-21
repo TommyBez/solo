@@ -1,7 +1,7 @@
 'use client'
 
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,14 +12,27 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import type { Area, Project } from '@/lib/db/schema'
+import {
+  SHORTCUT_EVENTS,
+  useShortcutEvent,
+} from '@/lib/hooks/use-keyboard-shortcuts'
 import { TimeEntryForm } from './time-entry-form'
 
-interface AddTimeEntryDialogProps {
+type AddTimeEntryDialogProps = {
   projects: (Project & { area: Area })[]
 }
 
 export function AddTimeEntryDialog({ projects }: AddTimeEntryDialogProps) {
   const [open, setOpen] = useState(false)
+
+  // Handle keyboard shortcut to open dialog
+  const handleOpenDialog = useCallback(() => {
+    if (projects.length > 0) {
+      setOpen(true)
+    }
+  }, [projects.length])
+
+  useShortcutEvent(SHORTCUT_EVENTS.NEW_ENTRY, handleOpenDialog)
 
   if (projects.length === 0) {
     return (

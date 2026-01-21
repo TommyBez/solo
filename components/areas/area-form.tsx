@@ -1,5 +1,6 @@
 'use client'
 
+import { Building2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
 import { useState } from 'react'
@@ -7,9 +8,16 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { createArea, updateArea } from '@/lib/actions/areas'
-import type { Area } from '@/lib/db/schema'
+import type { Area, Client } from '@/lib/db/schema'
 
 const PRESET_COLORS = [
   '#6366f1', // indigo
@@ -28,10 +36,11 @@ const PRESET_COLORS = [
 
 type AreaFormProps = {
   area?: Area
+  clients?: Client[]
   onSuccess?: () => void
 }
 
-export function AreaForm({ area, onSuccess }: AreaFormProps) {
+export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState(area?.name ?? '')
@@ -40,8 +49,20 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
   const [expectedHoursPerWeek, setExpectedHoursPerWeek] = useState(
     area?.expectedHoursPerWeek ?? 10,
   )
+  const [clientId, setClientId] = useState<string>(
+    area?.clientId?.toString() ?? '',
+  )
 
   const isEditing = !!area
+
+  function getFormData() {
+    return {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      color,
+      expectedHoursPerWeek,
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,20 +73,17 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
 
     setIsLoading(true)
     try {
+      const formData = getFormData()
       if (isEditing) {
         await updateArea(area.id, {
-          name: name.trim(),
-          description: description.trim() || undefined,
-          color,
-          expectedHoursPerWeek,
+          ...formData,
+          clientId: clientId ? Number(clientId) : null,
         })
         toast.success('Area updated successfully')
       } else {
         await createArea({
-          name: name.trim(),
-          description: description.trim() || undefined,
-          color,
-          expectedHoursPerWeek,
+          ...formData,
+          clientId: clientId ? Number(clientId) : undefined,
         })
         toast.success('Area created successfully')
       }
@@ -108,6 +126,40 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
           value={description}
         />
       </div>
+
+      {clients.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="client">Client (optional)</Label>
+          <Select onValueChange={setClientId} value={clientId}>
+            <SelectTrigger>
+              <SelectValue placeholder="No client assigned">
+                {clientId ? (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4" />
+                    {clients.find((c) => c.id.toString() === clientId)?.name}
+                  </div>
+                ) : (
+                  'No client assigned'
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No client assigned</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id.toString()}>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4" />
+                    {client.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground text-xs">
+            Link this area to a client for invoicing
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Color</Label>

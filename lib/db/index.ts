@@ -3,6 +3,12 @@ import { drizzle } from 'drizzle-orm/neon-http'
 import {
   areas,
   areasRelations,
+  clients,
+  clientsRelations,
+  invoiceLineItems,
+  invoiceLineItemsRelations,
+  invoices,
+  invoicesRelations,
   projects,
   projectsRelations,
   timeEntries,
@@ -17,10 +23,16 @@ const sql = neon(process.env.DATABASE_URL)
 
 export const db = drizzle(sql, {
   schema: {
+    clients,
+    clientsRelations,
     areas,
     areasRelations,
     projects,
     projectsRelations,
+    invoices,
+    invoicesRelations,
+    invoiceLineItems,
+    invoiceLineItemsRelations,
     timeEntries,
     timeEntriesRelations,
   },

@@ -1,0 +1,322 @@
+'use client'
+
+import { Building2, FileText, Globe, RotateCcw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Textarea } from '@/components/ui/textarea'
+import { useSettings } from '@/lib/hooks/use-settings'
+
+const currencies = [
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'GBP', label: 'GBP (£)' },
+  { value: 'CAD', label: 'CAD (C$)' },
+  { value: 'AUD', label: 'AUD (A$)' },
+  { value: 'CHF', label: 'CHF' },
+  { value: 'JPY', label: 'JPY (¥)' },
+]
+
+const dateFormats = [
+  { value: 'MMM d, yyyy', label: 'Jan 1, 2025' },
+  { value: 'MM/dd/yyyy', label: '01/01/2025' },
+  { value: 'dd/MM/yyyy', label: '01/01/2025 (EU)' },
+  { value: 'yyyy-MM-dd', label: '2025-01-01 (ISO)' },
+]
+
+export function SettingsForm() {
+  const { settings, isHydrated, updateSettings, resetSettings } = useSettings()
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Local form state
+  const [companyName, setCompanyName] = useState('')
+  const [companyEmail, setCompanyEmail] = useState('')
+  const [companyPhone, setCompanyPhone] = useState('')
+  const [companyAddress, setCompanyAddress] = useState('')
+  const [defaultCurrency, setDefaultCurrency] = useState('USD')
+  const [defaultTaxRate, setDefaultTaxRate] = useState('0')
+  const [paymentTerms, setPaymentTerms] = useState('')
+  const [invoiceNotes, setInvoiceNotes] = useState('')
+  const [weekStartsOn, setWeekStartsOn] = useState<'0' | '1'>('1')
+  const [dateFormat, setDateFormat] = useState('MMM d, yyyy')
+  const [timeFormat, setTimeFormat] = useState<'12' | '24'>('12')
+
+  // Sync local state with settings once hydrated
+  useEffect(() => {
+    if (isHydrated) {
+      setCompanyName(settings.companyName)
+      setCompanyEmail(settings.companyEmail)
+      setCompanyPhone(settings.companyPhone)
+      setCompanyAddress(settings.companyAddress)
+      setDefaultCurrency(settings.defaultCurrency)
+      setDefaultTaxRate(settings.defaultTaxRate)
+      setPaymentTerms(settings.paymentTerms)
+      setInvoiceNotes(settings.invoiceNotes)
+      setWeekStartsOn(settings.weekStartsOn)
+      setDateFormat(settings.dateFormat)
+      setTimeFormat(settings.timeFormat)
+    }
+  }, [isHydrated, settings])
+
+  const handleSave = () => {
+    setIsSaving(true)
+    updateSettings({
+      companyName,
+      companyEmail,
+      companyPhone,
+      companyAddress,
+      defaultCurrency,
+      defaultTaxRate,
+      paymentTerms,
+      invoiceNotes,
+      weekStartsOn,
+      dateFormat,
+      timeFormat,
+    })
+    setTimeout(() => {
+      setIsSaving(false)
+      toast.success('Settings saved')
+    }, 300)
+  }
+
+  const handleReset = () => {
+    resetSettings()
+    toast.success('Settings reset to defaults')
+  }
+
+  if (!isHydrated) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {['name', 'email', 'phone', 'address'].map((field) => (
+              <div className="space-y-2" key={field}>
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Company Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="size-5" />
+            Company Information
+          </CardTitle>
+          <CardDescription>
+            This information will appear on your invoices
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Your Company LLC"
+                value={companyName}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="companyEmail">Email</Label>
+              <Input
+                id="companyEmail"
+                onChange={(e) => setCompanyEmail(e.target.value)}
+                placeholder="billing@company.com"
+                type="email"
+                value={companyEmail}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyPhone">Phone</Label>
+            <Input
+              id="companyPhone"
+              onChange={(e) => setCompanyPhone(e.target.value)}
+              placeholder="+1 (555) 123-4567"
+              value={companyPhone}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyAddress">Address</Label>
+            <Textarea
+              id="companyAddress"
+              onChange={(e) => setCompanyAddress(e.target.value)}
+              placeholder="123 Main St&#10;City, State 12345&#10;Country"
+              rows={3}
+              value={companyAddress}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoice Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-5" />
+            Invoice Defaults
+          </CardTitle>
+          <CardDescription>Default values for new invoices</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="currency">Default Currency</Label>
+              <Select
+                onValueChange={setDefaultCurrency}
+                value={defaultCurrency}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((currency) => (
+                    <SelectItem key={currency.value} value={currency.value}>
+                      {currency.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+              <Input
+                id="taxRate"
+                min="0"
+                onChange={(e) => setDefaultTaxRate(e.target.value)}
+                step="0.01"
+                type="number"
+                value={defaultTaxRate}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="paymentTerms">Payment Terms</Label>
+            <Input
+              id="paymentTerms"
+              onChange={(e) => setPaymentTerms(e.target.value)}
+              placeholder="Due within 30 days"
+              value={paymentTerms}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="invoiceNotes">Default Invoice Notes</Label>
+            <Textarea
+              id="invoiceNotes"
+              onChange={(e) => setInvoiceNotes(e.target.value)}
+              placeholder="Thank you for your business!"
+              rows={2}
+              value={invoiceNotes}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Display Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="size-5" />
+            Display Preferences
+          </CardTitle>
+          <CardDescription>
+            Customize how dates and times are displayed
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Week Starts On</Label>
+              <Select
+                onValueChange={(v) => setWeekStartsOn(v as '0' | '1')}
+                value={weekStartsOn}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Sunday</SelectItem>
+                  <SelectItem value="1">Monday</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Date Format</Label>
+              <Select onValueChange={setDateFormat} value={dateFormat}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {dateFormats.map((fmt) => (
+                    <SelectItem key={fmt.value} value={fmt.value}>
+                      {fmt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Time Format</Label>
+              <Select
+                onValueChange={(v) => setTimeFormat(v as '12' | '24')}
+                value={timeFormat}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="12">12-hour (1:30 PM)</SelectItem>
+                  <SelectItem value="24">24-hour (13:30)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Actions */}
+      <div className="flex items-center justify-between">
+        <Button onClick={handleReset} variant="outline">
+          <RotateCcw className="mr-2 size-4" />
+          Reset to Defaults
+        </Button>
+        <Button disabled={isSaving} onClick={handleSave}>
+          {isSaving ? 'Saving...' : 'Save Settings'}
+        </Button>
+      </div>
+    </div>
+  )
+}

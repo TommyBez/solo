@@ -23,7 +23,10 @@ export default async function DashboardPage() {
       <StatsCards
         activeAreasCount={stats.activeAreasCount}
         activeProjectsCount={stats.activeProjectsCount}
+        monthlyChange={stats.monthlyChange}
         monthlyHours={stats.monthlyHours}
+        totalExpectedWeeklyHours={stats.totalExpectedWeeklyHours}
+        weeklyChange={stats.weeklyChange}
         weeklyHours={stats.weeklyHours}
       />
 

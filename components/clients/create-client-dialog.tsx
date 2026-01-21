@@ -11,14 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import type { Client } from '@/lib/db/schema'
-import { AreaForm } from './area-form'
+import { ClientForm } from './client-form'
 
-type CreateAreaDialogProps = {
-  clients?: Client[]
-}
-
-export function CreateAreaDialog({ clients = [] }: CreateAreaDialogProps) {
+export function CreateClientDialog() {
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,18 +21,17 @@ export function CreateAreaDialog({ clients = [] }: CreateAreaDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 size-4" />
-          New Area
+          Add Client
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create New Area</DialogTitle>
+          <DialogTitle>Add New Client</DialogTitle>
           <DialogDescription>
-            Areas are broad contexts like "Fractional CTO" or "Mentorship" that
-            contain multiple projects.
+            Create a new client to track work and generate invoices.
           </DialogDescription>
         </DialogHeader>
-        <AreaForm clients={clients} onSuccess={() => setOpen(false)} />
+        <ClientForm onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
