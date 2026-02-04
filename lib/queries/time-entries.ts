@@ -1,14 +1,33 @@
-import { and, desc, eq, gte, lte } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
+
+// Helper to get user's project IDs for filtering time entries
+async function getUserProjectIds(userId: string): Promise<number[]> {
+  const userProjects = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .innerJoin(areas, eq(projects.areaId, areas.id))
+    .where(eq(areas.userId, userId))
+  return userProjects.map((p) => p.id)
+}
 
 export async function getTimeEntries(projectId?: number, limit = 50) {
   const session = await getSession()
   if (!session?.user) return []
 
-  const result = await db.query.timeEntries.findMany({
-    where: projectId ? eq(timeEntries.projectId, projectId) : undefined,
+  const userProjectIds = await getUserProjectIds(session.user.id)
+  if (userProjectIds.length === 0) return []
+
+  const conditions = [inArray(timeEntries.projectId, userProjectIds)]
+
+  if (projectId) {
+    conditions.push(eq(timeEntries.projectId, projectId))
+  }
+
+  return db.query.timeEntries.findMany({
+    where: and(...conditions),
     orderBy: [desc(timeEntries.startTime)],
     limit,
     with: {
@@ -19,11 +38,6 @@ export async function getTimeEntries(projectId?: number, limit = 50) {
       },
     },
   })
-
-  // Filter to only include entries from projects in areas that belong to this user
-  return result.filter(
-    (entry) => entry.project.area.userId === session.user.id,
-  )
 }
 
 export async function getTimeEntriesForDateRange(
@@ -33,8 +47,12 @@ export async function getTimeEntriesForDateRange(
   const session = await getSession()
   if (!session?.user) return []
 
-  const result = await db.query.timeEntries.findMany({
+  const userProjectIds = await getUserProjectIds(session.user.id)
+  if (userProjectIds.length === 0) return []
+
+  return db.query.timeEntries.findMany({
     where: and(
+      inArray(timeEntries.projectId, userProjectIds),
       gte(timeEntries.startTime, startDate),
       lte(timeEntries.startTime, endDate),
     ),
@@ -47,11 +65,6 @@ export async function getTimeEntriesForDateRange(
       },
     },
   })
-
-  // Filter to only include entries from projects in areas that belong to this user
-  return result.filter(
-    (entry) => entry.project.area.userId === session.user.id,
-  )
 }
 
 export async function getDashboardStats() {
@@ -74,81 +87,46 @@ export async function getDashboardStats() {
     }
   }
 
+  const userProjectIds = await getUserProjectIds(session.user.id)
+
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
-  // Get all time entries for stats (including previous periods for comparison)
-  const allWeekEntries = await db.query.timeEntries.findMany({
-    where: gte(timeEntries.startTime, weekAgo),
-    with: {
-      project: {
-        with: {
-          area: true,
+  // Helper to get time entries for a date range filtered by user's projects
+  async function getFilteredTimeEntries(startDate: Date, endDate?: Date) {
+    if (userProjectIds.length === 0) return []
+
+    const conditions = [
+      inArray(timeEntries.projectId, userProjectIds),
+      gte(timeEntries.startTime, startDate),
+    ]
+    if (endDate) {
+      conditions.push(lte(timeEntries.startTime, endDate))
+    }
+
+    return db.query.timeEntries.findMany({
+      where: and(...conditions),
+      with: {
+        project: {
+          with: {
+            area: true,
+          },
         },
       },
-    },
-  })
+    })
+  }
 
-  // Filter to only include entries from projects in areas that belong to this user
-  const weekEntries = allWeekEntries.filter(
-    (entry) => entry.project.area.userId === session.user.id,
-  )
-
-  // Previous week entries (for comparison)
-  const allPrevWeekEntries = await db.query.timeEntries.findMany({
-    where: and(
-      gte(timeEntries.startTime, twoWeeksAgo),
-      lte(timeEntries.startTime, weekAgo),
-    ),
-    with: {
-      project: {
-        with: {
-          area: true,
-        },
-      },
-    },
-  })
-
-  const prevWeekEntries = allPrevWeekEntries.filter(
-    (entry) => entry.project.area.userId === session.user.id,
-  )
-
-  const allMonthEntries = await db.query.timeEntries.findMany({
-    where: gte(timeEntries.startTime, monthAgo),
-    with: {
-      project: {
-        with: {
-          area: true,
-        },
-      },
-    },
-  })
-
-  const monthEntries = allMonthEntries.filter(
-    (entry) => entry.project.area.userId === session.user.id,
-  )
-
-  // Previous month entries (for comparison)
-  const allPrevMonthEntries = await db.query.timeEntries.findMany({
-    where: and(
-      gte(timeEntries.startTime, twoMonthsAgo),
-      lte(timeEntries.startTime, monthAgo),
-    ),
-    with: {
-      project: {
-        with: {
-          area: true,
-        },
-      },
-    },
-  })
-
-  const prevMonthEntries = allPrevMonthEntries.filter(
-    (entry) => entry.project.area.userId === session.user.id,
-  )
+  // Get time entries for different periods
+  const [weekEntries, prevWeekEntries, monthEntries, prevMonthEntries] =
+    await Promise.all([
+      getFilteredTimeEntries(weekAgo),
+      getFilteredTimeEntries(twoWeeksAgo, weekAgo),
+      getFilteredTimeEntries(monthAgo),
+      getFilteredTimeEntries(twoMonthsAgo, monthAgo),
+    ])
 
   // Calculate weekly totals
   const weeklyMinutes = weekEntries.reduce(
@@ -183,14 +161,18 @@ export async function getDashboardStats() {
     where: and(eq(areas.userId, session.user.id), eq(areas.archived, false)),
   })
 
-  const allActiveProjects = await db.query.projects.findMany({
-    where: and(eq(projects.archived, false), eq(projects.status, 'active')),
-    with: { area: true },
-  })
-
-  const activeProjects = allActiveProjects.filter(
-    (project) => project.area.userId === session.user.id,
-  )
+  const userAreaIds = activeAreas.map((a) => a.id)
+  const activeProjects =
+    userAreaIds.length > 0
+      ? await db.query.projects.findMany({
+          where: and(
+            inArray(projects.areaId, userAreaIds),
+            eq(projects.archived, false),
+            eq(projects.status, 'active'),
+          ),
+          with: { area: true },
+        })
+      : []
 
   // Calculate time by area for the week
   const timeByArea = weekEntries.reduce(

@@ -1,31 +1,59 @@
-import { and, desc, eq, gte, isNull, lte } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { invoices, timeEntries } from '@/lib/db/schema'
+import { areas, clients, invoices, projects, timeEntries } from '@/lib/db/schema'
+
+// Helper to get user's client IDs for filtering
+async function getUserClientIds(userId: string): Promise<number[]> {
+  const userClients = await db
+    .select({ id: clients.id })
+    .from(clients)
+    .where(eq(clients.userId, userId))
+  return userClients.map((c) => c.id)
+}
+
+// Helper to get user's project IDs for filtering time entries
+async function getUserProjectIds(userId: string): Promise<number[]> {
+  const userProjects = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .innerJoin(areas, eq(projects.areaId, areas.id))
+    .where(eq(areas.userId, userId))
+  return userProjects.map((p) => p.id)
+}
 
 export async function getInvoices(clientId?: number) {
   const session = await getSession()
   if (!session?.user) return []
 
-  const result = await db.query.invoices.findMany({
-    where: clientId ? eq(invoices.clientId, clientId) : undefined,
+  const userClientIds = await getUserClientIds(session.user.id)
+  if (userClientIds.length === 0) return []
+
+  const conditions = [inArray(invoices.clientId, userClientIds)]
+
+  if (clientId) {
+    conditions.push(eq(invoices.clientId, clientId))
+  }
+
+  return db.query.invoices.findMany({
+    where: and(...conditions),
     orderBy: [desc(invoices.issueDate)],
     with: {
       client: true,
       lineItems: true,
     },
   })
-
-  // Filter to only include invoices from clients that belong to this user
-  return result.filter((invoice) => invoice.client.userId === session.user.id)
 }
 
 export async function getInvoice(id: number) {
   const session = await getSession()
   if (!session?.user) return null
 
-  const result = await db.query.invoices.findFirst({
-    where: eq(invoices.id, id),
+  const userClientIds = await getUserClientIds(session.user.id)
+  if (userClientIds.length === 0) return null
+
+  return db.query.invoices.findFirst({
+    where: and(eq(invoices.id, id), inArray(invoices.clientId, userClientIds)),
     with: {
       client: true,
       lineItems: {
@@ -43,13 +71,6 @@ export async function getInvoice(id: number) {
       },
     },
   })
-
-  // Verify this invoice belongs to the user
-  if (!result || result.client.userId !== session.user.id) {
-    return null
-  }
-
-  return result
 }
 
 export async function getUnbilledTimeEntries(
@@ -60,15 +81,35 @@ export async function getUnbilledTimeEntries(
   const session = await getSession()
   if (!session?.user) return []
 
-  // Get all time entries for projects in areas linked to this client
-  // that are not yet invoiced and are billable
-  const result = await db.query.timeEntries.findMany({
-    where: and(
-      eq(timeEntries.billable, true),
-      isNull(timeEntries.invoiceId),
-      startDate ? gte(timeEntries.startTime, startDate) : undefined,
-      endDate ? lte(timeEntries.startTime, endDate) : undefined,
-    ),
+  // Verify user owns this client
+  const userClientIds = await getUserClientIds(session.user.id)
+  if (!userClientIds.includes(clientId)) return []
+
+  // Get project IDs for areas linked to this client
+  const clientProjectIds = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .innerJoin(areas, eq(projects.areaId, areas.id))
+    .where(and(eq(areas.clientId, clientId), eq(areas.userId, session.user.id)))
+    .then((rows) => rows.map((r) => r.id))
+
+  if (clientProjectIds.length === 0) return []
+
+  const conditions = [
+    inArray(timeEntries.projectId, clientProjectIds),
+    eq(timeEntries.billable, true),
+    isNull(timeEntries.invoiceId),
+  ]
+
+  if (startDate) {
+    conditions.push(gte(timeEntries.startTime, startDate))
+  }
+  if (endDate) {
+    conditions.push(lte(timeEntries.startTime, endDate))
+  }
+
+  return db.query.timeEntries.findMany({
+    where: and(...conditions),
     orderBy: [desc(timeEntries.startTime)],
     with: {
       project: {
@@ -82,13 +123,6 @@ export async function getUnbilledTimeEntries(
       },
     },
   })
-
-  // Filter to only entries for this client and verify user ownership
-  return result.filter(
-    (entry) =>
-      entry.project.area.clientId === clientId &&
-      entry.project.area.userId === session.user.id,
-  )
 }
 
 export async function generateInvoiceNumber(): Promise<string> {
@@ -123,9 +157,16 @@ export async function getAllUnbilledTimeEntries() {
   const session = await getSession()
   if (!session?.user) return {}
 
-  // Get all unbilled time entries grouped by client
+  const userProjectIds = await getUserProjectIds(session.user.id)
+  if (userProjectIds.length === 0) return {}
+
+  // Get all unbilled time entries for user's projects
   const result = await db.query.timeEntries.findMany({
-    where: and(eq(timeEntries.billable, true), isNull(timeEntries.invoiceId)),
+    where: and(
+      inArray(timeEntries.projectId, userProjectIds),
+      eq(timeEntries.billable, true),
+      isNull(timeEntries.invoiceId),
+    ),
     orderBy: [desc(timeEntries.startTime)],
     with: {
       project: {
@@ -140,13 +181,10 @@ export async function getAllUnbilledTimeEntries() {
     },
   })
 
-  // Filter to only include entries for this user and group by client ID
+  // Group entries by client ID
   const entriesByClient: Record<number, typeof result> = {}
 
   for (const entry of result) {
-    // Verify this entry belongs to the user
-    if (entry.project.area.userId !== session.user.id) continue
-
     const clientId = entry.project.area.clientId
     if (clientId) {
       if (!entriesByClient[clientId]) {
@@ -172,16 +210,25 @@ export async function getInvoiceStats() {
     }
   }
 
-  const allInvoices = await db.query.invoices.findMany({
-    with: {
-      client: true,
+  const userClientIds = await getUserClientIds(session.user.id)
+  if (userClientIds.length === 0) {
+    return {
+      draft: 0,
+      sent: 0,
+      paid: 0,
+      overdue: 0,
+      totalOutstanding: 0,
+      totalPaid: 0,
+    }
+  }
+
+  const userInvoices = await db.query.invoices.findMany({
+    where: inArray(invoices.clientId, userClientIds),
+    columns: {
+      status: true,
+      total: true,
     },
   })
-
-  // Filter to only include invoices from clients that belong to this user
-  const userInvoices = allInvoices.filter(
-    (invoice) => invoice.client.userId === session.user.id,
-  )
 
   const stats = {
     draft: 0,

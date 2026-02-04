@@ -1,38 +1,53 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
+
+// Helper to get user's area IDs for filtering
+async function getUserAreaIds(userId: string): Promise<number[]> {
+  const userAreas = await db
+    .select({ id: areas.id })
+    .from(areas)
+    .where(eq(areas.userId, userId))
+  return userAreas.map((a) => a.id)
+}
 
 export async function getProjects(areaId?: number, includeArchived = false) {
   const session = await getSession()
   if (!session?.user) return []
 
-  // Get all projects through areas that belong to this user
-  const result = await db.query.projects.findMany({
-    where: areaId
-      ? includeArchived
-        ? eq(projects.areaId, areaId)
-        : and(eq(projects.areaId, areaId), eq(projects.archived, false))
-      : includeArchived
-        ? undefined
-        : eq(projects.archived, false),
+  const userAreaIds = await getUserAreaIds(session.user.id)
+  if (userAreaIds.length === 0) return []
+
+  const conditions = [inArray(projects.areaId, userAreaIds)]
+
+  if (areaId) {
+    conditions.push(eq(projects.areaId, areaId))
+  }
+
+  if (!includeArchived) {
+    conditions.push(eq(projects.archived, false))
+  }
+
+  return db.query.projects.findMany({
+    where: and(...conditions),
     orderBy: [desc(projects.createdAt)],
     with: {
       area: true,
       timeEntries: true,
     },
   })
-
-  // Filter to only include projects from areas that belong to this user
-  return result.filter((project) => project.area.userId === session.user.id)
 }
 
 export async function getProjectById(id: number) {
   const session = await getSession()
   if (!session?.user) return null
 
-  const result = await db.query.projects.findFirst({
-    where: eq(projects.id, id),
+  const userAreaIds = await getUserAreaIds(session.user.id)
+  if (userAreaIds.length === 0) return null
+
+  return db.query.projects.findFirst({
+    where: and(eq(projects.id, id), inArray(projects.areaId, userAreaIds)),
     with: {
       area: true,
       timeEntries: {
@@ -40,24 +55,23 @@ export async function getProjectById(id: number) {
       },
     },
   })
-
-  // Verify this project belongs to the user
-  if (!result || result.area.userId !== session.user.id) {
-    return null
-  }
-
-  return result
 }
 
 export async function getProjectsWithStats() {
   const session = await getSession()
   if (!session?.user) return []
 
+  const userAreaIds = await getUserAreaIds(session.user.id)
+  if (userAreaIds.length === 0) return []
+
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   const projectsData = await db.query.projects.findMany({
-    where: eq(projects.archived, false),
+    where: and(
+      inArray(projects.areaId, userAreaIds),
+      eq(projects.archived, false),
+    ),
     orderBy: [desc(projects.createdAt)],
     with: {
       area: true,
@@ -65,12 +79,7 @@ export async function getProjectsWithStats() {
     },
   })
 
-  // Filter to only include projects from areas that belong to this user
-  const userProjects = projectsData.filter(
-    (project) => project.area.userId === session.user.id,
-  )
-
-  return userProjects.map((project) => {
+  return projectsData.map((project) => {
     const totalMinutes = project.timeEntries.reduce(
       (sum, entry) => sum + entry.durationMinutes,
       0,
