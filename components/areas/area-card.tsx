@@ -168,9 +168,6 @@ export function AreaCard({ area, clients = [] }: AreaCardProps) {
               color: area.color,
               expectedHoursPerWeek: area.expectedHoursPerWeek,
               clientId: area.clientId,
-              archived: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
             }}
             clients={clients}
             onSuccess={() => setIsEditOpen(false)}
