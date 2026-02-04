@@ -24,7 +24,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
 } from '@/components/ui/sidebar'
+import { UserMenu } from '@/components/user-menu'
 
 const navigationItems = [
   {
@@ -121,6 +123,8 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <SidebarSeparator />
+        <UserMenu />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

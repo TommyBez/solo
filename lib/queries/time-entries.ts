@@ -1,8 +1,12 @@
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
+import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
 
 export async function getTimeEntries(projectId?: number, limit = 50) {
+  const session = await getSession()
+  if (!session?.user) return []
+
   const result = await db.query.timeEntries.findMany({
     where: projectId ? eq(timeEntries.projectId, projectId) : undefined,
     orderBy: [desc(timeEntries.startTime)],
@@ -16,13 +20,19 @@ export async function getTimeEntries(projectId?: number, limit = 50) {
     },
   })
 
-  return result
+  // Filter to only include entries from projects in areas that belong to this user
+  return result.filter(
+    (entry) => entry.project.area.userId === session.user.id,
+  )
 }
 
 export async function getTimeEntriesForDateRange(
   startDate: Date,
   endDate: Date,
 ) {
+  const session = await getSession()
+  if (!session?.user) return []
+
   const result = await db.query.timeEntries.findMany({
     where: and(
       gte(timeEntries.startTime, startDate),
@@ -38,10 +48,32 @@ export async function getTimeEntriesForDateRange(
     },
   })
 
-  return result
+  // Filter to only include entries from projects in areas that belong to this user
+  return result.filter(
+    (entry) => entry.project.area.userId === session.user.id,
+  )
 }
 
 export async function getDashboardStats() {
+  const session = await getSession()
+  if (!session?.user) {
+    return {
+      weeklyHours: 0,
+      prevWeeklyHours: 0,
+      weeklyChange: 0,
+      monthlyHours: 0,
+      prevMonthlyHours: 0,
+      monthlyChange: 0,
+      activeAreasCount: 0,
+      activeProjectsCount: 0,
+      totalExpectedWeeklyHours: 0,
+      timeByArea: [],
+      timeByProject: [],
+      dailyBreakdown: [],
+      areasComparison: [],
+    }
+  }
+
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
@@ -49,7 +81,7 @@ export async function getDashboardStats() {
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
   // Get all time entries for stats (including previous periods for comparison)
-  const weekEntries = await db.query.timeEntries.findMany({
+  const allWeekEntries = await db.query.timeEntries.findMany({
     where: gte(timeEntries.startTime, weekAgo),
     with: {
       project: {
@@ -60,8 +92,13 @@ export async function getDashboardStats() {
     },
   })
 
+  // Filter to only include entries from projects in areas that belong to this user
+  const weekEntries = allWeekEntries.filter(
+    (entry) => entry.project.area.userId === session.user.id,
+  )
+
   // Previous week entries (for comparison)
-  const prevWeekEntries = await db.query.timeEntries.findMany({
+  const allPrevWeekEntries = await db.query.timeEntries.findMany({
     where: and(
       gte(timeEntries.startTime, twoWeeksAgo),
       lte(timeEntries.startTime, weekAgo),
@@ -75,7 +112,11 @@ export async function getDashboardStats() {
     },
   })
 
-  const monthEntries = await db.query.timeEntries.findMany({
+  const prevWeekEntries = allPrevWeekEntries.filter(
+    (entry) => entry.project.area.userId === session.user.id,
+  )
+
+  const allMonthEntries = await db.query.timeEntries.findMany({
     where: gte(timeEntries.startTime, monthAgo),
     with: {
       project: {
@@ -86,8 +127,12 @@ export async function getDashboardStats() {
     },
   })
 
+  const monthEntries = allMonthEntries.filter(
+    (entry) => entry.project.area.userId === session.user.id,
+  )
+
   // Previous month entries (for comparison)
-  const prevMonthEntries = await db.query.timeEntries.findMany({
+  const allPrevMonthEntries = await db.query.timeEntries.findMany({
     where: and(
       gte(timeEntries.startTime, twoMonthsAgo),
       lte(timeEntries.startTime, monthAgo),
@@ -100,6 +145,10 @@ export async function getDashboardStats() {
       },
     },
   })
+
+  const prevMonthEntries = allPrevMonthEntries.filter(
+    (entry) => entry.project.area.userId === session.user.id,
+  )
 
   // Calculate weekly totals
   const weeklyMinutes = weekEntries.reduce(
@@ -129,13 +178,19 @@ export async function getDashboardStats() {
   const weeklyChange = calculateChange(weeklyMinutes, prevWeeklyMinutes)
   const monthlyChange = calculateChange(monthlyMinutes, prevMonthlyMinutes)
 
-  // Get active areas and projects count
+  // Get active areas and projects count for this user
   const activeAreas = await db.query.areas.findMany({
-    where: eq(areas.archived, false),
+    where: and(eq(areas.userId, session.user.id), eq(areas.archived, false)),
   })
-  const activeProjects = await db.query.projects.findMany({
+
+  const allActiveProjects = await db.query.projects.findMany({
     where: and(eq(projects.archived, false), eq(projects.status, 'active')),
+    with: { area: true },
   })
+
+  const activeProjects = allActiveProjects.filter(
+    (project) => project.area.userId === session.user.id,
+  )
 
   // Calculate time by area for the week
   const timeByArea = weekEntries.reduce(

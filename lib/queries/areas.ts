@@ -1,9 +1,15 @@
-import { desc, eq, gte } from 'drizzle-orm'
+import { and, desc, eq, gte } from 'drizzle-orm'
+import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
 
 export async function getAreas(includeArchived = false) {
-  const conditions = includeArchived ? undefined : eq(areas.archived, false)
+  const session = await getSession()
+  if (!session?.user) return []
+
+  const conditions = includeArchived
+    ? eq(areas.userId, session.user.id)
+    : and(eq(areas.userId, session.user.id), eq(areas.archived, false))
 
   const result = await db.query.areas.findMany({
     where: conditions,
@@ -18,9 +24,12 @@ export async function getAreas(includeArchived = false) {
   return result
 }
 
-export function getAreaById(id: number) {
+export async function getAreaById(id: number) {
+  const session = await getSession()
+  if (!session?.user) return null
+
   return db.query.areas.findFirst({
-    where: eq(areas.id, id),
+    where: and(eq(areas.id, id), eq(areas.userId, session.user.id)),
     with: {
       projects: {
         where: eq(projects.archived, false),
@@ -33,11 +42,14 @@ export function getAreaById(id: number) {
 }
 
 export async function getAreasWithStats() {
+  const session = await getSession()
+  if (!session?.user) return []
+
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   const areasData = await db.query.areas.findMany({
-    where: eq(areas.archived, false),
+    where: and(eq(areas.userId, session.user.id), eq(areas.archived, false)),
     orderBy: [desc(areas.createdAt)],
     with: {
       projects: {
