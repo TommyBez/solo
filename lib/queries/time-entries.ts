@@ -41,6 +41,30 @@ export async function getTimeEntriesForDateRange(
   return result
 }
 
+export async function getTimeEntriesForProjectAndDateRange(
+  projectId: number,
+  startDate: Date,
+  endDate: Date,
+) {
+  const result = await db.query.timeEntries.findMany({
+    where: and(
+      eq(timeEntries.projectId, projectId),
+      gte(timeEntries.startTime, startDate),
+      lte(timeEntries.startTime, endDate),
+    ),
+    orderBy: [desc(timeEntries.startTime)],
+    with: {
+      project: {
+        with: {
+          area: true,
+        },
+      },
+    },
+  })
+
+  return result
+}
+
 export async function getDashboardStats() {
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
