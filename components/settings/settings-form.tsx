@@ -110,9 +110,7 @@ export function SettingsForm() {
             <Building2 className="size-5" />
             Company Information
           </CardTitle>
-          <CardDescription>
-            Your company details
-          </CardDescription>
+          <CardDescription>Your company details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
