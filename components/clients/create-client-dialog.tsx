@@ -28,7 +28,7 @@ export function CreateClientDialog() {
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
           <DialogDescription>
-            Create a new client to track work and generate invoices.
+            Create a new client to track work.
           </DialogDescription>
         </DialogHeader>
         <ClientForm onSuccess={() => setOpen(false)} />

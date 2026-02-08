@@ -25,11 +25,6 @@ export async function getClient(id: number) {
           projects: true,
         },
       },
-      invoices: {
-        orderBy: (invoicesTable, { desc: descFn }) => [
-          descFn(invoicesTable.issueDate),
-        ],
-      },
     },
   })
 

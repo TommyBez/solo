@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, FileText, Globe, RotateCcw } from 'lucide-react'
+import { Building2, Globe, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -25,16 +25,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useSettings } from '@/lib/hooks/use-settings'
 
-const currencies = [
-  { value: 'USD', label: 'USD ($)' },
-  { value: 'EUR', label: 'EUR (€)' },
-  { value: 'GBP', label: 'GBP (£)' },
-  { value: 'CAD', label: 'CAD (C$)' },
-  { value: 'AUD', label: 'AUD (A$)' },
-  { value: 'CHF', label: 'CHF' },
-  { value: 'JPY', label: 'JPY (¥)' },
-]
-
 const dateFormats = [
   { value: 'MMM d, yyyy', label: 'Jan 1, 2025' },
   { value: 'MM/dd/yyyy', label: '01/01/2025' },
@@ -51,10 +41,6 @@ export function SettingsForm() {
   const [companyEmail, setCompanyEmail] = useState('')
   const [companyPhone, setCompanyPhone] = useState('')
   const [companyAddress, setCompanyAddress] = useState('')
-  const [defaultCurrency, setDefaultCurrency] = useState('USD')
-  const [defaultTaxRate, setDefaultTaxRate] = useState('0')
-  const [paymentTerms, setPaymentTerms] = useState('')
-  const [invoiceNotes, setInvoiceNotes] = useState('')
   const [weekStartsOn, setWeekStartsOn] = useState<'0' | '1'>('1')
   const [dateFormat, setDateFormat] = useState('MMM d, yyyy')
   const [timeFormat, setTimeFormat] = useState<'12' | '24'>('12')
@@ -66,10 +52,6 @@ export function SettingsForm() {
       setCompanyEmail(settings.companyEmail)
       setCompanyPhone(settings.companyPhone)
       setCompanyAddress(settings.companyAddress)
-      setDefaultCurrency(settings.defaultCurrency)
-      setDefaultTaxRate(settings.defaultTaxRate)
-      setPaymentTerms(settings.paymentTerms)
-      setInvoiceNotes(settings.invoiceNotes)
       setWeekStartsOn(settings.weekStartsOn)
       setDateFormat(settings.dateFormat)
       setTimeFormat(settings.timeFormat)
@@ -83,10 +65,6 @@ export function SettingsForm() {
       companyEmail,
       companyPhone,
       companyAddress,
-      defaultCurrency,
-      defaultTaxRate,
-      paymentTerms,
-      invoiceNotes,
       weekStartsOn,
       dateFormat,
       timeFormat,
@@ -133,7 +111,7 @@ export function SettingsForm() {
             Company Information
           </CardTitle>
           <CardDescription>
-            This information will appear on your invoices
+            Your company details
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -175,69 +153,6 @@ export function SettingsForm() {
               placeholder="123 Main St&#10;City, State 12345&#10;Country"
               rows={3}
               value={companyAddress}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Invoice Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="size-5" />
-            Invoice Defaults
-          </CardTitle>
-          <CardDescription>Default values for new invoices</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="currency">Default Currency</Label>
-              <Select
-                onValueChange={setDefaultCurrency}
-                value={defaultCurrency}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencies.map((currency) => (
-                    <SelectItem key={currency.value} value={currency.value}>
-                      {currency.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
-              <Input
-                id="taxRate"
-                min="0"
-                onChange={(e) => setDefaultTaxRate(e.target.value)}
-                step="0.01"
-                type="number"
-                value={defaultTaxRate}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="paymentTerms">Payment Terms</Label>
-            <Input
-              id="paymentTerms"
-              onChange={(e) => setPaymentTerms(e.target.value)}
-              placeholder="Due within 30 days"
-              value={paymentTerms}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="invoiceNotes">Default Invoice Notes</Label>
-            <Textarea
-              id="invoiceNotes"
-              onChange={(e) => setInvoiceNotes(e.target.value)}
-              placeholder="Thank you for your business!"
-              rows={2}
-              value={invoiceNotes}
             />
           </div>
         </CardContent>

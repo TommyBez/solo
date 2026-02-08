@@ -49,7 +49,6 @@ type TimeEntry = {
   endTime: Date | null
   durationMinutes: number
   billable: boolean
-  invoiceId: number | null
   createdAt: Date
   project: Project & { area: Area }
 }
@@ -232,7 +231,6 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                 endTime: editEntry.endTime,
                 durationMinutes: editEntry.durationMinutes,
                 billable: editEntry.billable,
-                invoiceId: editEntry.invoiceId,
                 createdAt: editEntry.createdAt,
               }}
               onSuccess={() => setEditEntry(null)}

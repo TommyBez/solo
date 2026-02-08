@@ -9,12 +9,6 @@ export type Settings = {
   companyPhone: string
   companyAddress: string
 
-  // Invoice Defaults
-  defaultCurrency: string
-  defaultTaxRate: string
-  paymentTerms: string
-  invoiceNotes: string
-
   // Display Preferences
   weekStartsOn: '0' | '1' // 0 = Sunday, 1 = Monday
   dateFormat: string
@@ -26,10 +20,6 @@ const defaultSettings: Settings = {
   companyEmail: '',
   companyPhone: '',
   companyAddress: '',
-  defaultCurrency: 'USD',
-  defaultTaxRate: '0',
-  paymentTerms: 'Due within 30 days',
-  invoiceNotes: 'Thank you for your business!',
   weekStartsOn: '1',
   dateFormat: 'MMM d, yyyy',
   timeFormat: '12',

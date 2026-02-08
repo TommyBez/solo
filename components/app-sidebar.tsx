@@ -1,7 +1,6 @@
 'use client'
 import {
   Clock,
-  FileText,
   FolderKanban,
   Layers,
   LayoutDashboard,
@@ -51,11 +50,6 @@ const navigationItems = [
     title: 'Clients',
     url: '/clients',
     icon: Users,
-  },
-  {
-    title: 'Invoices',
-    url: '/invoices',
-    icon: FileText,
   },
 ]
 
