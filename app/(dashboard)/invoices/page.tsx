@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react'
+import Link from 'next/link'
 import { CreateInvoiceDialog } from '@/components/invoices/create-invoice-dialog'
 import { InvoiceCard } from '@/components/invoices/invoice-card'
 import { Badge } from '@/components/ui/badge'
@@ -35,12 +36,12 @@ function InvoicesContent({
         <p className="mb-4 text-muted-foreground text-sm">
           You need to create a client before generating invoices.
         </p>
-        <a
+        <Link
           className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm ring-offset-background transition-colors hover:bg-primary/90"
           href="/clients"
         >
           Go to Clients
-        </a>
+        </Link>
       </div>
     )
   }
@@ -194,7 +195,7 @@ export default async function InvoicesPage(props: {
       {/* Status Filter Tabs */}
       <div className="flex gap-2 border-b pb-2">
         {statusFilters.map((filter) => (
-          <a
+          <Link
             className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
               statusFilter === filter.key
                 ? 'bg-primary text-primary-foreground'
@@ -212,7 +213,7 @@ export default async function InvoicesPage(props: {
                 {filter.count}
               </Badge>
             )}
-          </a>
+          </Link>
         ))}
       </div>
 

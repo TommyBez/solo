@@ -8,7 +8,10 @@ import './globals.css'
 const fontSans = JetBrains_Mono({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
-  title: 'Solo',
+  title: {
+    default: 'Solo',
+    template: '%s | Solo',
+  },
   description:
     'Solo is a tool for solo developers to track their time and projects',
 }
