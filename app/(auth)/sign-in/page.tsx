@@ -1,5 +1,9 @@
 'use client'
 
+import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -12,10 +16,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signIn } from '@/lib/auth/client'
-import { Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 
 export default function SignInPage() {
   const router = useRouter()
@@ -57,45 +57,45 @@ export default function SignInPage() {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          {error && (
+        <CardContent className="space-y-4 py-4">
+          {error ? (
             <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
               {error}
             </div>
-          )}
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
               disabled={isLoading}
+              id="email"
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              type="email"
+              value={email}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
               disabled={isLoading}
+              id="password"
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              type="password"
+              value={password}
             />
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="animate-spin" />}
+          <Button className="w-full" disabled={isLoading} type="submit">
+            {isLoading ? <Loader2 className="animate-spin" /> : null}
             Sign In
           </Button>
           <p className="text-center text-muted-foreground text-xs">
             Don&apos;t have an account?{' '}
-            <Link href="/sign-up" className="text-primary hover:underline">
+            <Link className="text-primary hover:underline" href="/sign-up">
               Sign up
             </Link>
           </p>
