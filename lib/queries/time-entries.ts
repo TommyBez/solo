@@ -104,7 +104,7 @@ export async function getDashboardStats() {
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
   // Helper to get time entries for a date range filtered by user's projects
-  function getFilteredTimeEntries(startDate: Date, endDate?: Date) {
+  async function getFilteredTimeEntries(startDate: Date, endDate?: Date) {
     if (userProjectIds.length === 0) {
       return []
     }
