@@ -27,9 +27,9 @@ type TimeEntryWithDetails = TimeEntry & {
   }
 }
 
-type CalendarViewProps = {
-  entries: TimeEntryWithDetails[]
+interface CalendarViewProps {
   currentDate: Date
+  entries: TimeEntryWithDetails[]
   view: 'month' | 'week'
 }
 

@@ -1,6 +1,15 @@
 import { neon } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
 import {
+  account,
+  accountRelations,
+  session,
+  sessionRelations,
+  user,
+  userRelations,
+  verification,
+} from '@/lib/auth/schema'
+import {
   areas,
   areasRelations,
   clients,
@@ -23,6 +32,15 @@ const sql = neon(process.env.DATABASE_URL)
 
 export const db = drizzle(sql, {
   schema: {
+    // Auth schema
+    user,
+    userRelations,
+    session,
+    sessionRelations,
+    account,
+    accountRelations,
+    verification,
+    // App schema
     clients,
     clientsRelations,
     areas,

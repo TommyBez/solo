@@ -1,9 +1,11 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
+import { and, eq } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
+import { requireSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import {
+  clients,
   invoiceLineItems,
   invoices,
   type NewInvoice,
@@ -11,10 +13,33 @@ import {
   timeEntries,
 } from '@/lib/db/schema'
 
+async function verifyClientOwnership(clientId: number, userId: string) {
+  const client = await db.query.clients.findFirst({
+    where: and(eq(clients.id, clientId), eq(clients.userId, userId)),
+  })
+  return !!client
+}
+
+async function verifyInvoiceOwnership(invoiceId: number, userId: string) {
+  const invoice = await db.query.invoices.findFirst({
+    where: eq(invoices.id, invoiceId),
+    with: { client: true },
+  })
+  return invoice?.client.userId === userId
+}
+
 export async function createInvoice(
   data: Omit<NewInvoice, 'id' | 'createdAt' | 'updatedAt'>,
   lineItems: Omit<NewInvoiceLineItem, 'id' | 'invoiceId' | 'createdAt'>[],
 ) {
+  const session = await requireSession()
+
+  // Verify user owns the client
+  const ownsClient = await verifyClientOwnership(data.clientId, session.user.id)
+  if (!ownsClient) {
+    throw new Error('Unauthorized')
+  }
+
   // Calculate totals
   const subtotal = lineItems.reduce((sum, item) => sum + Number(item.amount), 0)
   const taxAmount = subtotal * (Number(data.taxRate) / 100)
@@ -59,8 +84,8 @@ export async function createInvoice(
     }
   }
 
-  revalidatePath('/invoices')
-  revalidatePath('/time')
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
   return invoice
 }
 
@@ -68,6 +93,14 @@ export async function updateInvoice(
   id: number,
   data: Partial<Omit<NewInvoice, 'id' | 'createdAt'>>,
 ) {
+  const session = await requireSession()
+
+  // Verify user owns the invoice (through client)
+  const ownsInvoice = await verifyInvoiceOwnership(id, session.user.id)
+  if (!ownsInvoice) {
+    throw new Error('Unauthorized')
+  }
+
   const [invoice] = await db
     .update(invoices)
     .set({
@@ -77,8 +110,7 @@ export async function updateInvoice(
     .where(eq(invoices.id, id))
     .returning()
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${id}`)
+  revalidateTag('invoices', 'max')
   return invoice
 }
 
@@ -86,6 +118,14 @@ export async function updateInvoiceStatus(
   id: number,
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled',
 ) {
+  const session = await requireSession()
+
+  // Verify user owns the invoice (through client)
+  const ownsInvoice = await verifyInvoiceOwnership(id, session.user.id)
+  if (!ownsInvoice) {
+    throw new Error('Unauthorized')
+  }
+
   const [invoice] = await db
     .update(invoices)
     .set({
@@ -95,12 +135,19 @@ export async function updateInvoiceStatus(
     .where(eq(invoices.id, id))
     .returning()
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${id}`)
+  revalidateTag('invoices', 'max')
   return invoice
 }
 
 export async function deleteInvoice(id: number) {
+  const session = await requireSession()
+
+  // Verify user owns the invoice (through client)
+  const ownsInvoice = await verifyInvoiceOwnership(id, session.user.id)
+  if (!ownsInvoice) {
+    throw new Error('Unauthorized')
+  }
+
   // First, unlink time entries
   await db
     .update(timeEntries)
@@ -110,14 +157,22 @@ export async function deleteInvoice(id: number) {
   // Delete invoice (line items cascade)
   await db.delete(invoices).where(eq(invoices.id, id))
 
-  revalidatePath('/invoices')
-  revalidatePath('/time')
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
 }
 
 export async function addLineItem(
   invoiceId: number,
   item: Omit<NewInvoiceLineItem, 'id' | 'invoiceId' | 'createdAt'>,
 ) {
+  const session = await requireSession()
+
+  // Verify user owns the invoice (through client)
+  const ownsInvoice = await verifyInvoiceOwnership(invoiceId, session.user.id)
+  if (!ownsInvoice) {
+    throw new Error('Unauthorized')
+  }
+
   const [lineItem] = await db
     .insert(invoiceLineItems)
     .values({
@@ -137,19 +192,31 @@ export async function addLineItem(
       .where(eq(timeEntries.id, item.timeEntryId))
   }
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${invoiceId}`)
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
   return lineItem
 }
 
 export async function removeLineItem(lineItemId: number) {
+  const session = await requireSession()
+
   // Get the line item first
   const lineItem = await db.query.invoiceLineItems.findFirst({
     where: eq(invoiceLineItems.id, lineItemId),
+    with: {
+      invoice: {
+        with: { client: true },
+      },
+    },
   })
 
   if (!lineItem) {
     return
+  }
+
+  // Verify user owns the invoice (through client)
+  if (lineItem.invoice.client.userId !== session.user.id) {
+    throw new Error('Unauthorized')
   }
 
   // Unlink time entry if applicable
@@ -166,8 +233,8 @@ export async function removeLineItem(lineItemId: number) {
   // Recalculate invoice totals
   await recalculateInvoiceTotals(lineItem.invoiceId)
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${lineItem.invoiceId}`)
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
 }
 
 async function recalculateInvoiceTotals(invoiceId: number) {

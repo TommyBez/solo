@@ -10,10 +10,10 @@
  * - "1:30" (hours:minutes)
  */
 
-export type ParsedDuration = {
-  minutes: number
-  isValid: boolean
+export interface ParsedDuration {
   formatted: string
+  isValid: boolean
+  minutes: number
 }
 
 // Regex patterns moved to top level for performance

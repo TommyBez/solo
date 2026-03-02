@@ -44,7 +44,8 @@ import { deleteProject, updateProject } from '@/lib/actions/projects'
 import type { Area } from '@/lib/db/schema'
 import { ProjectForm } from './project-form'
 
-type ProjectCardProps = {
+interface ProjectCardProps {
+  areas: Area[]
   project: {
     id: number
     name: string
@@ -58,7 +59,6 @@ type ProjectCardProps = {
     hourlyRate: string | null
     area: Area
   }
-  areas: Area[]
 }
 
 const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {

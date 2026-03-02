@@ -38,10 +38,10 @@ import {
   parseDuration,
 } from '@/lib/utils/duration-parser'
 
-type TimeEntryFormProps = {
+interface TimeEntryFormProps {
   entry?: TimeEntry
-  projects: (Project & { area: Area })[]
   onSuccess?: () => void
+  projects: (Project & { area: Area })[]
 }
 
 export function TimeEntryForm({

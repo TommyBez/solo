@@ -15,7 +15,18 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient, updateClient } from '@/lib/actions/clients'
-import type { Client } from '@/lib/db/schema'
+
+// Partial client type for form - only fields needed for editing
+interface ClientFormData {
+  address: string | null
+  currency: string
+  email: string | null
+  hourlyRate: string | null
+  id: number
+  name: string
+  notes: string | null
+  phone: string | null
+}
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD ($)' },
@@ -27,8 +38,8 @@ const CURRENCIES = [
   { value: 'JPY', label: 'JPY (¥)' },
 ]
 
-type ClientFormProps = {
-  client?: Client
+interface ClientFormProps {
+  client?: ClientFormData
   onSuccess?: () => void
 }
 

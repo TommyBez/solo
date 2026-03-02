@@ -44,11 +44,10 @@ import { createInvoice } from '@/lib/actions/invoices'
 import type { Area, Client } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
-type UnbilledEntry = {
-  id: number
+interface UnbilledEntry {
   description: string | null
   durationMinutes: number
-  startTime: Date
+  id: number
   project: {
     id: number
     name: string
@@ -60,22 +59,23 @@ type UnbilledEntry = {
       client: Client | null
     }
   }
+  startTime: Date
 }
 
-type CreateInvoiceDialogProps = {
+interface CreateInvoiceDialogProps {
   clients: (Client & { areas: Area[] })[]
   initialInvoiceNumber: string
   unbilledEntriesByClient: Record<number, UnbilledEntry[]>
 }
 
-type LineItem = {
-  id: string
-  timeEntryId: number | null
+interface LineItem {
+  amount: number
   description: string
+  id: string
   quantity: number
   rate: number
-  amount: number
   selected: boolean
+  timeEntryId: number | null
 }
 
 export function CreateInvoiceDialog({

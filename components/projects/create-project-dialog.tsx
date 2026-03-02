@@ -14,7 +14,7 @@ import {
 import type { Area } from '@/lib/db/schema'
 import { ProjectForm } from './project-form'
 
-type CreateProjectDialogProps = {
+interface CreateProjectDialogProps {
   areas: Area[]
 }
 

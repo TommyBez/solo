@@ -27,10 +27,10 @@ import { createProject, updateProject } from '@/lib/actions/projects'
 import type { Area, Project } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
-type ProjectFormProps = {
-  project?: Project & { area?: Area }
+interface ProjectFormProps {
   areas: Area[]
   onSuccess?: () => void
+  project?: Project & { area?: Area }
 }
 
 export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {

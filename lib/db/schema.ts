@@ -10,10 +10,14 @@ import {
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core'
+import { user } from '@/lib/auth/schema'
 
 // Clients - customers/companies you work with
 export const clients = pgTable('clients', {
   id: serial('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }),
   phone: varchar('phone', { length: 50 }),
@@ -29,6 +33,9 @@ export const clients = pgTable('clients', {
 // Areas - broad contexts like "Fractional CTO", "Mentorship", "Solo Product Building"
 export const areas = pgTable('areas', {
   id: serial('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
   clientId: integer('client_id').references(() => clients.id, {
     onDelete: 'set null',
   }),
@@ -118,12 +125,20 @@ export const timeEntries = pgTable('time_entries', {
 })
 
 // Relations
-export const clientsRelations = relations(clients, ({ many }) => ({
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  user: one(user, {
+    fields: [clients.userId],
+    references: [user.id],
+  }),
   areas: many(areas),
   invoices: many(invoices),
 }))
 
 export const areasRelations = relations(areas, ({ one, many }) => ({
+  user: one(user, {
+    fields: [areas.userId],
+    references: [user.id],
+  }),
   client: one(clients, {
     fields: [areas.clientId],
     references: [clients.id],
