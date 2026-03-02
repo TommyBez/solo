@@ -1,6 +1,6 @@
 'use client'
 
-import { Cell, Pie, PieChart } from 'recharts'
+import dynamic from 'next/dynamic'
 import {
   Card,
   CardContent,
@@ -8,11 +8,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart'
+
+const TimeDistributionChartContent = dynamic(
+  () =>
+    import('./time-distribution-chart-content').then((m) => ({
+      default: m.TimeDistributionChartContent,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-muted-foreground">Loading chart...</p>
+      </div>
+    ),
+  },
+)
 
 interface TimeDistributionChartProps {
   data: Array<{
@@ -23,12 +33,6 @@ interface TimeDistributionChartProps {
 }
 
 export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
-  const chartConfig = {
-    hours: {
-      label: 'Hours',
-    },
-  }
-
   if (data.length === 0) {
     return (
       <Card>
@@ -50,34 +54,7 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
         <CardDescription>Weekly distribution across areas</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          className="aspect-auto h-[300px] w-full"
-          config={chartConfig}
-        >
-          <PieChart>
-            <Pie
-              cx="50%"
-              cy="50%"
-              data={data}
-              dataKey="hours"
-              innerRadius={60}
-              label={({ name, percent }) =>
-                `${name} (${(percent * 100).toFixed(0)}%)`
-              }
-              labelLine={false}
-              nameKey="name"
-              outerRadius={100}
-              paddingAngle={2}
-            >
-              {data.map((entry) => (
-                <Cell fill={entry.color} key={`cell-${entry.name}`} />
-              ))}
-            </Pie>
-            <ChartTooltip
-              content={<ChartTooltipContent labelKey="name" nameKey="name" />}
-            />
-          </PieChart>
-        </ChartContainer>
+        <TimeDistributionChartContent data={data} />
       </CardContent>
     </Card>
   )

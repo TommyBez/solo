@@ -105,12 +105,43 @@ export async function getTimeEntriesForDateRange(
   )
 }
 
+export async function getTimeEntriesForProjectAndDateRange(
+  projectId: number,
+  startDate: Date,
+  endDate: Date,
+) {
+  const session = await getSession()
+  if (!session?.user) {
+    return []
+  }
+
+  const userProjectIds = await getUserProjectIds(session.user.id)
+  if (!userProjectIds.includes(projectId)) {
+    return []
+  }
+
+  return db.query.timeEntries.findMany({
+    where: and(
+      eq(timeEntries.projectId, projectId),
+      gte(timeEntries.startTime, startDate),
+      lte(timeEntries.startTime, endDate),
+    ),
+    orderBy: [desc(timeEntries.startTime)],
+    with: {
+      project: {
+        with: {
+          area: true,
+        },
+      },
+    },
+  })
+}
+
 async function getDashboardStatsCached(userId: string) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
   const userProjectIds = await getUserProjectIds(userId)
-
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)

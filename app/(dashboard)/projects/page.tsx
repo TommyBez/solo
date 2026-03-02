@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CreateProjectDialog } from '@/components/projects/create-project-dialog'
+import { ExportTasksDialog } from '@/components/projects/export-tasks-dialog'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
 import { getAreas } from '@/lib/queries/areas'
@@ -39,7 +40,16 @@ export default async function ProjectsPage() {
             Manage your specific endeavors and track progress
           </p>
         </div>
-        <CreateProjectDialog areas={areas} />
+        <div className="flex items-center gap-2">
+          <ExportTasksDialog
+            projects={projects.map((p) => ({
+              id: p.id,
+              name: p.name,
+              area: p.area,
+            }))}
+          />
+          <CreateProjectDialog areas={areas} />
+        </div>
       </div>
 
       {areas.length === 0 && (

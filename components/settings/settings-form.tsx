@@ -1,7 +1,7 @@
 'use client'
 
 import { Building2, Globe, RotateCcw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +23,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { useSettings } from '@/lib/hooks/use-settings'
+import { type Settings, useSettings } from '@/lib/hooks/use-settings'
 
 const dateFormats = [
   { value: 'MMM d, yyyy', label: 'Jan 1, 2025' },
@@ -35,40 +35,16 @@ const dateFormats = [
 export function SettingsForm() {
   const { settings, isHydrated, updateSettings, resetSettings } = useSettings()
   const [isSaving, setIsSaving] = useState(false)
+  const [draft, setDraft] = useState<Partial<Settings>>({})
+  const form: Settings = { ...settings, ...draft }
 
-  // Local form state
-  const [companyName, setCompanyName] = useState('')
-  const [companyEmail, setCompanyEmail] = useState('')
-  const [companyPhone, setCompanyPhone] = useState('')
-  const [companyAddress, setCompanyAddress] = useState('')
-  const [weekStartsOn, setWeekStartsOn] = useState<'0' | '1'>('1')
-  const [dateFormat, setDateFormat] = useState('MMM d, yyyy')
-  const [timeFormat, setTimeFormat] = useState<'12' | '24'>('12')
-
-  // Sync local state with settings once hydrated
-  useEffect(() => {
-    if (isHydrated) {
-      setCompanyName(settings.companyName)
-      setCompanyEmail(settings.companyEmail)
-      setCompanyPhone(settings.companyPhone)
-      setCompanyAddress(settings.companyAddress)
-      setWeekStartsOn(settings.weekStartsOn)
-      setDateFormat(settings.dateFormat)
-      setTimeFormat(settings.timeFormat)
-    }
-  }, [isHydrated, settings])
+  function updateField<K extends keyof Settings>(key: K, value: Settings[K]) {
+    setDraft((prev) => ({ ...prev, [key]: value }))
+  }
 
   const handleSave = () => {
     setIsSaving(true)
-    updateSettings({
-      companyName,
-      companyEmail,
-      companyPhone,
-      companyAddress,
-      weekStartsOn,
-      dateFormat,
-      timeFormat,
-    })
+    updateSettings(form)
     setTimeout(() => {
       setIsSaving(false)
       toast.success('Settings saved')
@@ -77,6 +53,7 @@ export function SettingsForm() {
 
   const handleReset = () => {
     resetSettings()
+    setDraft({})
     toast.success('Settings reset to defaults')
   }
 
@@ -118,19 +95,19 @@ export function SettingsForm() {
               <Label htmlFor="companyName">Company Name</Label>
               <Input
                 id="companyName"
-                onChange={(e) => setCompanyName(e.target.value)}
+                onChange={(e) => updateField('companyName', e.target.value)}
                 placeholder="Your Company LLC"
-                value={companyName}
+                value={form.companyName}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="companyEmail">Email</Label>
               <Input
                 id="companyEmail"
-                onChange={(e) => setCompanyEmail(e.target.value)}
+                onChange={(e) => updateField('companyEmail', e.target.value)}
                 placeholder="billing@company.com"
                 type="email"
-                value={companyEmail}
+                value={form.companyEmail}
               />
             </div>
           </div>
@@ -138,19 +115,19 @@ export function SettingsForm() {
             <Label htmlFor="companyPhone">Phone</Label>
             <Input
               id="companyPhone"
-              onChange={(e) => setCompanyPhone(e.target.value)}
+              onChange={(e) => updateField('companyPhone', e.target.value)}
               placeholder="+1 (555) 123-4567"
-              value={companyPhone}
+              value={form.companyPhone}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="companyAddress">Address</Label>
             <Textarea
               id="companyAddress"
-              onChange={(e) => setCompanyAddress(e.target.value)}
+              onChange={(e) => updateField('companyAddress', e.target.value)}
               placeholder="123 Main St&#10;City, State 12345&#10;Country"
               rows={3}
-              value={companyAddress}
+              value={form.companyAddress}
             />
           </div>
         </CardContent>
@@ -172,8 +149,10 @@ export function SettingsForm() {
             <div className="space-y-2">
               <Label>Week Starts On</Label>
               <Select
-                onValueChange={(v) => setWeekStartsOn(v as '0' | '1')}
-                value={weekStartsOn}
+                onValueChange={(value) => {
+                  updateField('weekStartsOn', value as '0' | '1')
+                }}
+                value={form.weekStartsOn}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -186,7 +165,10 @@ export function SettingsForm() {
             </div>
             <div className="space-y-2">
               <Label>Date Format</Label>
-              <Select onValueChange={setDateFormat} value={dateFormat}>
+              <Select
+                onValueChange={(value) => updateField('dateFormat', value)}
+                value={form.dateFormat}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -202,8 +184,10 @@ export function SettingsForm() {
             <div className="space-y-2">
               <Label>Time Format</Label>
               <Select
-                onValueChange={(v) => setTimeFormat(v as '12' | '24')}
-                value={timeFormat}
+                onValueChange={(value) => {
+                  updateField('timeFormat', value as '12' | '24')
+                }}
+                value={form.timeFormat}
               >
                 <SelectTrigger>
                   <SelectValue />

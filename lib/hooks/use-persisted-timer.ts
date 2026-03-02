@@ -196,19 +196,6 @@ export function usePersistedTimer() {
     setDescription: updateDescription,
   }
 }
-
-// Helper to get last used project
-export function getLastUsedProject(): string | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-  try {
-    return localStorage.getItem('solo-last-project')
-  } catch {
-    return null
-  }
-}
-
 // Helper to get recent projects (stored as array of IDs)
 const RECENT_PROJECTS_KEY = 'solo-recent-projects'
 const MAX_RECENT_PROJECTS = 5

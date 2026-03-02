@@ -5,13 +5,10 @@ import { useCallback, useEffect, useState } from 'react'
 export interface Settings {
   companyAddress: string
   companyEmail: string
-  // Company Information
   companyName: string
   companyPhone: string
   dateFormat: string
-
   timeFormat: '12' | '24'
-  // Display Preferences
   weekStartsOn: '0' | '1' // 0 = Sunday, 1 = Monday
 }
 
@@ -72,20 +69,4 @@ export function useSettings() {
     updateSettings,
     resetSettings,
   }
-}
-
-// Helper to get settings outside of React (for server components)
-export function getStoredSettings(): Settings {
-  if (typeof window === 'undefined') {
-    return defaultSettings
-  }
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY)
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) }
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return defaultSettings
 }
