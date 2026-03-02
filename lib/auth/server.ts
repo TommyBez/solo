@@ -1,16 +1,17 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/lib/db'
-import { account, session, user, verification } from './schema'
+import { account, rateLimit, session, user, verification } from './schema'
 
 const appUrl = process.env.BETTER_AUTH_URL
 const trustedOrigins = ['http://localhost:3000', ...(appUrl ? [appUrl] : [])]
+const isProduction = process.env.NODE_ENV === 'production'
 
 export const auth = betterAuth({
   appName: 'Solo',
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: { account, session, user, verification },
+    schema: { account, session, user, verification, rateLimit },
   }),
   emailAndPassword: {
     enabled: true,
@@ -28,7 +29,7 @@ export const auth = betterAuth({
     enabled: true,
     window: 60,
     max: 5,
-    storage: 'database',
+    storage: isProduction ? 'database' : 'memory',
   },
   trustedOrigins,
   advanced: {

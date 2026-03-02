@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm'
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
 // User table for better-auth
 export const user = pgTable('user', {
@@ -55,6 +55,14 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+// Rate limit table for Better Auth DB rate limiting
+export const rateLimit = pgTable('rate_limit', {
+  id: text('id').primaryKey(),
+  key: text('key'),
+  count: integer('count'),
+  lastRequest: bigint('last_request', { mode: 'number' }),
+})
+
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
@@ -84,3 +92,5 @@ export type Account = typeof account.$inferSelect
 export type NewAccount = typeof account.$inferInsert
 export type Verification = typeof verification.$inferSelect
 export type NewVerification = typeof verification.$inferInsert
+export type RateLimit = typeof rateLimit.$inferSelect
+export type NewRateLimit = typeof rateLimit.$inferInsert
