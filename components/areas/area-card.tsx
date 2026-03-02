@@ -56,7 +56,9 @@ interface AreaCardProps {
   clients?: Client[]
 }
 
-export function AreaCard({ area, clients = [] }: AreaCardProps) {
+const EMPTY_CLIENTS: Client[] = []
+
+export function AreaCard({ area, clients = EMPTY_CLIENTS }: AreaCardProps) {
   const router = useRouter()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)

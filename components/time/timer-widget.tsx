@@ -2,7 +2,7 @@
 
 import { Clock, Pause, Play, Square } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,12 +49,9 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
     setDescription,
   } = usePersistedTimer()
 
-  const [recentProjectIds, setRecentProjectIds] = useState<string[]>([])
-
-  // Load recent projects on mount
-  useEffect(() => {
-    setRecentProjectIds(getRecentProjects())
-  }, [])
+  const [recentProjectIds, setRecentProjectIds] = useState<string[]>(() =>
+    getRecentProjects(),
+  )
 
   const formatTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600)

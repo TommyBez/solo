@@ -18,7 +18,11 @@ interface CreateAreaDialogProps {
   clients?: Client[]
 }
 
-export function CreateAreaDialog({ clients = [] }: CreateAreaDialogProps) {
+const EMPTY_CLIENTS: Client[] = []
+
+export function CreateAreaDialog({
+  clients = EMPTY_CLIENTS,
+}: CreateAreaDialogProps) {
   const [open, setOpen] = useState(false)
 
   return (

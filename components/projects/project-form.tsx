@@ -33,29 +33,36 @@ interface ProjectFormProps {
   project?: Project & { area?: Area }
 }
 
+interface ProjectFormState {
+  areaId: string
+  deadline: Date | undefined
+  description: string
+  expectedHours: number
+  name: string
+  status: string
+}
+
 export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [name, setName] = useState(project?.name ?? '')
-  const [description, setDescription] = useState(project?.description ?? '')
-  const [areaId, setAreaId] = useState(project?.areaId?.toString() ?? '')
-  const [status, setStatus] = useState(project?.status ?? 'active')
-  const [expectedHours, setExpectedHours] = useState(
-    project?.expectedHours ?? 0,
-  )
-  const [deadline, setDeadline] = useState<Date | undefined>(
-    project?.deadline ? new Date(project.deadline) : undefined,
-  )
+  const [form, setForm] = useState<ProjectFormState>(() => ({
+    name: project?.name ?? '',
+    description: project?.description ?? '',
+    areaId: project?.areaId?.toString() ?? '',
+    status: project?.status ?? 'active',
+    expectedHours: project?.expectedHours ?? 0,
+    deadline: project?.deadline ? new Date(project.deadline) : undefined,
+  }))
 
   const isEditing = !!project
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) {
+    if (!form.name.trim()) {
       toast.error('Name is required')
       return
     }
-    if (!areaId) {
+    if (!form.areaId) {
       toast.error('Please select an area')
       return
     }
@@ -64,21 +71,21 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
     try {
       if (isEditing) {
         await updateProject(project.id, {
-          name: name.trim(),
-          description: description.trim() || undefined,
-          status,
-          expectedHours,
-          deadline: deadline || null,
+          name: form.name.trim(),
+          description: form.description.trim() || undefined,
+          status: form.status,
+          expectedHours: form.expectedHours,
+          deadline: form.deadline || null,
         })
         toast.success('Project updated successfully')
       } else {
         await createProject({
-          areaId: Number.parseInt(areaId, 10),
-          name: name.trim(),
-          description: description.trim() || undefined,
-          status,
-          expectedHours,
-          deadline,
+          areaId: Number.parseInt(form.areaId, 10),
+          name: form.name.trim(),
+          description: form.description.trim() || undefined,
+          status: form.status,
+          expectedHours: form.expectedHours,
+          deadline: form.deadline,
         })
         toast.success('Project created successfully')
       }
@@ -104,7 +111,13 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
         <Label htmlFor="area">Area</Label>
-        <Select disabled={isEditing} onValueChange={setAreaId} value={areaId}>
+        <Select
+          disabled={isEditing}
+          onValueChange={(areaId) => {
+            setForm((prev) => ({ ...prev, areaId }))
+          }}
+          value={form.areaId}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select an area" />
           </SelectTrigger>
@@ -128,10 +141,12 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
         <Label htmlFor="name">Name</Label>
         <Input
           id="name"
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, name: e.target.value }))
+          }}
           placeholder="e.g., CTO for XY Agency"
           required
-          value={name}
+          value={form.name}
         />
       </div>
 
@@ -139,17 +154,24 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, description: e.target.value }))
+          }}
           placeholder="Brief description of this project..."
           rows={3}
-          value={description}
+          value={form.description}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={setStatus} value={status}>
+          <Select
+            onValueChange={(status) => {
+              setForm((prev) => ({ ...prev, status }))
+            }}
+            value={form.status}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -166,9 +188,14 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
           <Input
             id="expectedHours"
             min={0}
-            onChange={(e) => setExpectedHours(Number(e.target.value))}
+            onChange={(e) => {
+              setForm((prev) => ({
+                ...prev,
+                expectedHours: Number(e.target.value),
+              }))
+            }}
             type="number"
-            value={expectedHours}
+            value={form.expectedHours}
           />
         </div>
       </div>
@@ -180,20 +207,21 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
             <Button
               className={cn(
                 'w-full justify-start text-left font-normal',
-                !deadline && 'text-muted-foreground',
+                !form.deadline && 'text-muted-foreground',
               )}
               variant="outline"
             >
               <CalendarIcon className="mr-2 size-4" />
-              {deadline ? format(deadline, 'PPP') : 'No deadline set'}
+              {form.deadline ? format(form.deadline, 'PPP') : 'No deadline set'}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
             <Calendar
-              autoFocus
               mode="single"
-              onSelect={setDeadline}
-              selected={deadline}
+              onSelect={(deadline) => {
+                setForm((prev) => ({ ...prev, deadline }))
+              }}
+              selected={form.deadline}
             />
           </PopoverContent>
         </Popover>

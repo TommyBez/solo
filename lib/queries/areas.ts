@@ -32,32 +32,6 @@ export async function getAreas(includeArchived = false) {
   return getAreasCached(session.user.id, includeArchived)
 }
 
-async function getAreaByIdCached(userId: string, id: number) {
-  'use cache'
-  cacheLife('minutes')
-  cacheTag('areas', 'projects', 'time-entries')
-  return await db.query.areas.findFirst({
-    where: and(eq(areas.id, id), eq(areas.userId, userId)),
-    with: {
-      projects: {
-        where: eq(projects.archived, false),
-        with: {
-          timeEntries: true,
-        },
-      },
-    },
-  })
-}
-
-export async function getAreaById(id: number) {
-  const session = await getSession()
-  if (!session?.user) {
-    return null
-  }
-
-  return getAreaByIdCached(session.user.id, id)
-}
-
 async function getAreasWithStatsCached(userId: string) {
   'use cache'
   cacheLife('minutes')

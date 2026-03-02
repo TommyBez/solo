@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { CalendarIcon, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -44,6 +44,14 @@ interface TimeEntryFormProps {
   projects: (Project & { area: Area })[]
 }
 
+interface TimeEntryFormState {
+  date: Date
+  description: string
+  durationError: string | null
+  durationInput: string
+  projectId: string
+}
+
 export function TimeEntryForm({
   entry,
   projects,
@@ -51,23 +59,16 @@ export function TimeEntryForm({
 }: TimeEntryFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [projectId, setProjectId] = useState(entry?.projectId?.toString() ?? '')
-  const [description, setDescription] = useState(entry?.description ?? '')
-  const [date, setDate] = useState<Date>(
-    entry?.startTime ? new Date(entry.startTime) : new Date(),
-  )
-  const [durationInput, setDurationInput] = useState(
-    entry ? formatDurationForInput(entry.durationMinutes) : '1h',
-  )
-  const [durationError, setDurationError] = useState<string | null>(null)
-  const [recentProjectIds, setRecentProjectIds] = useState<string[]>([])
+  const [form, setForm] = useState<TimeEntryFormState>(() => ({
+    projectId: entry?.projectId?.toString() ?? '',
+    description: entry?.description ?? '',
+    date: entry?.startTime ? new Date(entry.startTime) : new Date(),
+    durationInput: entry ? formatDurationForInput(entry.durationMinutes) : '1h',
+    durationError: null,
+  }))
+  const [recentProjectIds] = useState<string[]>(() => getRecentProjects())
 
   const isEditing = !!entry
-
-  // Load recent projects on mount
-  useEffect(() => {
-    setRecentProjectIds(getRecentProjects())
-  }, [])
 
   // Group projects by area
   const projectsByArea = projects.reduce(
@@ -91,32 +92,31 @@ export function TimeEntryForm({
     .filter((p): p is Project & { area: Area } => p !== undefined)
 
   const handleDurationChange = (value: string) => {
-    setDurationInput(value)
+    let durationError: string | null = null
     const parsed = parseDuration(value)
     if (value.trim() && !parsed.isValid) {
-      setDurationError('Invalid format. Try "1h 30m", "90m", or "1.5h"')
+      durationError = 'Invalid format. Try "1h 30m", "90m", or "1.5h"'
     } else if (parsed.isValid && parsed.minutes <= 0 && value.trim()) {
-      setDurationError('Duration must be greater than 0')
-    } else {
-      setDurationError(null)
+      durationError = 'Duration must be greater than 0'
     }
+    setForm((prev) => ({ ...prev, durationInput: value, durationError }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!projectId) {
+    if (!form.projectId) {
       toast.error('Please select a project')
       return
     }
 
-    const parsed = parseDuration(durationInput)
+    const parsed = parseDuration(form.durationInput)
     if (!parsed.isValid || parsed.minutes <= 0) {
       toast.error('Please enter a valid duration')
       return
     }
 
     const durationMinutes = parsed.minutes
-    const startTime = new Date(date)
+    const startTime = new Date(form.date)
     startTime.setHours(9, 0, 0, 0)
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000)
 
@@ -124,7 +124,7 @@ export function TimeEntryForm({
     try {
       if (isEditing) {
         await updateTimeEntry(entry.id, {
-          description: description.trim() || undefined,
+          description: form.description.trim() || undefined,
           startTime,
           endTime,
           durationMinutes,
@@ -132,14 +132,14 @@ export function TimeEntryForm({
         toast.success('Time entry updated')
       } else {
         await createTimeEntry({
-          projectId: Number.parseInt(projectId, 10),
-          description: description.trim() || undefined,
+          projectId: Number.parseInt(form.projectId, 10),
+          description: form.description.trim() || undefined,
           startTime,
           endTime,
           durationMinutes,
         })
         // Add to recent projects
-        addRecentProject(projectId)
+        addRecentProject(form.projectId)
         toast.success('Time entry added')
       }
       router.refresh()
@@ -159,7 +159,7 @@ export function TimeEntryForm({
   }
 
   // Get duration preview
-  const parsed = parseDuration(durationInput)
+  const parsed = parseDuration(form.durationInput)
   const durationPreview =
     parsed.isValid && parsed.minutes > 0 ? parsed.formatted : null
 
@@ -167,7 +167,12 @@ export function TimeEntryForm({
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
         <Label htmlFor="project">Project</Label>
-        <Select onValueChange={setProjectId} value={projectId}>
+        <Select
+          onValueChange={(projectId) => {
+            setForm((prev) => ({ ...prev, projectId }))
+          }}
+          value={form.projectId}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select a project" />
           </SelectTrigger>
@@ -223,10 +228,12 @@ export function TimeEntryForm({
         <Label htmlFor="description">Description (optional)</Label>
         <Textarea
           id="description"
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, description: e.target.value }))
+          }}
           placeholder="What did you work on?"
           rows={2}
-          value={description}
+          value={form.description}
         />
       </div>
 
@@ -239,19 +246,18 @@ export function TimeEntryForm({
               variant="outline"
             >
               <CalendarIcon className="mr-2 size-4" />
-              {format(date, 'PPP')}
+              {format(form.date, 'PPP')}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
             <Calendar
-              autoFocus
               mode="single"
               onSelect={(d) => {
                 if (d) {
-                  setDate(d)
+                  setForm((prev) => ({ ...prev, date: d }))
                 }
               }}
-              selected={date}
+              selected={form.date}
             />
           </PopoverContent>
         </Popover>
@@ -263,23 +269,23 @@ export function TimeEntryForm({
           <Input
             className={cn(
               'pr-20',
-              !!durationError &&
+              !!form.durationError &&
                 'border-destructive focus-visible:ring-destructive',
             )}
             id="duration"
             onChange={(e) => handleDurationChange(e.target.value)}
             placeholder="e.g. 1h 30m, 90m, 1.5h"
-            value={durationInput}
+            value={form.durationInput}
           />
           {durationPreview ? (
-            <div className="-translate-y-1/2 absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
+            <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
               <Clock className="size-3.5" />
               <span>{durationPreview}</span>
             </div>
           ) : null}
         </div>
-        {durationError ? (
-          <p className="text-destructive text-sm">{durationError}</p>
+        {form.durationError ? (
+          <p className="text-destructive text-sm">{form.durationError}</p>
         ) : null}
         <p className="text-muted-foreground text-xs">
           Examples: &quot;1h 30m&quot;, &quot;90m&quot;, &quot;1.5h&quot;,
@@ -288,7 +294,7 @@ export function TimeEntryForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button disabled={isLoading || !!durationError} type="submit">
+        <Button disabled={isLoading || !!form.durationError} type="submit">
           {buttonText}
         </Button>
       </div>

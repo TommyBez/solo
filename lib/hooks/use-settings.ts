@@ -70,19 +70,3 @@ export function useSettings() {
     resetSettings,
   }
 }
-
-// Helper to get settings outside of React (for server components)
-export function getStoredSettings(): Settings {
-  if (typeof window === 'undefined') {
-    return defaultSettings
-  }
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY)
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) }
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return defaultSettings
-}

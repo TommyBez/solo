@@ -50,33 +50,45 @@ interface AreaFormProps {
   onSuccess?: () => void
 }
 
-export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
+interface AreaFormState {
+  clientId: string
+  color: string
+  description: string
+  expectedHoursPerWeek: number
+  name: string
+}
+
+const EMPTY_CLIENTS: Client[] = []
+
+export function AreaForm({
+  area,
+  clients = EMPTY_CLIENTS,
+  onSuccess,
+}: AreaFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [name, setName] = useState(area?.name ?? '')
-  const [description, setDescription] = useState(area?.description ?? '')
-  const [color, setColor] = useState(area?.color ?? PRESET_COLORS[0])
-  const [expectedHoursPerWeek, setExpectedHoursPerWeek] = useState(
-    area?.expectedHoursPerWeek ?? 10,
-  )
-  const [clientId, setClientId] = useState<string>(
-    area?.clientId?.toString() ?? '',
-  )
+  const [form, setForm] = useState<AreaFormState>(() => ({
+    name: area?.name ?? '',
+    description: area?.description ?? '',
+    color: area?.color ?? PRESET_COLORS[0],
+    expectedHoursPerWeek: area?.expectedHoursPerWeek ?? 10,
+    clientId: area?.clientId?.toString() ?? '',
+  }))
 
   const isEditing = !!area
 
   function getFormData() {
     return {
-      name: name.trim(),
-      description: description.trim() || undefined,
-      color,
-      expectedHoursPerWeek,
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+      color: form.color,
+      expectedHoursPerWeek: form.expectedHoursPerWeek,
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) {
+    if (!form.name.trim()) {
       toast.error('Name is required')
       return
     }
@@ -87,13 +99,13 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
       if (isEditing) {
         await updateArea(area.id, {
           ...formData,
-          clientId: clientId ? Number(clientId) : null,
+          clientId: form.clientId ? Number(form.clientId) : null,
         })
         toast.success('Area updated successfully')
       } else {
         await createArea({
           ...formData,
-          clientId: clientId ? Number(clientId) : undefined,
+          clientId: form.clientId ? Number(form.clientId) : undefined,
         })
         toast.success('Area created successfully')
       }
@@ -119,10 +131,12 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
         <Label htmlFor="name">Name</Label>
         <Input
           id="name"
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, name: e.target.value }))
+          }}
           placeholder="e.g., Fractional CTO"
           required
-          value={name}
+          value={form.name}
         />
       </div>
 
@@ -130,23 +144,33 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, description: e.target.value }))
+          }}
           placeholder="Brief description of this area..."
           rows={3}
-          value={description}
+          value={form.description}
         />
       </div>
 
       {clients.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="client">Client (optional)</Label>
-          <Select onValueChange={setClientId} value={clientId}>
+          <Select
+            onValueChange={(clientId) => {
+              setForm((prev) => ({ ...prev, clientId }))
+            }}
+            value={form.clientId}
+          >
             <SelectTrigger>
               <SelectValue placeholder="No client assigned">
-                {clientId ? (
+                {form.clientId ? (
                   <div className="flex items-center gap-2">
                     <Building2 className="size-4" />
-                    {clients.find((c) => c.id.toString() === clientId)?.name}
+                    {
+                      clients.find((c) => c.id.toString() === form.clientId)
+                        ?.name
+                    }
                   </div>
                 ) : (
                   'No client assigned'
@@ -178,12 +202,14 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
             <button
               aria-label={`Select color ${presetColor}`}
               className={`size-8 rounded-full transition-all ${
-                color === presetColor
+                form.color === presetColor
                   ? 'ring-2 ring-primary ring-offset-2'
                   : 'hover:scale-110'
               }`}
               key={presetColor}
-              onClick={() => setColor(presetColor)}
+              onClick={() => {
+                setForm((prev) => ({ ...prev, color: presetColor }))
+              }}
               style={{ backgroundColor: presetColor }}
               type="button"
             />
@@ -197,9 +223,14 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
           id="expectedHours"
           max={168}
           min={0}
-          onChange={(e) => setExpectedHoursPerWeek(Number(e.target.value))}
+          onChange={(e) => {
+            setForm((prev) => ({
+              ...prev,
+              expectedHoursPerWeek: Number(e.target.value),
+            }))
+          }}
           type="number"
-          value={expectedHoursPerWeek}
+          value={form.expectedHoursPerWeek}
         />
         <p className="text-muted-foreground text-xs">
           Set your weekly time allocation goal for this area

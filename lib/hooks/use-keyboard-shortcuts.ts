@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from 'react'
 
-export interface KeyboardShortcut {
+interface KeyboardShortcut {
   alt?: boolean
   ctrl?: boolean
   description?: string

@@ -1,6 +1,7 @@
 'use client'
 
-import { Cell, Pie, PieChart } from 'recharts'
+import dynamic from 'next/dynamic'
+import type { ComponentType } from 'react'
 import {
   Card,
   CardContent,
@@ -13,6 +14,22 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+
+type ChartComponent = ComponentType<Record<string, unknown>>
+
+const Cell = dynamic<Record<string, unknown>>(
+  () => import('recharts').then((mod) => mod.Cell as unknown as ChartComponent),
+  { ssr: false },
+)
+const Pie = dynamic(
+  () => import('recharts').then((mod) => mod.Pie as unknown as ChartComponent),
+  { ssr: false },
+)
+const PieChart = dynamic(
+  () =>
+    import('recharts').then((mod) => mod.PieChart as unknown as ChartComponent),
+  { ssr: false },
+)
 
 interface TimeDistributionChartProps {
   data: Array<{
@@ -61,7 +78,7 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
               data={data}
               dataKey="hours"
               innerRadius={60}
-              label={({ name, percent }) =>
+              label={({ name, percent }: { name: string; percent: number }) =>
                 `${name} (${(percent * 100).toFixed(0)}%)`
               }
               labelLine={false}

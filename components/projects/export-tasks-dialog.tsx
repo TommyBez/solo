@@ -34,29 +34,37 @@ import { cn } from '@/lib/utils'
 
 const FILENAME_REGEX = /filename="(.+)"/
 
-type ProjectOption = {
+interface ProjectOption {
+  area: Area
   id: number
   name: string
-  area: Area
 }
 
-type ExportTasksDialogProps = {
+interface ExportTasksDialogProps {
   projects: ProjectOption[]
+}
+
+interface ExportFormState {
+  endDate: Date | undefined
+  exportFormat: 'csv' | 'pdf'
+  selectedProjectId: string
+  startDate: Date | undefined
+}
+
+const initialFormState: ExportFormState = {
+  selectedProjectId: '',
+  startDate: undefined,
+  endDate: undefined,
+  exportFormat: 'csv',
 }
 
 export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
   const [open, setOpen] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
-  const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv')
+  const [form, setForm] = useState<ExportFormState>(initialFormState)
   const [isExporting, setIsExporting] = useState(false)
 
   function resetForm() {
-    setSelectedProjectId('')
-    setStartDate(undefined)
-    setEndDate(undefined)
-    setExportFormat('csv')
+    setForm(initialFormState)
   }
 
   function downloadBlob(response: Response, fallbackFormat: string) {
@@ -70,12 +78,12 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
   }
 
   async function handleExport() {
-    if (!(selectedProjectId && startDate && endDate)) {
+    if (!(form.selectedProjectId && form.startDate && form.endDate)) {
       toast.error('Please fill in all fields')
       return
     }
 
-    if (startDate > endDate) {
+    if (form.startDate > form.endDate) {
       toast.error('Start date must be before end date')
       return
     }
@@ -84,10 +92,10 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
 
     try {
       const params = new URLSearchParams({
-        projectId: selectedProjectId,
-        startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd'),
-        format: exportFormat,
+        projectId: form.selectedProjectId,
+        startDate: format(form.startDate, 'yyyy-MM-dd'),
+        endDate: format(form.endDate, 'yyyy-MM-dd'),
+        format: form.exportFormat,
       })
 
       const response = await fetch(`/api/export?${params.toString()}`)
@@ -97,7 +105,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
         throw new Error(error.error || 'Export failed')
       }
 
-      const { blob, filename } = downloadBlob(response, exportFormat)
+      const { blob, filename } = downloadBlob(response, form.exportFormat)
       const url = window.URL.createObjectURL(await blob)
       const link = document.createElement('a')
       link.href = url
@@ -109,7 +117,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
       window.URL.revokeObjectURL(url)
 
       toast.success(
-        `Tasks exported as ${exportFormat.toUpperCase()} successfully`,
+        `Tasks exported as ${form.exportFormat.toUpperCase()} successfully`,
       )
       setOpen(false)
       resetForm()
@@ -122,7 +130,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
     }
   }
 
-  const isFormValid = selectedProjectId && startDate && endDate
+  const isFormValid = form.selectedProjectId && form.startDate && form.endDate
 
   return (
     <Dialog
@@ -154,8 +162,10 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
           <div className="grid gap-2">
             <Label htmlFor="project-select">Project</Label>
             <Select
-              onValueChange={setSelectedProjectId}
-              value={selectedProjectId}
+              onValueChange={(selectedProjectId) => {
+                setForm((prev) => ({ ...prev, selectedProjectId }))
+              }}
+              value={form.selectedProjectId}
             >
               <SelectTrigger className="w-full" id="project-select">
                 <SelectValue placeholder="Select a project" />
@@ -188,22 +198,27 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                   <Button
                     className={cn(
                       'w-full justify-start text-left font-normal',
-                      !startDate && 'text-muted-foreground',
+                      !form.startDate && 'text-muted-foreground',
                     )}
                     variant="outline"
                   >
                     <CalendarIcon className="mr-2 size-4" />
-                    {startDate ? format(startDate, 'MMM d, yyyy') : 'Pick date'}
+                    {form.startDate
+                      ? format(form.startDate, 'MMM d, yyyy')
+                      : 'Pick date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-0">
                   <Calendar
                     disabled={(date) =>
-                      date > new Date() || (endDate ? date > endDate : false)
+                      date > new Date() ||
+                      (form.endDate ? date > form.endDate : false)
                     }
                     mode="single"
-                    onSelect={setStartDate}
-                    selected={startDate}
+                    onSelect={(startDate) => {
+                      setForm((prev) => ({ ...prev, startDate }))
+                    }}
+                    selected={form.startDate}
                   />
                 </PopoverContent>
               </Popover>
@@ -215,23 +230,27 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                   <Button
                     className={cn(
                       'w-full justify-start text-left font-normal',
-                      !endDate && 'text-muted-foreground',
+                      !form.endDate && 'text-muted-foreground',
                     )}
                     variant="outline"
                   >
                     <CalendarIcon className="mr-2 size-4" />
-                    {endDate ? format(endDate, 'MMM d, yyyy') : 'Pick date'}
+                    {form.endDate
+                      ? format(form.endDate, 'MMM d, yyyy')
+                      : 'Pick date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-0">
                   <Calendar
                     disabled={(date) =>
                       date > new Date() ||
-                      (startDate ? date < startDate : false)
+                      (form.startDate ? date < form.startDate : false)
                     }
                     mode="single"
-                    onSelect={setEndDate}
-                    selected={endDate}
+                    onSelect={(endDate) => {
+                      setForm((prev) => ({ ...prev, endDate }))
+                    }}
+                    selected={form.endDate}
                   />
                 </PopoverContent>
               </Popover>
@@ -243,13 +262,18 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
             <Label>Export Format</Label>
             <RadioGroup
               className="grid grid-cols-2 gap-3"
-              onValueChange={(value) => setExportFormat(value as 'csv' | 'pdf')}
-              value={exportFormat}
+              onValueChange={(exportFormat) => {
+                setForm((prev) => ({
+                  ...prev,
+                  exportFormat: exportFormat as 'csv' | 'pdf',
+                }))
+              }}
+              value={form.exportFormat}
             >
               <Label
                 className={cn(
                   'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
-                  exportFormat === 'csv' && 'border-primary bg-primary/5',
+                  form.exportFormat === 'csv' && 'border-primary bg-primary/5',
                 )}
                 htmlFor="format-csv"
               >
@@ -265,7 +289,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
               <Label
                 className={cn(
                   'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
-                  exportFormat === 'pdf' && 'border-primary bg-primary/5',
+                  form.exportFormat === 'pdf' && 'border-primary bg-primary/5',
                 )}
                 htmlFor="format-pdf"
               >
@@ -292,7 +316,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
             ) : (
               <>
                 <Download className="mr-2 size-4" />
-                Export {exportFormat.toUpperCase()}
+                Export {form.exportFormat.toUpperCase()}
               </>
             )}
           </Button>

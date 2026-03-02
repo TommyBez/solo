@@ -2,7 +2,7 @@ import { and, desc, eq, inArray } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { areas, projects, timeEntries } from '@/lib/db/schema'
+import { areas, projects } from '@/lib/db/schema'
 
 // Helper to get user's area IDs for filtering
 async function getUserAreaIds(userId: string): Promise<number[]> {
@@ -53,35 +53,6 @@ export async function getProjects(areaId?: number, includeArchived = false) {
   }
 
   return getProjectsCached(session.user.id, areaId, includeArchived)
-}
-
-async function getProjectByIdCached(userId: string, id: number) {
-  'use cache'
-  cacheLife('minutes')
-  cacheTag('projects', 'areas', 'time-entries')
-  const userAreaIds = await getUserAreaIds(userId)
-  if (userAreaIds.length === 0) {
-    return null
-  }
-
-  return db.query.projects.findFirst({
-    where: and(eq(projects.id, id), inArray(projects.areaId, userAreaIds)),
-    with: {
-      area: true,
-      timeEntries: {
-        orderBy: [desc(timeEntries.startTime)],
-      },
-    },
-  })
-}
-
-export async function getProjectById(id: number) {
-  const session = await getSession()
-  if (!session?.user) {
-    return null
-  }
-
-  return getProjectByIdCached(session.user.id, id)
 }
 
 async function getProjectsWithStatsCached(userId: string) {
