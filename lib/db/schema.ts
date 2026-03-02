@@ -1,7 +1,6 @@
 import { relations } from 'drizzle-orm'
 import {
   boolean,
-  date,
   decimal,
   integer,
   pgTable,
@@ -65,57 +64,12 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-// Invoices - billing documents sent to clients
-export const invoices = pgTable('invoices', {
-  id: serial('id').primaryKey(),
-  clientId: integer('client_id')
-    .notNull()
-    .references(() => clients.id, { onDelete: 'restrict' }),
-  invoiceNumber: varchar('invoice_number', { length: 50 }).notNull(),
-  status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, sent, paid, overdue, cancelled
-  issueDate: date('issue_date').notNull(),
-  dueDate: date('due_date'),
-  subtotal: decimal('subtotal', { precision: 10, scale: 2 })
-    .notNull()
-    .default('0'),
-  taxRate: decimal('tax_rate', { precision: 5, scale: 2 })
-    .notNull()
-    .default('0'),
-  taxAmount: decimal('tax_amount', { precision: 10, scale: 2 })
-    .notNull()
-    .default('0'),
-  total: decimal('total', { precision: 10, scale: 2 }).notNull().default('0'),
-  currency: varchar('currency', { length: 3 }).notNull().default('USD'),
-  notes: text('notes'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
-
-// Invoice Line Items - individual billable items on an invoice
-export const invoiceLineItems = pgTable('invoice_line_items', {
-  id: serial('id').primaryKey(),
-  invoiceId: integer('invoice_id')
-    .notNull()
-    .references(() => invoices.id, { onDelete: 'cascade' }),
-  timeEntryId: integer('time_entry_id').references(() => timeEntries.id, {
-    onDelete: 'set null',
-  }),
-  description: text('description').notNull(),
-  quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
-  rate: decimal('rate', { precision: 10, scale: 2 }).notNull(),
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-})
-
 // Time Entries - actual time tracking records
 export const timeEntries = pgTable('time_entries', {
   id: serial('id').primaryKey(),
   projectId: integer('project_id')
     .notNull()
     .references(() => projects.id, { onDelete: 'cascade' }),
-  invoiceId: integer('invoice_id').references(() => invoices.id, {
-    onDelete: 'set null',
-  }),
   description: text('description'),
   startTime: timestamp('start_time').notNull(),
   endTime: timestamp('end_time'),
@@ -131,7 +85,6 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     references: [user.id],
   }),
   areas: many(areas),
-  invoices: many(invoices),
 }))
 
 export const areasRelations = relations(areas, ({ one, many }) => ({
@@ -154,37 +107,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   timeEntries: many(timeEntries),
 }))
 
-export const invoicesRelations = relations(invoices, ({ one, many }) => ({
-  client: one(clients, {
-    fields: [invoices.clientId],
-    references: [clients.id],
-  }),
-  lineItems: many(invoiceLineItems),
-  timeEntries: many(timeEntries),
-}))
-
-export const invoiceLineItemsRelations = relations(
-  invoiceLineItems,
-  ({ one }) => ({
-    invoice: one(invoices, {
-      fields: [invoiceLineItems.invoiceId],
-      references: [invoices.id],
-    }),
-    timeEntry: one(timeEntries, {
-      fields: [invoiceLineItems.timeEntryId],
-      references: [timeEntries.id],
-    }),
-  }),
-)
-
 export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
   project: one(projects, {
     fields: [timeEntries.projectId],
     references: [projects.id],
-  }),
-  invoice: one(invoices, {
-    fields: [timeEntries.invoiceId],
-    references: [invoices.id],
   }),
 }))
 
@@ -195,9 +121,5 @@ export type Area = typeof areas.$inferSelect
 export type NewArea = typeof areas.$inferInsert
 export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
-export type Invoice = typeof invoices.$inferSelect
-export type NewInvoice = typeof invoices.$inferInsert
-export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect
-export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert
 export type TimeEntry = typeof timeEntries.$inferSelect
 export type NewTimeEntry = typeof timeEntries.$inferInsert

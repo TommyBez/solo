@@ -10,13 +10,7 @@ export interface Settings {
   companyPhone: string
   dateFormat: string
 
-  // Invoice Defaults
-  defaultCurrency: string
-  defaultTaxRate: string
-  invoiceNotes: string
-  paymentTerms: string
   timeFormat: '12' | '24'
-
   // Display Preferences
   weekStartsOn: '0' | '1' // 0 = Sunday, 1 = Monday
 }
@@ -26,10 +20,6 @@ const defaultSettings: Settings = {
   companyEmail: '',
   companyPhone: '',
   companyAddress: '',
-  defaultCurrency: 'USD',
-  defaultTaxRate: '0',
-  paymentTerms: 'Due within 30 days',
-  invoiceNotes: 'Thank you for your business!',
   weekStartsOn: '1',
   dateFormat: 'MMM d, yyyy',
   timeFormat: '12',

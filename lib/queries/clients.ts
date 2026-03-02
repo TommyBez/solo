@@ -33,7 +33,7 @@ export async function getClients(includeArchived = false) {
 async function getClientCached(userId: string, id: number) {
   'use cache'
   cacheLife('minutes')
-  cacheTag('clients', 'areas', 'projects', 'invoices')
+  cacheTag('clients', 'areas', 'projects')
   return await db.query.clients.findFirst({
     where: and(eq(clients.id, id), eq(clients.userId, userId)),
     with: {
@@ -41,11 +41,6 @@ async function getClientCached(userId: string, id: number) {
         with: {
           projects: true,
         },
-      },
-      invoices: {
-        orderBy: (invoicesTable, { desc: descFn }) => [
-          descFn(invoicesTable.issueDate),
-        ],
       },
     },
   })

@@ -263,7 +263,7 @@ export function TimeEntryForm({
           <Input
             className={cn(
               'pr-20',
-              durationError &&
+              !!durationError &&
                 'border-destructive focus-visible:ring-destructive',
             )}
             id="duration"
@@ -272,7 +272,7 @@ export function TimeEntryForm({
             value={durationInput}
           />
           {durationPreview ? (
-            <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
+            <div className="-translate-y-1/2 absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
               <Clock className="size-3.5" />
               <span>{durationPreview}</span>
             </div>

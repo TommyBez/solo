@@ -48,7 +48,6 @@ interface TimeEntry {
   durationMinutes: number
   endTime: Date | null
   id: number
-  invoiceId: number | null
   project: Project & { area: Area }
   projectId: number
   startTime: Date
@@ -232,7 +231,6 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                 endTime: editEntry.endTime,
                 durationMinutes: editEntry.durationMinutes,
                 billable: editEntry.billable,
-                invoiceId: editEntry.invoiceId,
                 createdAt: editEntry.createdAt,
               }}
               onSuccess={() => setEditEntry(null)}

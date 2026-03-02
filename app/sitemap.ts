@@ -10,7 +10,6 @@ const routes = [
   '/projects',
   '/time',
   '/clients',
-  '/invoices',
   '/settings',
 ]
 

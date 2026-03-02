@@ -21,8 +21,7 @@ export default async function ClientsPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <h3 className="font-semibold text-lg">No clients yet</h3>
           <p className="mb-4 text-muted-foreground text-sm">
-            Add your first client to start tracking work and generating
-            invoices.
+            Add your first client to start tracking work.
           </p>
           <CreateClientDialog />
         </div>

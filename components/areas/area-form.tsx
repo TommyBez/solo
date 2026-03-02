@@ -166,7 +166,7 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
             </SelectContent>
           </Select>
           <p className="text-muted-foreground text-xs">
-            Link this area to a client for invoicing
+            Link this area to a client for better organization
           </p>
         </div>
       )}
