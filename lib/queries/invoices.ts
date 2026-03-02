@@ -1,7 +1,13 @@
 import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { areas, clients, invoices, projects, timeEntries } from '@/lib/db/schema'
+import {
+  areas,
+  clients,
+  invoices,
+  projects,
+  timeEntries,
+} from '@/lib/db/schema'
 
 // Helper to get user's client IDs for filtering
 async function getUserClientIds(userId: string): Promise<number[]> {
@@ -24,10 +30,14 @@ async function getUserProjectIds(userId: string): Promise<number[]> {
 
 export async function getInvoices(clientId?: number) {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const userClientIds = await getUserClientIds(session.user.id)
-  if (userClientIds.length === 0) return []
+  if (userClientIds.length === 0) {
+    return []
+  }
 
   const conditions = [inArray(invoices.clientId, userClientIds)]
 
@@ -47,10 +57,14 @@ export async function getInvoices(clientId?: number) {
 
 export async function getInvoice(id: number) {
   const session = await getSession()
-  if (!session?.user) return null
+  if (!session?.user) {
+    return null
+  }
 
   const userClientIds = await getUserClientIds(session.user.id)
-  if (userClientIds.length === 0) return null
+  if (userClientIds.length === 0) {
+    return null
+  }
 
   return db.query.invoices.findFirst({
     where: and(eq(invoices.id, id), inArray(invoices.clientId, userClientIds)),
@@ -79,11 +93,15 @@ export async function getUnbilledTimeEntries(
   endDate?: Date,
 ) {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   // Verify user owns this client
   const userClientIds = await getUserClientIds(session.user.id)
-  if (!userClientIds.includes(clientId)) return []
+  if (!userClientIds.includes(clientId)) {
+    return []
+  }
 
   // Get project IDs for areas linked to this client
   const clientProjectIds = await db
@@ -93,7 +111,9 @@ export async function getUnbilledTimeEntries(
     .where(and(eq(areas.clientId, clientId), eq(areas.userId, session.user.id)))
     .then((rows) => rows.map((r) => r.id))
 
-  if (clientProjectIds.length === 0) return []
+  if (clientProjectIds.length === 0) {
+    return []
+  }
 
   const conditions = [
     inArray(timeEntries.projectId, clientProjectIds),
@@ -155,10 +175,14 @@ export async function generateInvoiceNumber(): Promise<string> {
 
 export async function getAllUnbilledTimeEntries() {
   const session = await getSession()
-  if (!session?.user) return {}
+  if (!session?.user) {
+    return {}
+  }
 
   const userProjectIds = await getUserProjectIds(session.user.id)
-  if (userProjectIds.length === 0) return {}
+  if (userProjectIds.length === 0) {
+    return {}
+  }
 
   // Get all unbilled time entries for user's projects
   const result = await db.query.timeEntries.findMany({

@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes that don't require authentication
@@ -9,7 +8,7 @@ export async function middleware(request: NextRequest) {
 
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + '/'),
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   )
 
   if (isPublicRoute) {

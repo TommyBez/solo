@@ -15,10 +15,14 @@ async function getUserProjectIds(userId: string): Promise<number[]> {
 
 export async function getTimeEntries(projectId?: number, limit = 50) {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const userProjectIds = await getUserProjectIds(session.user.id)
-  if (userProjectIds.length === 0) return []
+  if (userProjectIds.length === 0) {
+    return []
+  }
 
   const conditions = [inArray(timeEntries.projectId, userProjectIds)]
 
@@ -45,10 +49,14 @@ export async function getTimeEntriesForDateRange(
   endDate: Date,
 ) {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const userProjectIds = await getUserProjectIds(session.user.id)
-  if (userProjectIds.length === 0) return []
+  if (userProjectIds.length === 0) {
+    return []
+  }
 
   return db.query.timeEntries.findMany({
     where: and(
@@ -97,7 +105,9 @@ export async function getDashboardStats() {
 
   // Helper to get time entries for a date range filtered by user's projects
   async function getFilteredTimeEntries(startDate: Date, endDate?: Date) {
-    if (userProjectIds.length === 0) return []
+    if (userProjectIds.length === 0) {
+      return []
+    }
 
     const conditions = [
       inArray(timeEntries.projectId, userProjectIds),

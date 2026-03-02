@@ -14,10 +14,14 @@ async function getUserAreaIds(userId: string): Promise<number[]> {
 
 export async function getProjects(areaId?: number, includeArchived = false) {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const userAreaIds = await getUserAreaIds(session.user.id)
-  if (userAreaIds.length === 0) return []
+  if (userAreaIds.length === 0) {
+    return []
+  }
 
   const conditions = [inArray(projects.areaId, userAreaIds)]
 
@@ -41,10 +45,14 @@ export async function getProjects(areaId?: number, includeArchived = false) {
 
 export async function getProjectById(id: number) {
   const session = await getSession()
-  if (!session?.user) return null
+  if (!session?.user) {
+    return null
+  }
 
   const userAreaIds = await getUserAreaIds(session.user.id)
-  if (userAreaIds.length === 0) return null
+  if (userAreaIds.length === 0) {
+    return null
+  }
 
   return db.query.projects.findFirst({
     where: and(eq(projects.id, id), inArray(projects.areaId, userAreaIds)),
@@ -59,10 +67,14 @@ export async function getProjectById(id: number) {
 
 export async function getProjectsWithStats() {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const userAreaIds = await getUserAreaIds(session.user.id)
-  if (userAreaIds.length === 0) return []
+  if (userAreaIds.length === 0) {
+    return []
+  }
 
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)

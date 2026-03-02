@@ -5,7 +5,9 @@ import { areas, projects, timeEntries } from '@/lib/db/schema'
 
 export async function getAreas(includeArchived = false) {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const conditions = includeArchived
     ? eq(areas.userId, session.user.id)
@@ -26,7 +28,9 @@ export async function getAreas(includeArchived = false) {
 
 export async function getAreaById(id: number) {
   const session = await getSession()
-  if (!session?.user) return null
+  if (!session?.user) {
+    return null
+  }
 
   return db.query.areas.findFirst({
     where: and(eq(areas.id, id), eq(areas.userId, session.user.id)),
@@ -43,7 +47,9 @@ export async function getAreaById(id: number) {
 
 export async function getAreasWithStats() {
   const session = await getSession()
-  if (!session?.user) return []
+  if (!session?.user) {
+    return []
+  }
 
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)

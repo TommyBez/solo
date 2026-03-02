@@ -1,5 +1,7 @@
 'use client'
 
+import { ChevronsUpDown, LogOut, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -15,8 +17,6 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import { signOut, useSession } from '@/lib/auth/client'
-import { ChevronsUpDown, LogOut, User } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
 export function UserMenu() {
   const router = useRouter()
@@ -32,7 +32,7 @@ export function UserMenu() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" className="animate-pulse">
+          <SidebarMenuButton className="animate-pulse" size="lg">
             <div className="size-8 rounded-full bg-muted" />
             <div className="flex flex-1 flex-col gap-1">
               <div className="h-3 w-20 rounded bg-muted" />
@@ -64,11 +64,11 @@ export function UserMenu() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              size="lg"
             >
               <Avatar size="sm">
-                {user.image && <AvatarImage src={user.image} alt={user.name} />}
+                {user.image && <AvatarImage alt={user.name} src={user.image} />}
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left leading-tight">
@@ -83,8 +83,8 @@ export function UserMenu() {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-56"
             align="end"
+            className="w-56"
             side="top"
             sideOffset={4}
           >
@@ -102,7 +102,7 @@ export function UserMenu() {
               <span>Profile</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+            <DropdownMenuItem onClick={handleSignOut} variant="destructive">
               <LogOut className="size-4" />
               <span>Sign out</span>
             </DropdownMenuItem>

@@ -1,10 +1,6 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": [
-    "ultracite/core",
-    "ultracite/next",
-    "ultracite/biome/core"
-  ],
+  "extends": ["ultracite/core", "ultracite/next", "ultracite/biome/core"],
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
@@ -13,9 +9,6 @@
     }
   },
   "files": {
-    "includes": [
-      "**/*",
-      "!components/ui/*"
-    ]
+    "includes": ["**/*", "!components/ui/*"]
   }
 }

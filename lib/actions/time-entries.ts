@@ -36,7 +36,10 @@ export async function createTimeEntry(data: {
   const session = await requireSession()
 
   // Verify user owns the project (through area)
-  const ownsProject = await verifyProjectOwnership(data.projectId, session.user.id)
+  const ownsProject = await verifyProjectOwnership(
+    data.projectId,
+    session.user.id,
+  )
   if (!ownsProject) {
     throw new Error('Unauthorized')
   }

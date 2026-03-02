@@ -1,5 +1,9 @@
 'use client'
 
+import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -12,10 +16,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signUp } from '@/lib/auth/client'
-import { Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -80,60 +80,60 @@ export default function SignUpPage() {
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
-              id="name"
-              type="text"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
               disabled={isLoading}
+              id="name"
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              required
+              type="text"
+              value={name}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
               disabled={isLoading}
+              id="email"
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              type="email"
+              value={email}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
-              id="password"
-              type="password"
-              placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
               disabled={isLoading}
+              id="password"
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              required
+              type="password"
+              value={password}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
               disabled={isLoading}
+              id="confirmPassword"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              required
+              type="password"
+              value={confirmPassword}
             />
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button className="w-full" disabled={isLoading} type="submit">
             {isLoading && <Loader2 className="animate-spin" />}
             Create Account
           </Button>
           <p className="text-center text-muted-foreground text-xs">
             Already have an account?{' '}
-            <Link href="/sign-in" className="text-primary hover:underline">
+            <Link className="text-primary hover:underline" href="/sign-in">
               Sign in
             </Link>
           </p>
