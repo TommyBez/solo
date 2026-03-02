@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm'
-import { bigint, boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  bigint,
+  boolean,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core'
 
 // User table for better-auth
 export const user = pgTable('user', {
