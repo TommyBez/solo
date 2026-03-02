@@ -1,7 +1,8 @@
 'use server'
 
-import { desc, eq, gte } from 'drizzle-orm'
+import { and, desc, eq, gte } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
+import { requireSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
 
@@ -12,7 +13,15 @@ export async function createArea(data: {
   expectedHoursPerWeek: number
   clientId?: number
 }) {
-  const result = await db.insert(areas).values(data).returning()
+  const session = await requireSession()
+
+  const result = await db
+    .insert(areas)
+    .values({
+      ...data,
+      userId: session.user.id,
+    })
+    .returning()
   revalidateTag('areas', 'max')
   return result[0]
 }
@@ -28,26 +37,34 @@ export async function updateArea(
     archived?: boolean
   },
 ) {
+  const session = await requireSession()
+
   const result = await db
     .update(areas)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(areas.id, id))
+    .where(and(eq(areas.id, id), eq(areas.userId, session.user.id)))
     .returning()
   revalidateTag('areas', 'max')
   return result[0]
 }
 
 export async function deleteArea(id: number) {
-  await db.delete(areas).where(eq(areas.id, id))
+  const session = await requireSession()
+
+  await db
+    .delete(areas)
+    .where(and(eq(areas.id, id), eq(areas.userId, session.user.id)))
   revalidateTag('areas', 'max')
 }
 
 export async function getAreasWithStats() {
+  const session = await requireSession()
+
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   const areasData = await db.query.areas.findMany({
-    where: eq(areas.archived, false),
+    where: and(eq(areas.userId, session.user.id), eq(areas.archived, false)),
     orderBy: [desc(areas.createdAt)],
     with: {
       projects: {

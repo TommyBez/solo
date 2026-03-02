@@ -41,19 +41,19 @@ import { deleteTimeEntry } from '@/lib/actions/time-entries'
 import type { Area, Project } from '@/lib/db/schema'
 import { TimeEntryForm } from './time-entry-form'
 
-type TimeEntry = {
-  id: number
-  projectId: number
-  description: string | null
-  startTime: Date
-  endTime: Date | null
-  durationMinutes: number
+interface TimeEntry {
   billable: boolean
   createdAt: Date
+  description: string | null
+  durationMinutes: number
+  endTime: Date | null
+  id: number
   project: Project & { area: Area }
+  projectId: number
+  startTime: Date
 }
 
-type TimeEntriesListProps = {
+interface TimeEntriesListProps {
   entries: TimeEntry[]
   projects: (Project & { area: Area })[]
 }

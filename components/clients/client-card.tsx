@@ -33,7 +33,7 @@ import { archiveClient, deleteClient } from '@/lib/actions/clients'
 import type { Client } from '@/lib/db/schema'
 import { ClientForm } from './client-form'
 
-type ClientCardProps = {
+interface ClientCardProps {
   client: Client & {
     areas?: { id: number }[]
   }

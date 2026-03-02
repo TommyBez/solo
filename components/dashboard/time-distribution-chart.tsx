@@ -14,7 +14,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
-type TimeDistributionChartProps = {
+interface TimeDistributionChartProps {
   data: Array<{
     name: string
     hours: number

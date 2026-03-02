@@ -17,7 +17,17 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { createArea, updateArea } from '@/lib/actions/areas'
-import type { Area, Client } from '@/lib/db/schema'
+import type { Client } from '@/lib/db/schema'
+
+// Partial area type for form - only fields needed for editing
+interface AreaFormData {
+  clientId: number | null
+  color: string
+  description: string | null
+  expectedHoursPerWeek: number
+  id: number
+  name: string
+}
 
 const PRESET_COLORS = [
   '#6366f1', // indigo
@@ -34,8 +44,8 @@ const PRESET_COLORS = [
   '#3b82f6', // blue
 ]
 
-type AreaFormProps = {
-  area?: Area
+interface AreaFormProps {
+  area?: AreaFormData
   clients?: Client[]
   onSuccess?: () => void
 }
@@ -156,7 +166,7 @@ export function AreaForm({ area, clients = [], onSuccess }: AreaFormProps) {
             </SelectContent>
           </Select>
           <p className="text-muted-foreground text-xs">
-            Link this area to a client for invoicing
+            Link this area to a client for better organization
           </p>
         </div>
       )}
