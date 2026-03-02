@@ -4,6 +4,35 @@ import autoTable from 'jspdf-autotable'
 import { type NextRequest, NextResponse } from 'next/server'
 import { getTimeEntriesForProjectAndDateRange } from '@/lib/queries/time-entries'
 
+const MAX_FILENAME_PART_LENGTH = 100
+
+/**
+ * Sanitizes a string for safe use in Content-Disposition filenames.
+ * Prevents header injection and invalid filenames by stripping/replacing
+ * unsafe characters (control chars, quotes, slashes, newlines, etc.).
+ */
+function sanitizeForFilename(
+  value: string,
+  maxLength = MAX_FILENAME_PART_LENGTH,
+): string {
+  // Strip control chars (0x00-0x1F, 0x7F) - use charCode to avoid control chars in regex (lint)
+  const withoutControl = value
+    .split('')
+    .filter((c) => {
+      const code = c.charCodeAt(0)
+      return code > 31 && code !== 127
+    })
+    .join('')
+  const sanitized = withoutControl
+    .replace(/["'\\/]/g, '-') // replace quotes and slashes (control chars already stripped)
+    .replace(/[^A-Za-z0-9 _-]/g, '-') // replace chars outside safe set
+    .replace(/\s+/g, '-') // collapse spaces to single dash
+    .replace(/-+/g, '-') // collapse runs to single dash
+    .replace(/^-+|-+$/g, '') // trim leading/trailing dashes
+    .slice(0, maxLength)
+  return sanitized || 'export'
+}
+
 function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
@@ -181,12 +210,15 @@ export async function GET(request: NextRequest) {
     end,
   )
 
-  const projectName =
+  const rawProjectName =
     entries.length > 0 ? entries[0].project.name : `Project ${projectId}`
+  const projectName = sanitizeForFilename(rawProjectName).toLowerCase()
+  const safeStartDate = sanitizeForFilename(startDate, 16)
+  const safeEndDate = sanitizeForFilename(endDate, 16)
 
   if (formatType === 'csv') {
     const csv = buildCsv(entries)
-    const filename = `tasks-${projectName.replace(/\s+/g, '-').toLowerCase()}-${startDate}-to-${endDate}.csv`
+    const filename = `tasks-${projectName}-${safeStartDate}-to-${safeEndDate}.csv`
 
     return new Response(csv, {
       headers: {
@@ -196,8 +228,8 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const pdfBytes = buildPdf(entries, projectName, startDate, endDate)
-  const filename = `tasks-${projectName.replace(/\s+/g, '-').toLowerCase()}-${startDate}-to-${endDate}.pdf`
+  const pdfBytes = buildPdf(entries, rawProjectName, startDate, endDate)
+  const filename = `tasks-${projectName}-${safeStartDate}-to-${safeEndDate}.pdf`
 
   return new Response(pdfBytes, {
     headers: {
