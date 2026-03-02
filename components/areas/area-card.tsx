@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
 import { deleteArea, updateArea } from '@/lib/actions/areas'
+import { EMPTY_CLIENTS } from '@/lib/constants/areas'
 import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
@@ -56,7 +57,7 @@ interface AreaCardProps {
   clients?: Client[]
 }
 
-export function AreaCard({ area, clients = [] }: AreaCardProps) {
+export function AreaCard({ area, clients = EMPTY_CLIENTS }: AreaCardProps) {
   const router = useRouter()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)

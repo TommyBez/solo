@@ -1,8 +1,10 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
+
+const MILLISECONDS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
 import { db } from '@/lib/db'
-import { areas, projects, timeEntries } from '@/lib/db/schema'
+import { areas, projects } from '@/lib/db/schema'
 
 // Helper to get user's area IDs for filtering
 async function getUserAreaIds(userId: string): Promise<number[]> {
@@ -55,35 +57,6 @@ export async function getProjects(areaId?: number, includeArchived = false) {
   return getProjectsCached(session.user.id, areaId, includeArchived)
 }
 
-async function getProjectByIdCached(userId: string, id: number) {
-  'use cache'
-  cacheLife('minutes')
-  cacheTag('projects', 'areas', 'time-entries')
-  const userAreaIds = await getUserAreaIds(userId)
-  if (userAreaIds.length === 0) {
-    return null
-  }
-
-  return db.query.projects.findFirst({
-    where: and(eq(projects.id, id), inArray(projects.areaId, userAreaIds)),
-    with: {
-      area: true,
-      timeEntries: {
-        orderBy: [desc(timeEntries.startTime)],
-      },
-    },
-  })
-}
-
-export async function getProjectById(id: number) {
-  const session = await getSession()
-  if (!session?.user) {
-    return null
-  }
-
-  return getProjectByIdCached(session.user.id, id)
-}
-
 async function getProjectsWithStatsCached(userId: string) {
   'use cache'
   cacheLife('minutes')
@@ -94,7 +67,7 @@ async function getProjectsWithStatsCached(userId: string) {
   }
 
   const now = new Date()
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const weekAgo = new Date(now.getTime() - MILLISECONDS_PER_WEEK)
 
   const projectsData = await db.query.projects.findMany({
     where: and(

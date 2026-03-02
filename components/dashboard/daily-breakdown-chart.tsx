@@ -1,6 +1,7 @@
 'use client'
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import dynamic from 'next/dynamic'
+import type { ComponentType } from 'react'
 import {
   Card,
   CardContent,
@@ -13,6 +14,35 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+
+type ChartComponent = ComponentType<Record<string, unknown>>
+
+const Bar = dynamic<Record<string, unknown>>(
+  () => import('recharts').then((mod) => mod.Bar as unknown as ChartComponent),
+  { ssr: false },
+)
+const BarChart = dynamic(
+  () =>
+    import('recharts').then((mod) => mod.BarChart as unknown as ChartComponent),
+  { ssr: false },
+)
+const CartesianGrid = dynamic(
+  () =>
+    import('recharts').then(
+      (mod) => mod.CartesianGrid as unknown as ChartComponent,
+    ),
+  { ssr: false },
+)
+const XAxis = dynamic(
+  () =>
+    import('recharts').then((mod) => mod.XAxis as unknown as ChartComponent),
+  { ssr: false },
+)
+const YAxis = dynamic(
+  () =>
+    import('recharts').then((mod) => mod.YAxis as unknown as ChartComponent),
+  { ssr: false },
+)
 
 interface DailyBreakdownChartProps {
   data: Array<{
@@ -55,7 +85,7 @@ export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
             <YAxis
               axisLine={false}
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `${value}h`}
+              tickFormatter={(value: number | string) => `${value}h`}
               tickLine={false}
             />
             <ChartTooltip content={<ChartTooltipContent />} />

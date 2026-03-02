@@ -10,7 +10,7 @@
  * - "1:30" (hours:minutes)
  */
 
-export interface ParsedDuration {
+interface ParsedDuration {
   formatted: string
   isValid: boolean
   minutes: number
@@ -24,9 +24,6 @@ const MINS_PATTERN = /^(\d+)\s*m(?:in(?:utes?)?)?$/
 const HOURS_PATTERN = /^(\d+(?:\.\d+)?)\s*h(?:ours?)?$/
 const PLAIN_NUMBER_PATTERN = /^(\d+)$/
 const DECIMAL_NUMBER_PATTERN = /^(\d+\.\d+)$/
-const PARTIAL_DIGIT_PATTERN = /^\d+$/
-const PARTIAL_COLON_PATTERN = /^\d+:?$/
-const PARTIAL_HOURS_PATTERN = /^\d+h\s*\d*$/
 
 /**
  * Parse a duration string into minutes
@@ -96,7 +93,7 @@ export function parseDuration(input: string): ParsedDuration {
 /**
  * Format minutes into a human-readable string
  */
-export function formatDuration(totalMinutes: number): string {
+function formatDuration(totalMinutes: number): string {
   if (totalMinutes <= 0) {
     return '0m'
   }
@@ -131,34 +128,4 @@ export function formatDurationForInput(totalMinutes: number): string {
     return `${hours}h`
   }
   return `${hours}h ${mins}m`
-}
-
-/**
- * Validate and normalize duration input as user types
- */
-export function validateDurationInput(input: string): {
-  isValid: boolean
-  preview: string | null
-} {
-  const parsed = parseDuration(input)
-
-  if (parsed.isValid && parsed.minutes > 0) {
-    return { isValid: true, preview: parsed.formatted }
-  }
-
-  // Check if it's a partial valid input (user is still typing)
-  const trimmed = input.trim().toLowerCase()
-  if (
-    PARTIAL_DIGIT_PATTERN.test(trimmed) ||
-    PARTIAL_COLON_PATTERN.test(trimmed) ||
-    PARTIAL_HOURS_PATTERN.test(trimmed)
-  ) {
-    return { isValid: true, preview: null }
-  }
-
-  if (!trimmed) {
-    return { isValid: true, preview: null }
-  }
-
-  return { isValid: false, preview: null }
 }

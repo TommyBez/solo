@@ -43,23 +43,35 @@ interface ClientFormProps {
   onSuccess?: () => void
 }
 
+interface ClientFormState {
+  address: string
+  currency: string
+  email: string
+  hourlyRate: string
+  name: string
+  notes: string
+  phone: string
+}
+
 export function ClientForm({ client, onSuccess }: ClientFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [name, setName] = useState(client?.name ?? '')
-  const [email, setEmail] = useState(client?.email ?? '')
-  const [phone, setPhone] = useState(client?.phone ?? '')
-  const [address, setAddress] = useState(client?.address ?? '')
-  const [hourlyRate, setHourlyRate] = useState(client?.hourlyRate ?? '')
-  const [currency, setCurrency] = useState(client?.currency ?? 'USD')
-  const [notes, setNotes] = useState(client?.notes ?? '')
+  const [form, setForm] = useState<ClientFormState>(() => ({
+    name: client?.name ?? '',
+    email: client?.email ?? '',
+    phone: client?.phone ?? '',
+    address: client?.address ?? '',
+    hourlyRate: client?.hourlyRate ?? '',
+    currency: client?.currency ?? 'USD',
+    notes: client?.notes ?? '',
+  }))
 
   const isEditing = !!client
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!name.trim()) {
+    if (!form.name.trim()) {
       toast.error('Client name is required')
       return
     }
@@ -67,13 +79,13 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
     setIsLoading(true)
     try {
       const data = {
-        name: name.trim(),
-        email: email.trim() || null,
-        phone: phone.trim() || null,
-        address: address.trim() || null,
-        hourlyRate: hourlyRate ? String(hourlyRate) : null,
-        currency,
-        notes: notes.trim() || null,
+        name: form.name.trim(),
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        address: form.address.trim() || null,
+        hourlyRate: form.hourlyRate ? String(form.hourlyRate) : null,
+        currency: form.currency,
+        notes: form.notes.trim() || null,
       }
 
       if (isEditing) {
@@ -101,10 +113,12 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
         <Label htmlFor="name">Client Name *</Label>
         <Input
           id="name"
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, name: e.target.value }))
+          }}
           placeholder="Acme Corp"
           required
-          value={name}
+          value={form.name}
         />
       </div>
 
@@ -113,19 +127,23 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, email: e.target.value }))
+            }}
             placeholder="contact@acme.com"
             type="email"
-            value={email}
+            value={form.email}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
           <Input
             id="phone"
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, phone: e.target.value }))
+            }}
             placeholder="+1 (555) 123-4567"
-            value={phone}
+            value={form.phone}
           />
         </div>
       </div>
@@ -134,10 +152,12 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
         <Label htmlFor="address">Address</Label>
         <Textarea
           id="address"
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, address: e.target.value }))
+          }}
           placeholder="123 Main St, City, Country"
           rows={2}
-          value={address}
+          value={form.address}
         />
       </div>
 
@@ -147,16 +167,23 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
           <Input
             id="hourlyRate"
             min="0"
-            onChange={(e) => setHourlyRate(e.target.value)}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, hourlyRate: e.target.value }))
+            }}
             placeholder="150.00"
             step="0.01"
             type="number"
-            value={hourlyRate}
+            value={form.hourlyRate}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="currency">Currency</Label>
-          <Select onValueChange={setCurrency} value={currency}>
+          <Select
+            onValueChange={(currency) => {
+              setForm((prev) => ({ ...prev, currency }))
+            }}
+            value={form.currency}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -175,10 +202,12 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
         <Label htmlFor="notes">Notes</Label>
         <Textarea
           id="notes"
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => {
+            setForm((prev) => ({ ...prev, notes: e.target.value }))
+          }}
           placeholder="Additional notes about the client..."
           rows={3}
-          value={notes}
+          value={form.notes}
         />
       </div>
 

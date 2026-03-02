@@ -70,19 +70,3 @@ export async function archiveClient(id: number) {
   revalidateTag('clients', 'max')
   return client
 }
-
-export async function unarchiveClient(id: number) {
-  const session = await requireSession()
-
-  const [client] = await db
-    .update(clients)
-    .set({
-      archived: false,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(clients.id, id), eq(clients.userId, session.user.id)))
-    .returning()
-
-  revalidateTag('clients', 'max')
-  return client
-}
