@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
 import { deleteArea, updateArea } from '@/lib/actions/areas'
+import { EMPTY_CLIENTS } from '@/lib/constants/areas'
 import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
@@ -55,8 +56,6 @@ interface AreaCardProps {
   }
   clients?: Client[]
 }
-
-const EMPTY_CLIENTS: Client[] = []
 
 export function AreaCard({ area, clients = EMPTY_CLIENTS }: AreaCardProps) {
   const router = useRouter()

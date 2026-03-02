@@ -1,6 +1,8 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
+
+const MILLISECONDS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
 import { db } from '@/lib/db'
 import { areas, projects } from '@/lib/db/schema'
 
@@ -65,7 +67,7 @@ async function getProjectsWithStatsCached(userId: string) {
   }
 
   const now = new Date()
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const weekAgo = new Date(now.getTime() - MILLISECONDS_PER_WEEK)
 
   const projectsData = await db.query.projects.findMany({
     where: and(

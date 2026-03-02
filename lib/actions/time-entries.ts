@@ -52,6 +52,7 @@ export async function createTimeEntry(data: {
 export async function updateTimeEntry(
   id: number,
   data: {
+    projectId?: number
     description?: string
     startTime?: Date
     endTime?: Date
@@ -66,9 +67,20 @@ export async function updateTimeEntry(
     throw new Error('Unauthorized')
   }
 
+  const updateData = { ...data }
+  if (updateData.projectId !== undefined) {
+    const ownsProject = await verifyProjectOwnership(
+      updateData.projectId,
+      session.user.id,
+    )
+    if (!ownsProject) {
+      throw new Error('Unauthorized')
+    }
+  }
+
   const result = await db
     .update(timeEntries)
-    .set(data)
+    .set(updateData)
     .where(eq(timeEntries.id, id))
     .returning()
   revalidateTag('time-entries', 'max')

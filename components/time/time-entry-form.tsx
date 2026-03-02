@@ -124,6 +124,9 @@ export function TimeEntryForm({
     try {
       if (isEditing) {
         await updateTimeEntry(entry.id, {
+          ...(form.projectId && {
+            projectId: Number.parseInt(form.projectId, 10),
+          }),
           description: form.description.trim() || undefined,
           startTime,
           endTime,

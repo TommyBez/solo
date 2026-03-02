@@ -11,14 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { EMPTY_CLIENTS } from '@/lib/constants/areas'
 import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
 interface CreateAreaDialogProps {
   clients?: Client[]
 }
-
-const EMPTY_CLIENTS: Client[] = []
 
 export function CreateAreaDialog({
   clients = EMPTY_CLIENTS,

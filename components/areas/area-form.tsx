@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { createArea, updateArea } from '@/lib/actions/areas'
+import { DEFAULT_EXPECTED_HOURS_PER_WEEK, EMPTY_CLIENTS } from '@/lib/constants/areas'
 import type { Client } from '@/lib/db/schema'
 
 // Partial area type for form - only fields needed for editing
@@ -58,8 +59,6 @@ interface AreaFormState {
   name: string
 }
 
-const EMPTY_CLIENTS: Client[] = []
-
 export function AreaForm({
   area,
   clients = EMPTY_CLIENTS,
@@ -71,7 +70,7 @@ export function AreaForm({
     name: area?.name ?? '',
     description: area?.description ?? '',
     color: area?.color ?? PRESET_COLORS[0],
-    expectedHoursPerWeek: area?.expectedHoursPerWeek ?? 10,
+    expectedHoursPerWeek: area?.expectedHoursPerWeek ?? DEFAULT_EXPECTED_HOURS_PER_WEEK,
     clientId: area?.clientId?.toString() ?? '',
   }))
 
@@ -167,10 +166,8 @@ export function AreaForm({
                 {form.clientId ? (
                   <div className="flex items-center gap-2">
                     <Building2 className="size-4" />
-                    {
-                      clients.find((c) => c.id.toString() === form.clientId)
-                        ?.name
-                    }
+                    {clients.find((c) => c.id.toString() === form.clientId)?.name ??
+                      'Unknown client'}
                   </div>
                 ) : (
                   'No client assigned'
