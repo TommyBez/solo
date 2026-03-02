@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'solo-timer-state'
 
-type TimerState = {
-  isRunning: boolean
-  startTime: number | null // Unix timestamp when timer started
+interface TimerState {
   accumulatedSeconds: number // Seconds accumulated before pause
-  projectId: string
   description: string
+  isRunning: boolean
+  projectId: string
+  startTime: number | null // Unix timestamp when timer started
 }
 
 const defaultState: TimerState = {

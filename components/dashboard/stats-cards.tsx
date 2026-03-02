@@ -10,14 +10,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
-type StatsCardsProps = {
-  weeklyHours: number
-  weeklyChange: number
-  monthlyHours: number
-  monthlyChange: number
+interface StatsCardsProps {
   activeAreasCount: number
   activeProjectsCount: number
+  monthlyChange: number
+  monthlyHours: number
   totalExpectedWeeklyHours: number
+  weeklyChange: number
+  weeklyHours: number
 }
 
 function TrendIndicator({ change, label }: { change: number; label: string }) {

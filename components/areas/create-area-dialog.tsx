@@ -14,7 +14,7 @@ import {
 import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
-type CreateAreaDialogProps = {
+interface CreateAreaDialogProps {
   clients?: Client[]
 }
 

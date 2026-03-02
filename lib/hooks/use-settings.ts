@@ -2,17 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-export type Settings = {
-  // Company Information
-  companyName: string
-  companyEmail: string
-  companyPhone: string
+export interface Settings {
   companyAddress: string
-
-  // Display Preferences
-  weekStartsOn: '0' | '1' // 0 = Sunday, 1 = Monday
+  companyEmail: string
+  companyName: string
+  companyPhone: string
   dateFormat: string
   timeFormat: '12' | '24'
+  weekStartsOn: '0' | '1' // 0 = Sunday, 1 = Monday
 }
 
 const defaultSettings: Settings = {

@@ -16,7 +16,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
-type AreasComparisonChartProps = {
+interface AreasComparisonChartProps {
   data: Array<{
     name: string
     color: string

@@ -8,7 +8,7 @@ import {
   useKeyboardShortcuts,
 } from '@/lib/hooks/use-keyboard-shortcuts'
 
-type KeyboardShortcutsProviderProps = {
+interface KeyboardShortcutsProviderProps {
   children: ReactNode
 }
 

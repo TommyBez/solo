@@ -14,7 +14,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
-type DailyBreakdownChartProps = {
+interface DailyBreakdownChartProps {
   data: Array<{
     date: string
     dayName: string

@@ -18,7 +18,7 @@ import {
 } from '@/lib/hooks/use-keyboard-shortcuts'
 import { TimeEntryForm } from './time-entry-form'
 
-type AddTimeEntryDialogProps = {
+interface AddTimeEntryDialogProps {
   projects: (Project & { area: Area })[]
 }
 

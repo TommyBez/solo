@@ -29,7 +29,7 @@ import {
   usePersistedTimer,
 } from '@/lib/hooks/use-persisted-timer'
 
-type TimerWidgetProps = {
+interface TimerWidgetProps {
   projects: (Project & { area: Area })[]
 }
 
