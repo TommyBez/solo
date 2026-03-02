@@ -38,10 +38,20 @@ function buildCsv(
   ])
 
   const escapeCsvField = (field: string): string => {
-    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-      return `"${field.replace(/"/g, '""')}"`
+    const trimmed = field.trim()
+    // CSV formula injection mitigation: prefix fields starting with =, +, -, @
+    let processed = field
+    if (/^[=+\-@]/.test(trimmed)) {
+      processed = "'" + field
     }
-    return field
+    if (
+      processed.includes(',') ||
+      processed.includes('"') ||
+      processed.includes('\n')
+    ) {
+      return `"${processed.replace(/"/g, '""')}"`
+    }
+    return processed
   }
 
   const csvLines = [
