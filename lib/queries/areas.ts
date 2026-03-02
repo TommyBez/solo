@@ -1,19 +1,18 @@
 import { and, desc, eq, gte } from 'drizzle-orm'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
 
-export async function getAreas(includeArchived = false) {
-  const session = await getSession()
-  if (!session?.user) {
-    return []
-  }
-
+async function getAreasCached(userId: string, includeArchived: boolean) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('areas', 'projects')
   const conditions = includeArchived
-    ? eq(areas.userId, session.user.id)
-    : and(eq(areas.userId, session.user.id), eq(areas.archived, false))
+    ? eq(areas.userId, userId)
+    : and(eq(areas.userId, userId), eq(areas.archived, false))
 
-  const result = await db.query.areas.findMany({
+  return await db.query.areas.findMany({
     where: conditions,
     orderBy: [desc(areas.createdAt)],
     with: {
@@ -22,18 +21,23 @@ export async function getAreas(includeArchived = false) {
       },
     },
   })
-
-  return result
 }
 
-export async function getAreaById(id: number) {
+export async function getAreas(includeArchived = false) {
   const session = await getSession()
   if (!session?.user) {
-    return null
+    return []
   }
 
-  return db.query.areas.findFirst({
-    where: and(eq(areas.id, id), eq(areas.userId, session.user.id)),
+  return getAreasCached(session.user.id, includeArchived)
+}
+
+async function getAreaByIdCached(userId: string, id: number) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('areas', 'projects', 'time-entries')
+  return await db.query.areas.findFirst({
+    where: and(eq(areas.id, id), eq(areas.userId, userId)),
     with: {
       projects: {
         where: eq(projects.archived, false),
@@ -45,17 +49,24 @@ export async function getAreaById(id: number) {
   })
 }
 
-export async function getAreasWithStats() {
+export async function getAreaById(id: number) {
   const session = await getSession()
   if (!session?.user) {
-    return []
+    return null
   }
 
+  return getAreaByIdCached(session.user.id, id)
+}
+
+async function getAreasWithStatsCached(userId: string) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('areas', 'projects', 'time-entries')
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   const areasData = await db.query.areas.findMany({
-    where: and(eq(areas.userId, session.user.id), eq(areas.archived, false)),
+    where: and(eq(areas.userId, userId), eq(areas.archived, false)),
     orderBy: [desc(areas.createdAt)],
     with: {
       projects: {
@@ -92,4 +103,13 @@ export async function getAreasWithStats() {
       projectCount: area.projects.length,
     }
   })
+}
+
+export async function getAreasWithStats() {
+  const session = await getSession()
+  if (!session?.user) {
+    return []
+  }
+
+  return getAreasWithStatsCached(session.user.id)
 }

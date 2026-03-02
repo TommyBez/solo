@@ -1,7 +1,7 @@
 'use server'
 
 import { and, eq } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { requireSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { clients, type NewClient } from '@/lib/db/schema'
@@ -20,8 +20,8 @@ export async function createClient(
     })
     .returning()
 
-  revalidatePath('/clients')
-  revalidatePath('/areas')
+  revalidateTag('clients', 'max')
+  revalidateTag('areas', 'max')
   return client
 }
 
@@ -40,8 +40,8 @@ export async function updateClient(
     .where(and(eq(clients.id, id), eq(clients.userId, session.user.id)))
     .returning()
 
-  revalidatePath('/clients')
-  revalidatePath('/areas')
+  revalidateTag('clients', 'max')
+  revalidateTag('areas', 'max')
   return client
 }
 
@@ -51,8 +51,8 @@ export async function deleteClient(id: number) {
   await db
     .delete(clients)
     .where(and(eq(clients.id, id), eq(clients.userId, session.user.id)))
-  revalidatePath('/clients')
-  revalidatePath('/areas')
+  revalidateTag('clients', 'max')
+  revalidateTag('areas', 'max')
 }
 
 export async function archiveClient(id: number) {
@@ -67,7 +67,7 @@ export async function archiveClient(id: number) {
     .where(and(eq(clients.id, id), eq(clients.userId, session.user.id)))
     .returning()
 
-  revalidatePath('/clients')
+  revalidateTag('clients', 'max')
   return client
 }
 
@@ -83,6 +83,6 @@ export async function unarchiveClient(id: number) {
     .where(and(eq(clients.id, id), eq(clients.userId, session.user.id)))
     .returning()
 
-  revalidatePath('/clients')
+  revalidateTag('clients', 'max')
   return client
 }

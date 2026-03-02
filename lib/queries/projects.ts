@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
@@ -12,13 +13,15 @@ async function getUserAreaIds(userId: string): Promise<number[]> {
   return userAreas.map((a) => a.id)
 }
 
-export async function getProjects(areaId?: number, includeArchived = false) {
-  const session = await getSession()
-  if (!session?.user) {
-    return []
-  }
-
-  const userAreaIds = await getUserAreaIds(session.user.id)
+async function getProjectsCached(
+  userId: string,
+  areaId?: number,
+  includeArchived = false,
+) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('projects', 'areas', 'time-entries')
+  const userAreaIds = await getUserAreaIds(userId)
   if (userAreaIds.length === 0) {
     return []
   }
@@ -43,13 +46,20 @@ export async function getProjects(areaId?: number, includeArchived = false) {
   })
 }
 
-export async function getProjectById(id: number) {
+export async function getProjects(areaId?: number, includeArchived = false) {
   const session = await getSession()
   if (!session?.user) {
-    return null
+    return []
   }
 
-  const userAreaIds = await getUserAreaIds(session.user.id)
+  return getProjectsCached(session.user.id, areaId, includeArchived)
+}
+
+async function getProjectByIdCached(userId: string, id: number) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('projects', 'areas', 'time-entries')
+  const userAreaIds = await getUserAreaIds(userId)
   if (userAreaIds.length === 0) {
     return null
   }
@@ -65,13 +75,20 @@ export async function getProjectById(id: number) {
   })
 }
 
-export async function getProjectsWithStats() {
+export async function getProjectById(id: number) {
   const session = await getSession()
   if (!session?.user) {
-    return []
+    return null
   }
 
-  const userAreaIds = await getUserAreaIds(session.user.id)
+  return getProjectByIdCached(session.user.id, id)
+}
+
+async function getProjectsWithStatsCached(userId: string) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('projects', 'areas', 'time-entries')
+  const userAreaIds = await getUserAreaIds(userId)
   if (userAreaIds.length === 0) {
     return []
   }
@@ -113,4 +130,13 @@ export async function getProjectsWithStats() {
       percentageComplete,
     }
   })
+}
+
+export async function getProjectsWithStats() {
+  const session = await getSession()
+  if (!session?.user) {
+    return []
+  }
+
+  return getProjectsWithStatsCached(session.user.id)
 }

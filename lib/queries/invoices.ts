@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm'
+import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import {
@@ -28,13 +29,11 @@ async function getUserProjectIds(userId: string): Promise<number[]> {
   return userProjects.map((p) => p.id)
 }
 
-export async function getInvoices(clientId?: number) {
-  const session = await getSession()
-  if (!session?.user) {
-    return []
-  }
-
-  const userClientIds = await getUserClientIds(session.user.id)
+async function getInvoicesCached(userId: string, clientId?: number) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('invoices', 'clients')
+  const userClientIds = await getUserClientIds(userId)
   if (userClientIds.length === 0) {
     return []
   }
@@ -55,13 +54,20 @@ export async function getInvoices(clientId?: number) {
   })
 }
 
-export async function getInvoice(id: number) {
+export async function getInvoices(clientId?: number) {
   const session = await getSession()
   if (!session?.user) {
-    return null
+    return []
   }
 
-  const userClientIds = await getUserClientIds(session.user.id)
+  return getInvoicesCached(session.user.id, clientId)
+}
+
+async function getInvoiceCached(userId: string, id: number) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('invoices', 'clients', 'time-entries')
+  const userClientIds = await getUserClientIds(userId)
   if (userClientIds.length === 0) {
     return null
   }
@@ -87,18 +93,26 @@ export async function getInvoice(id: number) {
   })
 }
 
-export async function getUnbilledTimeEntries(
-  clientId: number,
-  startDate?: Date,
-  endDate?: Date,
-) {
+export async function getInvoice(id: number) {
   const session = await getSession()
   if (!session?.user) {
-    return []
+    return null
   }
 
+  return getInvoiceCached(session.user.id, id)
+}
+
+async function getUnbilledTimeEntriesCached(
+  userId: string,
+  clientId: number,
+  startDateIso?: string,
+  endDateIso?: string,
+) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('time-entries', 'projects', 'areas', 'clients', 'invoices')
   // Verify user owns this client
-  const userClientIds = await getUserClientIds(session.user.id)
+  const userClientIds = await getUserClientIds(userId)
   if (!userClientIds.includes(clientId)) {
     return []
   }
@@ -108,7 +122,7 @@ export async function getUnbilledTimeEntries(
     .select({ id: projects.id })
     .from(projects)
     .innerJoin(areas, eq(projects.areaId, areas.id))
-    .where(and(eq(areas.clientId, clientId), eq(areas.userId, session.user.id)))
+    .where(and(eq(areas.clientId, clientId), eq(areas.userId, userId)))
     .then((rows) => rows.map((r) => r.id))
 
   if (clientProjectIds.length === 0) {
@@ -121,10 +135,12 @@ export async function getUnbilledTimeEntries(
     isNull(timeEntries.invoiceId),
   ]
 
-  if (startDate) {
+  if (startDateIso) {
+    const startDate = new Date(startDateIso)
     conditions.push(gte(timeEntries.startTime, startDate))
   }
-  if (endDate) {
+  if (endDateIso) {
+    const endDate = new Date(endDateIso)
     conditions.push(lte(timeEntries.startTime, endDate))
   }
 
@@ -143,6 +159,24 @@ export async function getUnbilledTimeEntries(
       },
     },
   })
+}
+
+export async function getUnbilledTimeEntries(
+  clientId: number,
+  startDate?: Date,
+  endDate?: Date,
+) {
+  const session = await getSession()
+  if (!session?.user) {
+    return []
+  }
+
+  return getUnbilledTimeEntriesCached(
+    session.user.id,
+    clientId,
+    startDate?.toISOString(),
+    endDate?.toISOString(),
+  )
 }
 
 export async function generateInvoiceNumber(): Promise<string> {
@@ -173,13 +207,11 @@ export async function generateInvoiceNumber(): Promise<string> {
   return `${prefix}${nextNumber.toString().padStart(4, '0')}`
 }
 
-export async function getAllUnbilledTimeEntries() {
-  const session = await getSession()
-  if (!session?.user) {
-    return {}
-  }
-
-  const userProjectIds = await getUserProjectIds(session.user.id)
+async function getAllUnbilledTimeEntriesCached(userId: string) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('time-entries', 'projects', 'areas', 'clients', 'invoices')
+  const userProjectIds = await getUserProjectIds(userId)
   if (userProjectIds.length === 0) {
     return {}
   }
@@ -221,20 +253,20 @@ export async function getAllUnbilledTimeEntries() {
   return entriesByClient
 }
 
-export async function getInvoiceStats() {
+export async function getAllUnbilledTimeEntries() {
   const session = await getSession()
   if (!session?.user) {
-    return {
-      draft: 0,
-      sent: 0,
-      paid: 0,
-      overdue: 0,
-      totalOutstanding: 0,
-      totalPaid: 0,
-    }
+    return {}
   }
 
-  const userClientIds = await getUserClientIds(session.user.id)
+  return getAllUnbilledTimeEntriesCached(session.user.id)
+}
+
+async function getInvoiceStatsCached(userId: string) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('invoices', 'clients')
+  const userClientIds = await getUserClientIds(userId)
   if (userClientIds.length === 0) {
     return {
       draft: 0,
@@ -287,4 +319,20 @@ export async function getInvoiceStats() {
   }
 
   return stats
+}
+
+export async function getInvoiceStats() {
+  const session = await getSession()
+  if (!session?.user) {
+    return {
+      draft: 0,
+      sent: 0,
+      paid: 0,
+      overdue: 0,
+      totalOutstanding: 0,
+      totalPaid: 0,
+    }
+  }
+
+  return getInvoiceStatsCached(session.user.id)
 }

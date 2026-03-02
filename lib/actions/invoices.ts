@@ -1,7 +1,7 @@
 'use server'
 
 import { and, eq } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 import { requireSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import {
@@ -84,8 +84,8 @@ export async function createInvoice(
     }
   }
 
-  revalidatePath('/invoices')
-  revalidatePath('/time')
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
   return invoice
 }
 
@@ -110,8 +110,7 @@ export async function updateInvoice(
     .where(eq(invoices.id, id))
     .returning()
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${id}`)
+  revalidateTag('invoices', 'max')
   return invoice
 }
 
@@ -136,8 +135,7 @@ export async function updateInvoiceStatus(
     .where(eq(invoices.id, id))
     .returning()
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${id}`)
+  revalidateTag('invoices', 'max')
   return invoice
 }
 
@@ -159,8 +157,8 @@ export async function deleteInvoice(id: number) {
   // Delete invoice (line items cascade)
   await db.delete(invoices).where(eq(invoices.id, id))
 
-  revalidatePath('/invoices')
-  revalidatePath('/time')
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
 }
 
 export async function addLineItem(
@@ -194,8 +192,8 @@ export async function addLineItem(
       .where(eq(timeEntries.id, item.timeEntryId))
   }
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${invoiceId}`)
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
   return lineItem
 }
 
@@ -235,8 +233,8 @@ export async function removeLineItem(lineItemId: number) {
   // Recalculate invoice totals
   await recalculateInvoiceTotals(lineItem.invoiceId)
 
-  revalidatePath('/invoices')
-  revalidatePath(`/invoices/${lineItem.invoiceId}`)
+  revalidateTag('invoices', 'max')
+  revalidateTag('time-entries', 'max')
 }
 
 async function recalculateInvoiceTotals(invoiceId: number) {
