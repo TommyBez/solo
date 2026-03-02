@@ -168,6 +168,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
   }
 
+  if (start.getTime() > end.getTime()) {
+    return NextResponse.json(
+      { error: 'Start date must be on or before end date' },
+      { status: 400 },
+    )
+  }
+
   const entries = await getTimeEntriesForProjectAndDateRange(
     parsedProjectId,
     start,
