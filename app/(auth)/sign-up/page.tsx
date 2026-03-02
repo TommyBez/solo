@@ -1,9 +1,12 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,40 +16,53 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { signUp } from '@/lib/auth/client'
+
+const signUpSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.string().email('Please enter a valid email'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
+
+type SignUpFormValues = z.infer<typeof signUpSchema>
 
 export default function SignUpPage() {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = form.handleSubmit(async (values) => {
     setError('')
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
-    }
-
-    setIsLoading(true)
 
     try {
       const result = await signUp.email({
-        name,
-        email,
-        password,
+        name: values.name,
+        email: values.email,
+        password: values.password,
       })
 
       if (result.error) {
@@ -57,10 +73,8 @@ export default function SignUpPage() {
       }
     } catch {
       setError('An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
     }
-  }
+  })
 
   return (
     <Card>
@@ -70,75 +84,101 @@ export default function SignUpPage() {
           Enter your details to create a new account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          {error && (
-            <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              disabled={isLoading}
-              id="name"
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              required
-              type="text"
-              value={name}
+      <Form {...form}>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4 p-4">
+            {error ? (
+              <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
+                {error}
+              </div>
+            ) : null}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="Your name"
+                      type="text"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              disabled={isLoading}
-              id="email"
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              type="email"
-              value={email}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="you@example.com"
+                      type="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              disabled={isLoading}
-              id="password"
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              required
-              type="password"
-              value={password}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="Create a password"
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              disabled={isLoading}
-              id="confirmPassword"
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              required
-              type="password"
-              value={confirmPassword}
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="Confirm your password"
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col gap-4">
-          <Button className="w-full" disabled={isLoading} type="submit">
-            {isLoading && <Loader2 className="animate-spin" />}
-            Create Account
-          </Button>
-          <p className="text-center text-muted-foreground text-xs">
-            Already have an account?{' '}
-            <Link className="text-primary hover:underline" href="/sign-in">
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
+          </CardContent>
+          <CardFooter className="flex-col gap-4">
+            <Button className="w-full" disabled={isLoading} type="submit">
+              {isLoading ? <Loader2 className="animate-spin" /> : null}
+              Create Account
+            </Button>
+            <p className="text-center text-muted-foreground text-xs">
+              Already have an account?{' '}
+              <Link className="text-primary hover:underline" href="/sign-in">
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   )
 }
