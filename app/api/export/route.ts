@@ -57,7 +57,7 @@ function buildPdf(
   projectName: string,
   startDate: string,
   endDate: string,
-): Uint8Array {
+): ArrayBuffer {
   const doc = new jsPDF()
 
   // Title
@@ -117,7 +117,7 @@ function buildPdf(
     },
   })
 
-  return doc.output('arraybuffer') as unknown as Uint8Array
+  return doc.output('arraybuffer')
 }
 
 export async function GET(request: NextRequest) {
