@@ -2,23 +2,23 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-export type Settings = {
+export interface Settings {
+  companyAddress: string
+  companyEmail: string
   // Company Information
   companyName: string
-  companyEmail: string
   companyPhone: string
-  companyAddress: string
+  dateFormat: string
 
   // Invoice Defaults
   defaultCurrency: string
   defaultTaxRate: string
-  paymentTerms: string
   invoiceNotes: string
+  paymentTerms: string
+  timeFormat: '12' | '24'
 
   // Display Preferences
   weekStartsOn: '0' | '1' // 0 = Sunday, 1 = Monday
-  dateFormat: string
-  timeFormat: '12' | '24'
 }
 
 const defaultSettings: Settings = {

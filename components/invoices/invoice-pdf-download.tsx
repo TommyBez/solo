@@ -8,7 +8,7 @@ import type { Client, Invoice, InvoiceLineItem } from '@/lib/db/schema'
 import { getStoredSettings } from '@/lib/hooks/use-settings'
 import { InvoicePDFTemplate } from './invoice-pdf-template'
 
-type InvoicePDFDownloadProps = {
+interface InvoicePDFDownloadProps {
   invoice: Invoice & {
     client: Client
     lineItems: InvoiceLineItem[]

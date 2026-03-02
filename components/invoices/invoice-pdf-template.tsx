@@ -196,13 +196,13 @@ const styles = StyleSheet.create({
   },
 })
 
-type InvoicePDFTemplateProps = {
+interface InvoicePDFTemplateProps {
+  companyAddress?: string
+  companyName?: string
   invoice: Invoice & {
     client: Client
     lineItems: InvoiceLineItem[]
   }
-  companyName?: string
-  companyAddress?: string
 }
 
 const formatCurrency = (amount: string | null, currency: string) => {

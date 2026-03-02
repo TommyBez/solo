@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-type RecentEntriesProps = {
+interface RecentEntriesProps {
   entries: Array<{
     id: number
     description: string | null

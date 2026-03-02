@@ -13,7 +13,7 @@ import {
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
-type InvoicesContentProps = {
+interface InvoicesContentProps {
   clients: Awaited<ReturnType<typeof getClients>>
   filteredInvoices: Awaited<ReturnType<typeof getInvoices>>
   initialInvoiceNumber: string

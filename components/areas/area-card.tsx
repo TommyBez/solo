@@ -41,7 +41,7 @@ import { deleteArea, updateArea } from '@/lib/actions/areas'
 import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
-type AreaCardProps = {
+interface AreaCardProps {
   area: {
     id: number
     name: string

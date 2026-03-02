@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect } from 'react'
 
-export type KeyboardShortcut = {
-  key: string
+export interface KeyboardShortcut {
+  alt?: boolean
   ctrl?: boolean
+  description?: string
+  handler: () => void
+  key: string
   meta?: boolean
   shift?: boolean
-  alt?: boolean
-  handler: () => void
-  description?: string
 }
 
-type UseKeyboardShortcutsOptions = {
-  shortcuts: KeyboardShortcut[]
+interface UseKeyboardShortcutsOptions {
   enabled?: boolean
+  shortcuts: KeyboardShortcut[]
 }
 
 function isInputElement(target: HTMLElement): boolean {

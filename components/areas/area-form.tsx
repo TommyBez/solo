@@ -20,13 +20,13 @@ import { createArea, updateArea } from '@/lib/actions/areas'
 import type { Client } from '@/lib/db/schema'
 
 // Partial area type for form - only fields needed for editing
-type AreaFormData = {
+interface AreaFormData {
+  clientId: number | null
+  color: string
+  description: string | null
+  expectedHoursPerWeek: number
   id: number
   name: string
-  description: string | null
-  color: string
-  expectedHoursPerWeek: number
-  clientId: number | null
 }
 
 const PRESET_COLORS = [
@@ -44,7 +44,7 @@ const PRESET_COLORS = [
   '#3b82f6', // blue
 ]
 
-type AreaFormProps = {
+interface AreaFormProps {
   area?: AreaFormData
   clients?: Client[]
   onSuccess?: () => void

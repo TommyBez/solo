@@ -28,7 +28,7 @@ import {
 import { deleteInvoice, updateInvoiceStatus } from '@/lib/actions/invoices'
 import type { Client, Invoice, InvoiceLineItem } from '@/lib/db/schema'
 
-type InvoiceCardProps = {
+interface InvoiceCardProps {
   invoice: Invoice & {
     client: Client
     lineItems: InvoiceLineItem[]
