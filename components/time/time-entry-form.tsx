@@ -72,26 +72,40 @@ export function TimeEntryForm({
 
   const isEditing = !!entry
 
-  // Group projects by area
-  const projectsByArea = projects.reduce(
-    (acc, project) => {
-      const areaName = project.area.name
-      if (!acc[areaName]) {
-        acc[areaName] = {
-          area: project.area,
-          projects: [],
-        }
-      }
-      acc[areaName].projects.push(project)
-      return acc
-    },
-    {} as Record<string, { area: Area; projects: typeof projects }>,
+  // Deduplicate projects by id to prevent duplicate key errors
+  const uniqueProjects = projects.filter(
+    (project, index, self) =>
+      index === self.findIndex((p) => p.id === project.id),
   )
 
   // Get recent projects that still exist
   const recentProjects = recentProjectIds
-    .map((id) => projects.find((p) => p.id.toString() === id))
+    .map((id) => uniqueProjects.find((p) => p.id.toString() === id))
     .filter((p): p is Project & { area: Area } => p !== undefined)
+
+  const recentProjectIdSet = new Set(
+    recentProjects.map((project) => project.id.toString()),
+  )
+
+  // Group remaining projects by area (excluding those already shown in "Recent")
+  const projectsByArea = uniqueProjects.reduce(
+    (acc, project) => {
+      if (recentProjectIdSet.has(project.id.toString())) {
+        return acc
+      }
+
+      const areaKey = project.area.id.toString()
+      if (!acc[areaKey]) {
+        acc[areaKey] = {
+          area: project.area,
+          projects: [],
+        }
+      }
+      acc[areaKey].projects.push(project)
+      return acc
+    },
+    {} as Record<string, { area: Area; projects: typeof uniqueProjects }>,
+  )
 
   const handleDurationChange = (value: string) => {
     let durationError: string | null = null
@@ -207,15 +221,15 @@ export function TimeEntryForm({
                 <Separator className="my-1" />
               </>
             )}
-            {Object.entries(projectsByArea).map(
-              ([areaName, { area, projects: areaProjects }]) => (
-                <SelectGroup key={areaName}>
+            {Object.values(projectsByArea).map(
+              ({ area, projects: areaProjects }) => (
+                <SelectGroup key={area.id}>
                   <SelectLabel className="flex items-center gap-2">
                     <div
                       className="size-2 rounded-full"
                       style={{ backgroundColor: area.color }}
                     />
-                    {areaName}
+                    {area.name}
                   </SelectLabel>
                   {areaProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id.toString()}>

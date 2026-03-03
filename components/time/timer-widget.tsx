@@ -117,8 +117,14 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
 
   useShortcutEvent(SHORTCUT_EVENTS.TOGGLE_TIMER, handleToggleTimer)
 
+  // Deduplicate projects by id to prevent duplicate key errors
+  const uniqueProjects = projects.filter(
+    (project, index, self) =>
+      index === self.findIndex((p) => p.id === project.id),
+  )
+
   // Group projects by area
-  const projectsByArea = projects.reduce(
+  const projectsByArea = uniqueProjects.reduce(
     (acc, project) => {
       const areaName = project.area.name
       if (!acc[areaName]) {
@@ -130,15 +136,17 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
       acc[areaName].projects.push(project)
       return acc
     },
-    {} as Record<string, { area: Area; projects: typeof projects }>,
+    {} as Record<string, { area: Area; projects: typeof uniqueProjects }>,
   )
 
   // Get recent projects that still exist
   const recentProjects = recentProjectIds
-    .map((id) => projects.find((p) => p.id.toString() === id))
+    .map((id) => uniqueProjects.find((p) => p.id.toString() === id))
     .filter((p): p is Project & { area: Area } => p !== undefined)
 
-  const selectedProject = projects.find((p) => p.id.toString() === projectId)
+  const selectedProject = uniqueProjects.find(
+    (p) => p.id.toString() === projectId,
+  )
 
   // Show skeleton while hydrating to prevent flash
   if (!isHydrated) {
