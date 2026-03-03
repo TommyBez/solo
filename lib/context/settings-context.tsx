@@ -7,6 +7,8 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useOptimistic,
+  useRef,
   useState,
   useTransition,
 } from 'react'
@@ -33,53 +35,74 @@ export function SettingsProvider({
   initialSettings,
 }: SettingsProviderProps) {
   const [settings, setSettings] = useState<Settings>(initialSettings)
+  const [optimisticSettings, addOptimisticSettings] = useOptimistic(
+    settings,
+    (currentSettings: Settings, updates: Partial<Settings>) => ({
+      ...currentSettings,
+      ...updates,
+    }),
+  )
   const [isPending, startTransition] = useTransition()
+  const latestUpdateId = useRef(0)
 
   const formatDate = useCallback(
     (date: Date | string, formatStr?: string) => {
       const d = typeof date === 'string' ? new Date(date) : date
-      const fmt = formatStr ?? settings.dateFormat
+      const fmt = formatStr ?? optimisticSettings.dateFormat
       return format(d, fmt)
     },
-    [settings.dateFormat],
+    [optimisticSettings.dateFormat],
   )
 
   const formatTime = useCallback(
     (date: Date | string) => {
       const d = typeof date === 'string' ? new Date(date) : date
-      const fmt = settings.timeFormat === '24' ? 'HH:mm' : 'h:mm a'
+      const fmt = optimisticSettings.timeFormat === '24' ? 'HH:mm' : 'h:mm a'
       return format(d, fmt)
     },
-    [settings.timeFormat],
+    [optimisticSettings.timeFormat],
   )
 
   const updateSettings = useCallback(
     (updates: Partial<Settings>) => {
-      const newSettings = { ...settings, ...updates }
-
-      // Optimistic update
-      setSettings(newSettings)
+      const previousSettings = settings
+      const updateId = ++latestUpdateId.current
 
       // Server update in transition
-      startTransition(() => {
-        updateSettingsAction(updates).catch(() => {
-          // Revert on error
-          setSettings(settings)
+      return new Promise<void>((resolve) => {
+        startTransition(() => {
+          addOptimisticSettings(updates)
+          updateSettingsAction(updates)
+            .then(() => {
+              setSettings((currentSettings) => ({
+                ...currentSettings,
+                ...updates,
+              }))
+            })
+            .catch(() => {
+              // Only revert if this is still the latest in-flight update.
+              if (updateId === latestUpdateId.current) {
+                setSettings(previousSettings)
+              }
+            })
+            .finally(() => {
+              resolve()
+            })
         })
       })
     },
-    [settings],
+    [addOptimisticSettings, settings],
   )
 
   const value = useMemo(
     () => ({
-      settings,
+      settings: optimisticSettings,
       formatDate,
       formatTime,
       updateSettings,
       isPending,
     }),
-    [settings, formatDate, formatTime, updateSettings, isPending],
+    [optimisticSettings, formatDate, formatTime, updateSettings, isPending],
   )
 
   return (
