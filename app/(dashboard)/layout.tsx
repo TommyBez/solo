@@ -41,30 +41,30 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <Suspense
-      fallback={
-        <SidebarProvider>
-          <div className="w-[--sidebar-width] shrink-0 border-r bg-sidebar" />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Solo</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </header>
-            <main className="flex-1 overflow-auto p-4 md:p-6">
-              <MainContentSkeleton />
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      }
-    >
-      <SettingsProviderWrapper>
-        <SidebarProvider>
+    <SidebarProvider>
+      <Suspense
+        fallback={
+          <>
+            <div className="w-[--sidebar-width] shrink-0 border-r bg-sidebar" />
+            <SidebarInset>
+              <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                <SidebarTrigger className="-ml-1" />
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Solo</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </header>
+              <main className="flex-1 overflow-auto p-4 md:p-6">
+                <MainContentSkeleton />
+              </main>
+            </SidebarInset>
+          </>
+        }
+      >
+        <SettingsProviderWrapper>
           <Suspense
             fallback={
               <div className="w-[--sidebar-width] shrink-0 border-r bg-sidebar" />
@@ -91,8 +91,8 @@ export default function DashboardLayout({
               </Suspense>
             </main>
           </SidebarInset>
-        </SidebarProvider>
-      </SettingsProviderWrapper>
-    </Suspense>
+        </SettingsProviderWrapper>
+      </Suspense>
+    </SidebarProvider>
   )
 }
