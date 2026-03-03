@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__hades-tools__get_diagnostics",
+      "mcp__hades-tools__get_tabs",
+      "mcp__hades-tools__browser_use_start",
+      "mcp__hades-tools__navigate",
+      "mcp__hades-tools__get_browser_state",
+      "mcp__hades-tools__click_element",
+      "mcp__hades-tools__browser_use_end"
+    ]
+  }
+}

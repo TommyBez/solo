@@ -161,9 +161,9 @@ export function AreaForm({
           <Label htmlFor="client">Client (optional)</Label>
           <Select
             onValueChange={(clientId) => {
-              setForm((prev) => ({ ...prev, clientId }))
+              setForm((prev) => ({ ...prev, clientId: clientId === 'none' ? '' : clientId }))
             }}
-            value={form.clientId}
+            value={form.clientId || 'none'}
           >
             <SelectTrigger>
               <SelectValue placeholder="No client assigned">
@@ -179,7 +179,7 @@ export function AreaForm({
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No client assigned</SelectItem>
+              <SelectItem value="none">No client assigned</SelectItem>
               {clients.map((client) => (
                 <SelectItem key={client.id} value={client.id.toString()}>
                   <div className="flex items-center gap-2">
