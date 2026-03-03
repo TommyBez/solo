@@ -1,5 +1,7 @@
 import { neon } from '@neondatabase/serverless'
-import { drizzle } from 'drizzle-orm/neon-http'
+import { drizzle as drizzleNeonHttp } from 'drizzle-orm/neon-http'
+import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres'
+import pg from 'pg'
 import {
   account,
   accountRelations,
@@ -24,26 +26,33 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set')
 }
 
-const sql = neon(process.env.DATABASE_URL)
+const schema = {
+  // Auth schema
+  user,
+  userRelations,
+  session,
+  sessionRelations,
+  account,
+  accountRelations,
+  verification,
+  // App schema
+  clients,
+  clientsRelations,
+  areas,
+  areasRelations,
+  projects,
+  projectsRelations,
+  timeEntries,
+  timeEntriesRelations,
+}
 
-export const db = drizzle(sql, {
-  schema: {
-    // Auth schema
-    user,
-    userRelations,
-    session,
-    sessionRelations,
-    account,
-    accountRelations,
-    verification,
-    // App schema
-    clients,
-    clientsRelations,
-    areas,
-    areasRelations,
-    projects,
-    projectsRelations,
-    timeEntries,
-    timeEntriesRelations,
-  },
-})
+function createDb() {
+  if (process.env.USE_LOCAL_DB === 'true') {
+    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+    return drizzleNodePg(pool, { schema })
+  }
+  const sql = neon(process.env.DATABASE_URL!)
+  return drizzleNeonHttp(sql, { schema })
+}
+
+export const db = createDb()
