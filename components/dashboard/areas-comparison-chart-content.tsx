@@ -12,7 +12,6 @@ import {
 interface AreasComparisonChartContentProps {
   data: Array<{
     name: string
-    color: string
     expected: number
     actual: number
   }>

@@ -24,7 +24,6 @@ const AreasComparisonChartContent = dynamic(
 interface AreasComparisonChartProps {
   data: Array<{
     name: string
-    color: string
     expected: number
     actual: number
   }>
