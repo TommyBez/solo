@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html className={fontSans.variable} lang="en">
+    <html className={fontSans.variable} lang="en" suppressHydrationWarning>
       <body className={'antialiased'}>
         <ThemeProvider
           attribute="class"
