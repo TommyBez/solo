@@ -1,5 +1,3 @@
-'use client'
-
 import dynamic from 'next/dynamic'
 import {
   Card,
@@ -15,7 +13,6 @@ const DailyBreakdownChartContent = dynamic(
       default: m.DailyBreakdownChartContent,
     })),
   {
-    ssr: false,
     loading: () => (
       <div className="flex h-[300px] items-center justify-center">
         <p className="text-muted-foreground">Loading chart...</p>
