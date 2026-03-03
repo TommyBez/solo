@@ -77,6 +77,19 @@
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "@tailwindcss/oxide",
+      "better-sqlite3",
+      "bufferutil",
+      "esbuild",
+      "libpq",
+      "prisma",
+      "sharp",
+      "sqlite3"
+    ]
+  },
   "devDependencies": {
     "@biomejs/biome": "2.4.0",
     "@tailwindcss/postcss": "^4.1.9",
