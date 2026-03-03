@@ -4,12 +4,14 @@ import { ExportTasksDialog } from '@/components/projects/export-tasks-dialog'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
 import { getAreas } from '@/lib/queries/areas'
+import { getClients } from '@/lib/queries/clients'
 import { getProjectsWithStats } from '@/lib/queries/projects'
 
 export default async function ProjectsPage() {
-  const [projects, areas] = await Promise.all([
+  const [projects, areas, clients] = await Promise.all([
     getProjectsWithStats(),
     getAreas(),
+    getClients(),
   ])
 
   // Group projects by area
@@ -48,7 +50,7 @@ export default async function ProjectsPage() {
               area: p.area,
             }))}
           />
-          <CreateProjectDialog areas={areas} />
+          <CreateProjectDialog areas={areas} clients={clients} />
         </div>
       </div>
 
@@ -69,7 +71,7 @@ export default async function ProjectsPage() {
           <p className="mb-4 text-muted-foreground text-sm">
             Create your first project to start tracking time
           </p>
-          <CreateProjectDialog areas={areas} />
+          <CreateProjectDialog areas={areas} clients={clients} />
         </div>
       )}
       {areas.length > 0 && projects.length > 0 && (
@@ -91,6 +93,7 @@ export default async function ProjectsPage() {
                   {areaProjects.map((project) => (
                     <ProjectCard
                       areas={areas}
+                      clients={clients}
                       key={project.id}
                       project={project}
                     />

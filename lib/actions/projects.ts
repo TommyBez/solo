@@ -23,6 +23,7 @@ async function verifyProjectOwnership(projectId: number, userId: string) {
 
 export async function createProject(data: {
   areaId: number
+  clientId?: number
   name: string
   description?: string
   status?: string
@@ -51,6 +52,7 @@ export async function updateProject(
     status?: string
     expectedHours?: number
     recurring?: boolean
+    clientId?: number | null
     deadline?: Date | null
     archived?: boolean
   },

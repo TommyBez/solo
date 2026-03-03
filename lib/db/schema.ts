@@ -35,9 +35,6 @@ export const areas = pgTable('areas', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  clientId: integer('client_id').references(() => clients.id, {
-    onDelete: 'set null',
-  }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   color: varchar('color', { length: 7 }).notNull().default('#6366f1'), // hex color
@@ -53,6 +50,9 @@ export const projects = pgTable('projects', {
   areaId: integer('area_id')
     .notNull()
     .references(() => areas.id, { onDelete: 'cascade' }),
+  clientId: integer('client_id').references(() => clients.id, {
+    onDelete: 'set null',
+  }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   status: varchar('status', { length: 50 }).notNull().default('active'), // active, completed, on-hold
@@ -102,17 +102,13 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     fields: [clients.userId],
     references: [user.id],
   }),
-  areas: many(areas),
+  projects: many(projects),
 }))
 
 export const areasRelations = relations(areas, ({ one, many }) => ({
   user: one(user, {
     fields: [areas.userId],
     references: [user.id],
-  }),
-  client: one(clients, {
-    fields: [areas.clientId],
-    references: [clients.id],
   }),
   projects: many(projects),
 }))
@@ -121,6 +117,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   area: one(areas, {
     fields: [projects.areaId],
     references: [areas.id],
+  }),
+  client: one(clients, {
+    fields: [projects.clientId],
+    references: [clients.id],
   }),
   timeEntries: many(timeEntries),
 }))

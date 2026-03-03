@@ -41,11 +41,12 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { deleteProject, updateProject } from '@/lib/actions/projects'
 import { useSettingsContext } from '@/lib/context/settings-context'
-import type { Area } from '@/lib/db/schema'
+import type { Area, Client } from '@/lib/db/schema'
 import { ProjectForm } from './project-form'
 
 interface ProjectCardProps {
   areas: Area[]
+  clients?: Client[]
   project: {
     id: number
     name: string
@@ -53,6 +54,7 @@ interface ProjectCardProps {
     status: string
     expectedHours: number
     recurring: boolean
+    clientId: number | null
     deadline: Date | null
     totalHours: number
     hoursThisWeek: number
@@ -69,7 +71,7 @@ const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
   completed: 'outline',
 }
 
-export function ProjectCard({ project, areas }: ProjectCardProps) {
+export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
   const router = useRouter()
   const { formatDate } = useSettingsContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -189,10 +191,12 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
           </DialogHeader>
           <ProjectForm
             areas={areas}
+            clients={clients}
             onSuccess={() => setIsEditOpen(false)}
             project={{
               id: project.id,
               areaId: project.area.id,
+              clientId: project.clientId,
               name: project.name,
               description: project.description,
               status: project.status,

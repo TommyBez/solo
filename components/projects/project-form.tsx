@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarIcon } from 'lucide-react'
+import { Building2, CalendarIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
 import { useState } from 'react'
@@ -25,17 +25,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Toggle } from '@/components/ui/toggle'
 import { createProject, updateProject } from '@/lib/actions/projects'
 import { useSettingsContext } from '@/lib/context/settings-context'
-import type { Area, Project } from '@/lib/db/schema'
+import type { Area, Client, Project } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
 interface ProjectFormProps {
   areas: Area[]
+  clients?: Client[]
   onSuccess?: () => void
   project?: Project & { area?: Area }
 }
 
 interface ProjectFormState {
   areaId: string
+  clientId: string
   deadline: Date | undefined
   description: string
   expectedHours: number
@@ -44,7 +46,7 @@ interface ProjectFormState {
   status: string
 }
 
-export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
+export function ProjectForm({ project, areas, clients = [], onSuccess }: ProjectFormProps) {
   const router = useRouter()
   const { settings, formatDate } = useSettingsContext()
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
@@ -53,6 +55,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
     name: project?.name ?? '',
     description: project?.description ?? '',
     areaId: project?.areaId?.toString() ?? '',
+    clientId: project?.clientId?.toString() ?? '',
     status: project?.status ?? 'active',
     expectedHours: project?.expectedHours ?? 0,
     recurring: project?.recurring ?? false,
@@ -78,6 +81,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
         await updateProject(project.id, {
           name: form.name.trim(),
           description: form.description.trim() || undefined,
+          clientId: form.clientId ? Number(form.clientId) : null,
           status: form.status,
           expectedHours: form.expectedHours,
           recurring: form.recurring,
@@ -87,6 +91,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
       } else {
         await createProject({
           areaId: Number.parseInt(form.areaId, 10),
+          clientId: form.clientId ? Number(form.clientId) : undefined,
           name: form.name.trim(),
           description: form.description.trim() || undefined,
           status: form.status,
@@ -143,6 +148,46 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
           </SelectContent>
         </Select>
       </div>
+
+      {clients.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="client">Client (optional)</Label>
+          <Select
+            onValueChange={(clientId) => {
+              setForm((prev) => ({ ...prev, clientId: clientId === 'none' ? '' : clientId }))
+            }}
+            value={form.clientId || 'none'}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="No client assigned">
+                {form.clientId ? (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4" />
+                    {clients.find((c) => c.id.toString() === form.clientId)
+                      ?.name ?? 'Unknown client'}
+                  </div>
+                ) : (
+                  'No client assigned'
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No client assigned</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id.toString()}>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4" />
+                    {client.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground text-xs">
+            Link this project to a client for billing
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>

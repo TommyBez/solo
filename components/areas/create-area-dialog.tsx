@@ -11,17 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { EMPTY_CLIENTS } from '@/lib/constants/areas'
-import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
-interface CreateAreaDialogProps {
-  clients?: Client[]
-}
-
-export function CreateAreaDialog({
-  clients = EMPTY_CLIENTS,
-}: CreateAreaDialogProps) {
+export function CreateAreaDialog() {
   const [open, setOpen] = useState(false)
 
   return (
@@ -40,7 +32,7 @@ export function CreateAreaDialog({
             contain multiple projects.
           </DialogDescription>
         </DialogHeader>
-        <AreaForm clients={clients} onSuccess={() => setOpen(false)} />
+        <AreaForm onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )

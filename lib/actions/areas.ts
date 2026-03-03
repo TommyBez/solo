@@ -11,7 +11,6 @@ export async function createArea(data: {
   description?: string
   color: string
   expectedHoursPerWeek: number
-  clientId?: number
 }) {
   const session = await requireSession()
 
@@ -33,7 +32,6 @@ export async function updateArea(
     description?: string
     color?: string
     expectedHoursPerWeek?: number
-    clientId?: number | null
     archived?: boolean
   },
 ) {

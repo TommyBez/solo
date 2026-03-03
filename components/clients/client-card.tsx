@@ -35,7 +35,7 @@ import { ClientForm } from './client-form'
 
 interface ClientCardProps {
   client: Client & {
-    areas?: { id: number }[]
+    projects?: { id: number }[]
   }
 }
 
@@ -43,7 +43,7 @@ export function ClientCard({ client }: ClientCardProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const areasCount = client.areas?.length ?? 0
+  const projectsCount = client.projects?.length ?? 0
 
   const formatCurrency = (rate: string | null, currency: string) => {
     if (!rate) {
@@ -136,9 +136,9 @@ export function ClientCard({ client }: ClientCardProps) {
             </div>
           ) : null}
           <div className="pt-2 text-muted-foreground text-sm">
-            {areasCount === 0
-              ? 'No areas linked'
-              : `${areasCount} area${areasCount === 1 ? '' : 's'} linked`}
+            {projectsCount === 0
+              ? 'No projects linked'
+              : `${projectsCount} project${projectsCount === 1 ? '' : 's'} linked`}
           </div>
         </CardContent>
       </Card>

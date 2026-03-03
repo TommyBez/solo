@@ -21,7 +21,7 @@ export async function createClient(
     .returning()
 
   revalidateTag('clients', 'max')
-  revalidateTag('areas', 'max')
+  revalidateTag('projects', 'max')
   return client
 }
 
@@ -41,7 +41,7 @@ export async function updateClient(
     .returning()
 
   revalidateTag('clients', 'max')
-  revalidateTag('areas', 'max')
+  revalidateTag('projects', 'max')
   return client
 }
 
@@ -52,7 +52,7 @@ export async function deleteClient(id: number) {
     .delete(clients)
     .where(and(eq(clients.id, id), eq(clients.userId, session.user.id)))
   revalidateTag('clients', 'max')
-  revalidateTag('areas', 'max')
+  revalidateTag('projects', 'max')
 }
 
 export async function archiveClient(id: number) {

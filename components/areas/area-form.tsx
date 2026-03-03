@@ -1,6 +1,5 @@
 'use client'
 
-import { Building2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
 import { useState } from 'react'
@@ -8,24 +7,12 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { createArea, updateArea } from '@/lib/actions/areas'
-import {
-  DEFAULT_EXPECTED_HOURS_PER_WEEK,
-  EMPTY_CLIENTS,
-} from '@/lib/constants/areas'
-import type { Client } from '@/lib/db/schema'
+import { DEFAULT_EXPECTED_HOURS_PER_WEEK } from '@/lib/constants/areas'
 
 // Partial area type for form - only fields needed for editing
 interface AreaFormData {
-  clientId: number | null
   color: string
   description: string | null
   expectedHoursPerWeek: number
@@ -50,12 +37,10 @@ const PRESET_COLORS = [
 
 interface AreaFormProps {
   area?: AreaFormData
-  clients?: Client[]
   onSuccess?: () => void
 }
 
 interface AreaFormState {
-  clientId: string
   color: string
   description: string
   expectedHoursPerWeek: number
@@ -64,7 +49,6 @@ interface AreaFormState {
 
 export function AreaForm({
   area,
-  clients = EMPTY_CLIENTS,
   onSuccess,
 }: AreaFormProps) {
   const router = useRouter()
@@ -75,7 +59,6 @@ export function AreaForm({
     color: area?.color ?? PRESET_COLORS[0],
     expectedHoursPerWeek:
       area?.expectedHoursPerWeek ?? DEFAULT_EXPECTED_HOURS_PER_WEEK,
-    clientId: area?.clientId?.toString() ?? '',
   }))
 
   const isEditing = !!area
@@ -100,16 +83,10 @@ export function AreaForm({
     try {
       const formData = getFormData()
       if (isEditing) {
-        await updateArea(area.id, {
-          ...formData,
-          clientId: form.clientId ? Number(form.clientId) : null,
-        })
+        await updateArea(area.id, formData)
         toast.success('Area updated successfully')
       } else {
-        await createArea({
-          ...formData,
-          clientId: form.clientId ? Number(form.clientId) : undefined,
-        })
+        await createArea(formData)
         toast.success('Area created successfully')
       }
       router.refresh()
@@ -155,46 +132,6 @@ export function AreaForm({
           value={form.description}
         />
       </div>
-
-      {clients.length > 0 && (
-        <div className="space-y-2">
-          <Label htmlFor="client">Client (optional)</Label>
-          <Select
-            onValueChange={(clientId) => {
-              setForm((prev) => ({ ...prev, clientId: clientId === 'none' ? '' : clientId }))
-            }}
-            value={form.clientId || 'none'}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="No client assigned">
-                {form.clientId ? (
-                  <div className="flex items-center gap-2">
-                    <Building2 className="size-4" />
-                    {clients.find((c) => c.id.toString() === form.clientId)
-                      ?.name ?? 'Unknown client'}
-                  </div>
-                ) : (
-                  'No client assigned'
-                )}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No client assigned</SelectItem>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id.toString()}>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="size-4" />
-                    {client.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-muted-foreground text-xs">
-            Link this area to a client for better organization
-          </p>
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label>Color</Label>

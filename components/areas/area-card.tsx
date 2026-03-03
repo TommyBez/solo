@@ -38,8 +38,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
 import { deleteArea, updateArea } from '@/lib/actions/areas'
-import { EMPTY_CLIENTS } from '@/lib/constants/areas'
-import type { Client } from '@/lib/db/schema'
 import { AreaForm } from './area-form'
 
 interface AreaCardProps {
@@ -52,12 +50,10 @@ interface AreaCardProps {
     hoursThisWeek: number
     percentageComplete: number
     projectCount: number
-    clientId: number | null
   }
-  clients?: Client[]
 }
 
-export function AreaCard({ area, clients = EMPTY_CLIENTS }: AreaCardProps) {
+export function AreaCard({ area }: AreaCardProps) {
   const router = useRouter()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
@@ -168,9 +164,7 @@ export function AreaCard({ area, clients = EMPTY_CLIENTS }: AreaCardProps) {
               description: area.description,
               color: area.color,
               expectedHoursPerWeek: area.expectedHoursPerWeek,
-              clientId: area.clientId,
             }}
-            clients={clients}
             onSuccess={() => setIsEditOpen(false)}
           />
         </DialogContent>

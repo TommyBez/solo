@@ -11,14 +11,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import type { Area } from '@/lib/db/schema'
+import type { Area, Client } from '@/lib/db/schema'
 import { ProjectForm } from './project-form'
 
 interface CreateProjectDialogProps {
   areas: Area[]
+  clients?: Client[]
 }
 
-export function CreateProjectDialog({ areas }: CreateProjectDialogProps) {
+export function CreateProjectDialog({ areas, clients }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false)
 
   if (areas.length === 0) {
@@ -46,7 +47,7 @@ export function CreateProjectDialog({ areas }: CreateProjectDialogProps) {
             Agency" or "Build Mobile App".
           </DialogDescription>
         </DialogHeader>
-        <ProjectForm areas={areas} onSuccess={() => setOpen(false)} />
+        <ProjectForm areas={areas} clients={clients} onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )

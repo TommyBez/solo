@@ -7,15 +7,15 @@ import { clients } from '@/lib/db/schema'
 async function getClientsCached(userId: string, includeArchived: boolean) {
   'use cache'
   cacheLife('minutes')
-  cacheTag('clients', 'areas')
+  cacheTag('clients', 'projects')
   return await db.query.clients.findMany({
     where: includeArchived
       ? eq(clients.userId, userId)
       : and(eq(clients.userId, userId), eq(clients.archived, false)),
     orderBy: [desc(clients.createdAt)],
     with: {
-      areas: {
-        where: (areasTable, { eq: eqFn }) => eqFn(areasTable.archived, false),
+      projects: {
+        where: (projectsTable, { eq: eqFn }) => eqFn(projectsTable.archived, false),
       },
     },
   })
