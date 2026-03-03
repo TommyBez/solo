@@ -69,7 +69,7 @@ export function SettingsProvider({
       const updateId = ++latestUpdateId.current
 
       // Server update in transition
-      return new Promise<void>((resolve) => {
+      return new Promise<void>((resolve, reject) => {
         startTransition(() => {
           addOptimisticSettings(updates)
           updateSettingsAction(updates)
@@ -78,8 +78,9 @@ export function SettingsProvider({
                 ...currentSettings,
                 ...updates,
               }))
+              resolve()
             })
-            .catch(() => {
+            .catch((error) => {
               // Only revert if this is still the latest in-flight update.
               if (updateId === latestUpdateId.current) {
                 const updatedKeys = Object.keys(updates) as Array<
@@ -94,9 +95,7 @@ export function SettingsProvider({
                   ...rollbackUpdates,
                 }))
               }
-            })
-            .finally(() => {
-              resolve()
+              reject(error)
             })
         })
       })
