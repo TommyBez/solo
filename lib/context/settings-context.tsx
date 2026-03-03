@@ -82,7 +82,9 @@ export function SettingsProvider({
             .catch(() => {
               // Only revert if this is still the latest in-flight update.
               if (updateId === latestUpdateId.current) {
-                const updatedKeys = Object.keys(updates) as Array<keyof Settings>
+                const updatedKeys = Object.keys(updates) as Array<
+                  keyof Settings
+                >
                 const rollbackUpdates = Object.fromEntries(
                   updatedKeys.map((key) => [key, previousSettings[key]]),
                 ) as Partial<Settings>
