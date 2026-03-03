@@ -57,6 +57,7 @@ export const projects = pgTable('projects', {
   description: text('description'),
   status: varchar('status', { length: 50 }).notNull().default('active'), // active, completed, on-hold
   expectedHours: integer('expected_hours').notNull().default(0),
+  recurring: boolean('recurring').notNull().default(false),
   hourlyRate: decimal('hourly_rate', { precision: 10, scale: 2 }), // Override client rate
   deadline: timestamp('deadline'),
   archived: boolean('archived').notNull().default(false),

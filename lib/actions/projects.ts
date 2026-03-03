@@ -27,6 +27,7 @@ export async function createProject(data: {
   description?: string
   status?: string
   expectedHours?: number
+  recurring?: boolean
   deadline?: Date
 }) {
   const session = await requireSession()
@@ -49,6 +50,7 @@ export async function updateProject(
     description?: string
     status?: string
     expectedHours?: number
+    recurring?: boolean
     deadline?: Date | null
     archived?: boolean
   },
