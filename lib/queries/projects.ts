@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
 
 const MILLISECONDS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
+
 import { db } from '@/lib/db'
 import { areas, projects } from '@/lib/db/schema'
 
