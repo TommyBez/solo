@@ -299,8 +299,7 @@ async function getDashboardStatsCached(userId: string) {
     (sum, area) => sum + area.expectedHoursPerWeek,
     0,
   )
-
-  return {
+  const result = {
     weeklyHours: Math.round((weeklyMinutes / 60) * 10) / 10,
     prevWeeklyHours: Math.round((prevWeeklyMinutes / 60) * 10) / 10,
     weeklyChange,
@@ -324,6 +323,7 @@ async function getDashboardStatsCached(userId: string) {
     dailyBreakdown,
     areasComparison,
   }
+  return result
 }
 
 export async function getDashboardStats() {
