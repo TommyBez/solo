@@ -11,8 +11,7 @@ import {
   projects,
   timeEntries,
 } from '@/lib/db/schema'
-
-const WEEK_STARTS_ON_MONDAY = 1 as const
+import { getSettings } from '@/lib/queries/settings'
 
 async function verifyProjectOwnership(projectId: number, userId: string) {
   const project = await db.query.projects.findFirst({
@@ -132,15 +131,19 @@ export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
     throw new Error('Invalid reference date')
   }
 
+  // Get user's week start preference
+  const settings = await getSettings(session.user.id)
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
+
   const sourceWeekStart = startOfWeek(referenceDate, {
-    weekStartsOn: WEEK_STARTS_ON_MONDAY,
+    weekStartsOn,
   })
   const sourceWeekEnd = endOfWeek(referenceDate, {
-    weekStartsOn: WEEK_STARTS_ON_MONDAY,
+    weekStartsOn,
   })
   const targetWeekStart = addWeeks(sourceWeekStart, 1)
   const targetWeekEnd = endOfWeek(targetWeekStart, {
-    weekStartsOn: WEEK_STARTS_ON_MONDAY,
+    weekStartsOn,
   })
 
   const userProjectRows = await db

@@ -2,6 +2,8 @@ import { format } from 'date-fns'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { type NextRequest, NextResponse } from 'next/server'
+import { getSession } from '@/lib/auth/session'
+import { getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForProjectAndDateRange } from '@/lib/queries/time-entries'
 
 const MAX_FILENAME_PART_LENGTH = 100
@@ -42,6 +44,8 @@ function formatDuration(minutes: number): string {
 
 function buildCsv(
   entries: Awaited<ReturnType<typeof getTimeEntriesForProjectAndDateRange>>,
+  dateFormat: string,
+  timeFormat: '12' | '24',
 ): string {
   const headers = [
     'Date',
@@ -55,13 +59,15 @@ function buildCsv(
     'Billable',
   ]
 
+  const timeFormatStr = timeFormat === '24' ? 'HH:mm' : 'h:mm a'
+
   const rows = entries.map((entry) => [
-    format(new Date(entry.startTime), 'yyyy-MM-dd'),
+    format(new Date(entry.startTime), dateFormat),
     entry.project.name,
     entry.project.area.name,
     entry.description ?? '',
-    format(new Date(entry.startTime), 'HH:mm'),
-    entry.endTime ? format(new Date(entry.endTime), 'HH:mm') : '',
+    format(new Date(entry.startTime), timeFormatStr),
+    entry.endTime ? format(new Date(entry.endTime), timeFormatStr) : '',
     formatDuration(entry.durationMinutes),
     String(entry.durationMinutes),
     entry.billable ? 'Yes' : 'No',
@@ -97,6 +103,12 @@ function buildPdf(
   projectName: string,
   startDate: string,
   endDate: string,
+  dateFormat: string,
+  timeFormat: '12' | '24',
+  companyInfo: {
+    companyName?: string | null
+    companyAddress?: string | null
+  },
 ): ArrayBuffer {
   const doc = new jsPDF()
 
@@ -107,9 +119,29 @@ function buildPdf(
   // Metadata
   doc.setFontSize(11)
   doc.setTextColor(100)
-  doc.text(`Project: ${projectName}`, 14, 32)
-  doc.text(`Period: ${startDate} to ${endDate}`, 14, 39)
-  doc.text(`Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`, 14, 46)
+
+  let yOffset = 32
+
+  // Add company info if available
+  if (companyInfo.companyName) {
+    doc.text(`${companyInfo.companyName}`, 14, yOffset)
+    yOffset += 7
+
+    if (companyInfo.companyAddress) {
+      const addressLines = companyInfo.companyAddress.split('\n')
+      for (const line of addressLines) {
+        doc.text(line, 14, yOffset)
+        yOffset += 5
+      }
+      yOffset += 2
+    }
+  }
+
+  doc.text(`Project: ${projectName}`, 14, yOffset)
+  yOffset += 7
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, yOffset)
+  yOffset += 7
+  doc.text(`Generated: ${format(new Date(), dateFormat)}`, 14, yOffset)
 
   // Summary
   const totalMinutes = entries.reduce(
@@ -120,26 +152,32 @@ function buildPdf(
     .filter((entry) => entry.billable)
     .reduce((sum, entry) => sum + entry.durationMinutes, 0)
 
+  yOffset += 12
   doc.setTextColor(0)
   doc.setFontSize(12)
-  doc.text('Summary', 14, 58)
+  doc.text('Summary', 14, yOffset)
+  yOffset += 7
   doc.setFontSize(10)
-  doc.text(`Total Entries: ${entries.length}`, 14, 65)
-  doc.text(`Total Time: ${formatDuration(totalMinutes)}`, 14, 71)
-  doc.text(`Billable Time: ${formatDuration(billableMinutes)}`, 14, 77)
+  doc.text(`Total Entries: ${entries.length}`, 14, yOffset)
+  yOffset += 6
+  doc.text(`Total Time: ${formatDuration(totalMinutes)}`, 14, yOffset)
+  yOffset += 6
+  doc.text(`Billable Time: ${formatDuration(billableMinutes)}`, 14, yOffset)
 
   // Table
+  const timeFormatStr = timeFormat === '24' ? 'HH:mm' : 'h:mm a'
+
   const tableData = entries.map((entry) => [
-    format(new Date(entry.startTime), 'yyyy-MM-dd'),
+    format(new Date(entry.startTime), dateFormat),
     entry.description ?? '-',
-    format(new Date(entry.startTime), 'HH:mm'),
-    entry.endTime ? format(new Date(entry.endTime), 'HH:mm') : '-',
+    format(new Date(entry.startTime), timeFormatStr),
+    entry.endTime ? format(new Date(entry.endTime), timeFormatStr) : '-',
     formatDuration(entry.durationMinutes),
     entry.billable ? 'Yes' : 'No',
   ])
 
   autoTable(doc, {
-    startY: 84,
+    startY: yOffset + 7,
     head: [['Date', 'Description', 'Start', 'End', 'Duration', 'Billable']],
     body: tableData,
     theme: 'striped',
@@ -205,6 +243,13 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Get user settings for formatting
+  const session = await getSession()
+  const settings = session?.user ? await getSettings(session.user.id) : null
+
+  const dateFormat = settings?.dateFormat ?? 'MMM d, yyyy'
+  const timeFormat = settings?.timeFormat ?? '12'
+
   const entries = await getTimeEntriesForProjectAndDateRange(
     parsedProjectId,
     start,
@@ -218,7 +263,7 @@ export async function GET(request: NextRequest) {
   const safeEndDate = sanitizeForFilename(endDate, 16)
 
   if (formatType === 'csv') {
-    const csv = buildCsv(entries)
+    const csv = buildCsv(entries, dateFormat, timeFormat as '12' | '24')
     const filename = `tasks-${projectName}-${safeStartDate}-to-${safeEndDate}.csv`
 
     return new Response(csv, {
@@ -229,7 +274,20 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const pdfBytes = buildPdf(entries, rawProjectName, startDate, endDate)
+  const companyInfo = {
+    companyName: settings?.companyName,
+    companyAddress: settings?.companyAddress,
+  }
+
+  const pdfBytes = buildPdf(
+    entries,
+    rawProjectName,
+    startDate,
+    endDate,
+    dateFormat,
+    timeFormat as '12' | '24',
+    companyInfo,
+  )
   const filename = `tasks-${projectName}-${safeStartDate}-to-${safeEndDate}.pdf`
 
   return new Response(pdfBytes, {

@@ -39,6 +39,7 @@ import {
   createTimeEntry,
   scheduleTasksForFollowingWeek,
 } from '@/lib/actions/time-entries'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project } from '@/lib/db/schema'
 import { parseDuration } from '@/lib/utils/duration-parser'
 
@@ -46,8 +47,6 @@ interface ScheduleNextWeekDialogProps {
   projects: (Project & { area: Area })[]
   referenceDateIso: string
 }
-
-const WEEK_STARTS_ON_MONDAY = 1 as const
 
 function formatTaskCount(value: number) {
   return `${value} task${value === 1 ? '' : 's'}`
@@ -58,6 +57,8 @@ export function ScheduleNextWeekDialog({
   referenceDateIso,
 }: ScheduleNextWeekDialogProps) {
   const router = useRouter()
+  const { settings, formatDate } = useSettingsContext()
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const [open, setOpen] = useState(false)
   const [isCopying, startCopying] = useTransition()
   const [isCreating, startCreating] = useTransition()
@@ -72,16 +73,16 @@ export function ScheduleNextWeekDialog({
   const sourceWeekStart = useMemo(() => {
     const referenceDate = parseISO(referenceDateIso)
     return startOfWeek(referenceDate, {
-      weekStartsOn: WEEK_STARTS_ON_MONDAY,
+      weekStartsOn,
     })
-  }, [referenceDateIso])
+  }, [referenceDateIso, weekStartsOn])
 
   const sourceWeekLabel = useMemo(() => {
     const sourceWeekEnd = endOfWeek(sourceWeekStart, {
-      weekStartsOn: WEEK_STARTS_ON_MONDAY,
+      weekStartsOn,
     })
-    return `${format(sourceWeekStart, 'MMM d')} - ${format(sourceWeekEnd, 'MMM d, yyyy')}`
-  }, [sourceWeekStart])
+    return `${formatDate(sourceWeekStart, 'MMM d')} - ${formatDate(sourceWeekEnd, 'MMM d, yyyy')}`
+  }, [sourceWeekStart, formatDate, weekStartsOn])
 
   const nextWeekStart = useMemo(
     () => addWeeks(sourceWeekStart, 1),
@@ -90,10 +91,10 @@ export function ScheduleNextWeekDialog({
 
   const targetWeekLabel = useMemo(() => {
     const nextWeekEnd = endOfWeek(nextWeekStart, {
-      weekStartsOn: WEEK_STARTS_ON_MONDAY,
+      weekStartsOn,
     })
-    return `${format(nextWeekStart, 'MMM d')} - ${format(nextWeekEnd, 'MMM d, yyyy')}`
-  }, [nextWeekStart])
+    return `${formatDate(nextWeekStart, 'MMM d')} - ${formatDate(nextWeekEnd, 'MMM d, yyyy')}`
+  }, [nextWeekStart, formatDate, weekStartsOn])
 
   const nextWeekDayOptions = useMemo(
     () =>
@@ -102,10 +103,10 @@ export function ScheduleNextWeekDialog({
         return {
           dayOffset: dayOffset.toString(),
           label: format(date, 'EEEE'),
-          dateLabel: format(date, 'MMM d'),
+          dateLabel: formatDate(date, 'MMM d'),
         }
       }),
-    [nextWeekStart],
+    [nextWeekStart, formatDate],
   )
 
   const projectsByArea = useMemo(

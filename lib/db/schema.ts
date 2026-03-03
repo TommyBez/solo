@@ -78,6 +78,23 @@ export const timeEntries = pgTable('time_entries', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+// User Settings - user preferences and company information
+export const userSettings = pgTable('user_settings', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  companyName: varchar('company_name', { length: 255 }),
+  companyEmail: varchar('company_email', { length: 255 }),
+  companyPhone: varchar('company_phone', { length: 50 }),
+  companyAddress: text('company_address'),
+  dateFormat: varchar('date_format', { length: 20 })
+    .notNull()
+    .default('MMM d, yyyy'),
+  timeFormat: varchar('time_format', { length: 2 }).notNull().default('12'),
+  weekStartsOn: varchar('week_starts_on', { length: 1 }).notNull().default('1'),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
 // Relations
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   user: one(user, {
@@ -114,6 +131,13 @@ export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
   }),
 }))
 
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(user, {
+    fields: [userSettings.userId],
+    references: [user.id],
+  }),
+}))
+
 // Types
 export type Client = typeof clients.$inferSelect
 export type NewClient = typeof clients.$inferInsert
@@ -123,3 +147,5 @@ export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
 export type TimeEntry = typeof timeEntries.$inferSelect
 export type NewTimeEntry = typeof timeEntries.$inferInsert
+export type UserSettings = typeof userSettings.$inferSelect
+export type NewUserSettings = typeof userSettings.$inferInsert

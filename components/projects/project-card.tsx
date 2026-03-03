@@ -1,6 +1,5 @@
 'use client'
 
-import { format } from 'date-fns'
 import {
   Archive,
   Calendar,
@@ -41,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
 import { deleteProject, updateProject } from '@/lib/actions/projects'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area } from '@/lib/db/schema'
 import { ProjectForm } from './project-form'
 
@@ -69,6 +69,7 @@ const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
 
 export function ProjectCard({ project, areas }: ProjectCardProps) {
   const router = useRouter()
+  const { formatDate } = useSettingsContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
@@ -151,7 +152,7 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
             {project.deadline ? (
               <div className="flex items-center gap-1">
                 <Calendar className="size-4" />
-                <span>{format(new Date(project.deadline), 'MMM d, yyyy')}</span>
+                <span>{formatDate(project.deadline)}</span>
               </div>
             ) : null}
           </div>

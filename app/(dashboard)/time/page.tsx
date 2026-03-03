@@ -12,7 +12,9 @@ import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dia
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
+import { getSession } from '@/lib/auth/session'
 import { getProjects } from '@/lib/queries/projects'
+import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
@@ -27,19 +29,26 @@ export default async function TimeTrackingPage(props: {
     typeof searchParams.view === 'string' ? searchParams.view : 'month'
   const currentDate = dateParam ? parseISO(dateParam) : new Date()
 
+  // Fetch user settings for week start preference
+  const session = await getSession()
+  const settings = session?.user
+    ? await getSettings(session.user.id)
+    : defaultSettings
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
+
   // Calculate range for the calendar view
   let startDate: Date
   let endDate: Date
 
   if (viewParam === 'week') {
-    startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
-    endDate = endOfWeek(currentDate, { weekStartsOn: 1 })
+    startDate = startOfWeek(currentDate, { weekStartsOn })
+    endDate = endOfWeek(currentDate, { weekStartsOn })
   } else {
     // Month view - include padding days
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(monthStart)
-    startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
-    endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+    startDate = startOfWeek(monthStart, { weekStartsOn })
+    endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
   const [entries, projects] = await Promise.all([

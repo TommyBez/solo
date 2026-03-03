@@ -1,6 +1,5 @@
 'use client'
 
-import { format } from 'date-fns'
 import { CalendarIcon, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
@@ -27,6 +26,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { createTimeEntry, updateTimeEntry } from '@/lib/actions/time-entries'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
 import {
   addRecentProject,
@@ -58,6 +58,8 @@ export function TimeEntryForm({
   onSuccess,
 }: TimeEntryFormProps) {
   const router = useRouter()
+  const { settings, formatDate } = useSettingsContext()
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const [isLoading, setIsLoading] = useState(false)
   const [form, setForm] = useState<TimeEntryFormState>(() => ({
     projectId: entry?.projectId?.toString() ?? '',
@@ -249,7 +251,7 @@ export function TimeEntryForm({
               variant="outline"
             >
               <CalendarIcon className="mr-2 size-4" />
-              {format(form.date, 'PPP')}
+              {formatDate(form.date, 'PPP')}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
@@ -261,6 +263,7 @@ export function TimeEntryForm({
                 }
               }}
               selected={form.date}
+              weekStartsOn={weekStartsOn}
             />
           </PopoverContent>
         </Popover>

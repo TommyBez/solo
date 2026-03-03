@@ -18,6 +18,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
@@ -39,6 +40,8 @@ export function CalendarView({
   view,
 }: CalendarViewProps) {
   const router = useRouter()
+  const { settings, formatDate } = useSettingsContext()
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
 
   const navigateDate = (direction: 'prev' | 'next') => {
     let newDate: Date
@@ -70,26 +73,31 @@ export function CalendarView({
   let headerTitle: string
 
   if (view === 'week') {
-    const startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
-    const endDate = endOfWeek(currentDate, { weekStartsOn: 1 })
+    const startDate = startOfWeek(currentDate, { weekStartsOn })
+    const endDate = endOfWeek(currentDate, { weekStartsOn })
     days = eachDayOfInterval({ start: startDate, end: endDate })
 
     // Format: "Jul 29 - Aug 04, 2024"
     if (isSameMonth(startDate, endDate)) {
-      headerTitle = `${format(startDate, 'MMM d')} - ${format(endDate, 'd, yyyy')}`
+      headerTitle = `${formatDate(startDate, 'MMM d')} - ${formatDate(endDate, 'd, yyyy')}`
     } else {
-      headerTitle = `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
+      headerTitle = `${formatDate(startDate, 'MMM d')} - ${formatDate(endDate, 'MMM d, yyyy')}`
     }
   } else {
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(monthStart)
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+    const startDate = startOfWeek(monthStart, { weekStartsOn })
+    const endDate = endOfWeek(monthEnd, { weekStartsOn })
     days = eachDayOfInterval({ start: startDate, end: endDate })
-    headerTitle = format(currentDate, 'MMMM yyyy')
+    headerTitle = formatDate(currentDate, 'MMMM yyyy')
   }
 
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  // Week days based on user's preference
+  const allWeekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const weekDays =
+    weekStartsOn === 0
+      ? allWeekDays // Sunday start: Sun, Mon, Tue, Wed, Thu, Fri, Sat
+      : [...allWeekDays.slice(1), allWeekDays[0]] // Monday start: Mon, Tue, Wed, Thu, Fri, Sat, Sun
 
   // Calculate stats for current view
   const totalMinutes = entries.reduce(

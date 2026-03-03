@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
@@ -59,6 +60,8 @@ const initialFormState: ExportFormState = {
 }
 
 export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
+  const { settings, formatDate } = useSettingsContext()
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<ExportFormState>(initialFormState)
   const [isExporting, setIsExporting] = useState(false)
@@ -203,9 +206,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                     variant="outline"
                   >
                     <CalendarIcon className="mr-2 size-4" />
-                    {form.startDate
-                      ? format(form.startDate, 'MMM d, yyyy')
-                      : 'Pick date'}
+                    {form.startDate ? formatDate(form.startDate) : 'Pick date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-0">
@@ -219,6 +220,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                       setForm((prev) => ({ ...prev, startDate }))
                     }}
                     selected={form.startDate}
+                    weekStartsOn={weekStartsOn}
                   />
                 </PopoverContent>
               </Popover>
@@ -235,9 +237,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                     variant="outline"
                   >
                     <CalendarIcon className="mr-2 size-4" />
-                    {form.endDate
-                      ? format(form.endDate, 'MMM d, yyyy')
-                      : 'Pick date'}
+                    {form.endDate ? formatDate(form.endDate) : 'Pick date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-0">
@@ -251,6 +251,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                       setForm((prev) => ({ ...prev, endDate }))
                     }}
                     selected={form.endDate}
+                    weekStartsOn={weekStartsOn}
                   />
                 </PopoverContent>
               </Popover>

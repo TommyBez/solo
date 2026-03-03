@@ -21,9 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { type Settings, useSettings } from '@/lib/hooks/use-settings'
+import { useSettingsContext } from '@/lib/context/settings-context'
+import type { Settings } from '@/lib/queries/settings'
 
 const dateFormats = [
   { value: 'MMM d, yyyy', label: 'Jan 1, 2025' },
@@ -33,8 +33,7 @@ const dateFormats = [
 ]
 
 export function SettingsForm() {
-  const { settings, isHydrated, updateSettings, resetSettings } = useSettings()
-  const [isSaving, setIsSaving] = useState(false)
+  const { settings, updateSettings, isPending } = useSettingsContext()
   const [draft, setDraft] = useState<Partial<Settings>>({})
   const form: Settings = { ...settings, ...draft }
 
@@ -42,40 +41,32 @@ export function SettingsForm() {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleSave = () => {
-    setIsSaving(true)
-    updateSettings(form)
-    setTimeout(() => {
-      setIsSaving(false)
+  const handleSave = async () => {
+    try {
+      await updateSettings(form)
+      setDraft({})
       toast.success('Settings saved')
-    }, 300)
+    } catch {
+      toast.error('Failed to save settings')
+    }
   }
 
-  const handleReset = () => {
-    resetSettings()
-    setDraft({})
-    toast.success('Settings reset to defaults')
-  }
-
-  if (!isHydrated) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {['name', 'email', 'phone', 'address'].map((field) => (
-              <div className="space-y-2" key={field}>
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    )
+  const handleReset = async () => {
+    try {
+      await updateSettings({
+        companyName: '',
+        companyEmail: '',
+        companyPhone: '',
+        companyAddress: '',
+        weekStartsOn: '1',
+        dateFormat: 'MMM d, yyyy',
+        timeFormat: '12',
+      })
+      setDraft({})
+      toast.success('Settings reset to defaults')
+    } catch {
+      toast.error('Failed to reset settings')
+    }
   }
 
   return (
@@ -206,12 +197,12 @@ export function SettingsForm() {
 
       {/* Actions */}
       <div className="flex items-center justify-between">
-        <Button onClick={handleReset} variant="outline">
+        <Button disabled={isPending} onClick={handleReset} variant="outline">
           <RotateCcw className="mr-2 size-4" />
           Reset to Defaults
         </Button>
-        <Button disabled={isSaving} onClick={handleSave}>
-          {isSaving ? 'Saving...' : 'Save Settings'}
+        <Button disabled={isPending} onClick={handleSave}>
+          {isPending ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core'
+import { userSettings } from '@/lib/db/schema'
 
 // User table for better-auth
 export const user = pgTable('user', {
@@ -71,9 +72,10 @@ export const rateLimit = pgTable('rate_limit', {
 })
 
 // Relations
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
+  settings: one(userSettings),
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({

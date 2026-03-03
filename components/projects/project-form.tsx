@@ -1,6 +1,5 @@
 'use client'
 
-import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type React from 'react'
@@ -24,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { createProject, updateProject } from '@/lib/actions/projects'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +44,8 @@ interface ProjectFormState {
 
 export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
   const router = useRouter()
+  const { settings, formatDate } = useSettingsContext()
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const [isLoading, setIsLoading] = useState(false)
   const [form, setForm] = useState<ProjectFormState>(() => ({
     name: project?.name ?? '',
@@ -212,7 +214,9 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
               variant="outline"
             >
               <CalendarIcon className="mr-2 size-4" />
-              {form.deadline ? format(form.deadline, 'PPP') : 'No deadline set'}
+              {form.deadline
+                ? formatDate(form.deadline, 'PPP')
+                : 'No deadline set'}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
@@ -222,6 +226,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
                 setForm((prev) => ({ ...prev, deadline }))
               }}
               selected={form.deadline}
+              weekStartsOn={weekStartsOn}
             />
           </PopoverContent>
         </Popover>

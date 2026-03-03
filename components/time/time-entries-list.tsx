@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { deleteTimeEntry } from '@/lib/actions/time-entries'
+import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project } from '@/lib/db/schema'
 import { TimeEntryForm } from './time-entry-form'
 
@@ -60,6 +61,7 @@ interface TimeEntriesListProps {
 
 export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
   const router = useRouter()
+  const { formatDate, formatTime } = useSettingsContext()
   const [editEntry, setEditEntry] = useState<TimeEntry | null>(null)
   const [deleteEntryId, setDeleteEntryId] = useState<number | null>(null)
 
@@ -89,7 +91,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
     setDeleteEntryId(null)
   }
 
-  // Group entries by date
+  // Group entries by date (internal key format)
   const entriesByDate = entries.reduce(
     (acc, entry) => {
       const dateKey = format(new Date(entry.startTime), 'yyyy-MM-dd')
@@ -131,7 +133,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                   <div className="space-y-3" key={dateKey}>
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-sm">
-                        {format(new Date(dateKey), 'EEEE, MMMM d, yyyy')}
+                        {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
                       </h3>
                       <Badge variant="secondary">
                         {formatDuration(totalMinutes)}
@@ -161,9 +163,9 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                               </p>
                             ) : null}
                             <p className="text-muted-foreground text-xs">
-                              {format(new Date(entry.startTime), 'h:mm a')}
+                              {formatTime(entry.startTime)}
                               {entry.endTime
-                                ? ` - ${format(new Date(entry.endTime), 'h:mm a')}`
+                                ? ` - ${formatTime(entry.endTime)}`
                                 : null}
                             </p>
                           </div>
