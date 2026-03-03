@@ -15,16 +15,16 @@ interface DailyBreakdownChartContentProps {
   }>
 }
 
+const chartConfig = {
+  hours: {
+    label: 'Hours',
+    color: 'var(--primary)',
+  },
+}
+
 export function DailyBreakdownChartContent({
   data,
 }: DailyBreakdownChartContentProps) {
-  const chartConfig = {
-    hours: {
-      label: 'Hours',
-      color: 'var(--primary)',
-    },
-  }
-
   return (
     <ChartContainer
       className="aspect-auto h-[300px] w-full"

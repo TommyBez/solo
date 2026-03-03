@@ -17,20 +17,20 @@ interface AreasComparisonChartContentProps {
   }>
 }
 
+const chartConfig = {
+  expected: {
+    label: 'Expected',
+    color: 'var(--muted-foreground)',
+  },
+  actual: {
+    label: 'Actual',
+    color: 'var(--primary)',
+  },
+}
+
 export function AreasComparisonChartContent({
   data,
 }: AreasComparisonChartContentProps) {
-  const chartConfig = {
-    expected: {
-      label: 'Expected',
-      color: 'var(--muted-foreground)',
-    },
-    actual: {
-      label: 'Actual',
-      color: 'var(--primary)',
-    },
-  }
-
   return (
     <ChartContainer
       className="aspect-auto h-[300px] w-full"
