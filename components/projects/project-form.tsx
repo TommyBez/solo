@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Toggle } from '@/components/ui/toggle'
 import { createProject, updateProject } from '@/lib/actions/projects'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project } from '@/lib/db/schema'
@@ -194,17 +194,18 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
           <div className="flex items-start justify-between gap-4 rounded-md border p-3">
             <div className="space-y-1">
               <Label htmlFor="project-recurring">Recurring Project</Label>
-              <p className="text-muted-foreground text-xs">
-                Treat expected hours as a weekly target.
-              </p>
             </div>
-            <Switch
-              checked={form.recurring}
+            <Toggle
               id="project-recurring"
-              onCheckedChange={(recurring) => {
-                setForm((prev) => ({ ...prev, recurring }))
+              onPressedChange={(recurring) => {
+                setForm((prev) => ({ ...prev, recurring: !!recurring }))
               }}
-            />
+              pressed={form.recurring}
+              size="sm"
+              variant="outline"
+            >
+              {form.recurring ? 'On' : 'Off'}
+            </Toggle>
           </div>
         </div>
 
