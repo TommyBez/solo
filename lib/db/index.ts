@@ -47,11 +47,12 @@ const schema = {
 }
 
 function createDb() {
+  const databaseUrl = process.env.DATABASE_URL as string
   if (process.env.USE_LOCAL_DB === 'true') {
-    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+    const pool = new pg.Pool({ connectionString: databaseUrl })
     return drizzleNodePg(pool, { schema })
   }
-  const sql = neon(process.env.DATABASE_URL!)
+  const sql = neon(databaseUrl)
   return drizzleNeonHttp(sql, { schema })
 }
 
