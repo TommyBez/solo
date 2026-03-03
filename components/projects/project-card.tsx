@@ -52,9 +52,11 @@ interface ProjectCardProps {
     description: string | null
     status: string
     expectedHours: number
+    recurring: boolean
     deadline: Date | null
     totalHours: number
     hoursThisWeek: number
+    progressHours: number
     percentageComplete: number
     hourlyRate: string | null
     area: Area
@@ -72,6 +74,8 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
   const { formatDate } = useSettingsContext()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const progressLabel = project.recurring ? 'Weekly Progress' : 'Progress'
+  const progressSuffix = project.recurring ? 'weekly target' : 'total target'
 
   async function handleArchive() {
     try {
@@ -160,15 +164,16 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
           {project.expectedHours > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span>Progress</span>
+                <span>{progressLabel}</span>
                 <span className="font-medium">
-                  {project.totalHours}h / {project.expectedHours}h
+                  {project.progressHours}h / {project.expectedHours}h
                 </span>
               </div>
               <Progress
                 className="h-2"
                 value={Math.min(project.percentageComplete, 100)}
               />
+              <p className="text-muted-foreground text-xs">{progressSuffix}</p>
             </div>
           )}
         </CardContent>
@@ -192,6 +197,7 @@ export function ProjectCard({ project, areas }: ProjectCardProps) {
               description: project.description,
               status: project.status,
               expectedHours: project.expectedHours,
+              recurring: project.recurring,
               deadline: project.deadline,
               hourlyRate: project.hourlyRate,
               archived: false,

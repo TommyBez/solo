@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createProject, updateProject } from '@/lib/actions/projects'
 import { useSettingsContext } from '@/lib/context/settings-context'
@@ -39,6 +40,7 @@ interface ProjectFormState {
   description: string
   expectedHours: number
   name: string
+  recurring: boolean
   status: string
 }
 
@@ -53,6 +55,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
     areaId: project?.areaId?.toString() ?? '',
     status: project?.status ?? 'active',
     expectedHours: project?.expectedHours ?? 0,
+    recurring: project?.recurring ?? false,
     deadline: project?.deadline ? new Date(project.deadline) : undefined,
   }))
 
@@ -77,6 +80,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
           description: form.description.trim() || undefined,
           status: form.status,
           expectedHours: form.expectedHours,
+          recurring: form.recurring,
           deadline: form.deadline || null,
         })
         toast.success('Project updated successfully')
@@ -87,6 +91,7 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
           description: form.description.trim() || undefined,
           status: form.status,
           expectedHours: form.expectedHours,
+          recurring: form.recurring,
           deadline: form.deadline,
         })
         toast.success('Project created successfully')
@@ -186,9 +191,30 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="expectedHours">Expected Hours</Label>
+          <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="project-recurring">Recurring Project</Label>
+              <p className="text-muted-foreground text-xs">
+                Treat expected hours as a weekly target.
+              </p>
+            </div>
+            <Switch
+              checked={form.recurring}
+              id="project-recurring"
+              onCheckedChange={(recurring) => {
+                setForm((prev) => ({ ...prev, recurring }))
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expectedHours">
+            {form.recurring ? 'Expected Hours per Week' : 'Expected Hours'}
+          </Label>
           <Input
             id="expectedHours"
+            max={form.recurring ? 168 : undefined}
             min={0}
             onChange={(e) => {
               setForm((prev) => ({
@@ -199,6 +225,11 @@ export function ProjectForm({ project, areas, onSuccess }: ProjectFormProps) {
             type="number"
             value={form.expectedHours}
           />
+          <p className="text-muted-foreground text-xs">
+            {form.recurring
+              ? 'Used to track weekly progress for recurring projects.'
+              : 'Used as a one-time total estimate for this project.'}
+          </p>
         </div>
       </div>
 
