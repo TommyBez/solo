@@ -61,6 +61,7 @@ export default async function TimeTrackingPage(props: {
         <div className="flex items-center gap-2">
           {viewParam === 'week' ? (
             <ScheduleNextWeekDialog
+              projects={activeProjects}
               referenceDateIso={currentDate.toISOString()}
             />
           ) : null}
