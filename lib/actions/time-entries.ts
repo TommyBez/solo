@@ -1,10 +1,18 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
+import { addWeeks, endOfWeek, startOfWeek } from 'date-fns'
+import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
 import { requireSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { projects, timeEntries } from '@/lib/db/schema'
+import {
+  areas,
+  type NewTimeEntry,
+  projects,
+  timeEntries,
+} from '@/lib/db/schema'
+
+const WEEK_STARTS_ON_MONDAY = 1 as const
 
 async function verifyProjectOwnership(projectId: number, userId: string) {
   const project = await db.query.projects.findFirst({
@@ -24,6 +32,22 @@ async function verifyTimeEntryOwnership(timeEntryId: number, userId: string) {
     },
   })
   return entry?.project.area.userId === userId
+}
+
+function buildTimeEntryDedupKey(entry: {
+  billable: boolean
+  description: string | null | undefined
+  durationMinutes: number
+  projectId: number
+  startTime: Date
+}) {
+  return [
+    entry.projectId,
+    entry.startTime.toISOString(),
+    entry.durationMinutes,
+    entry.description?.trim().toLowerCase() ?? '',
+    entry.billable ? '1' : '0',
+  ].join('|')
 }
 
 export async function createTimeEntry(data: {
@@ -98,4 +122,109 @@ export async function deleteTimeEntry(id: number) {
 
   await db.delete(timeEntries).where(eq(timeEntries.id, id))
   revalidateTag('time-entries', 'max')
+}
+
+export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
+  const session = await requireSession()
+  const referenceDate = new Date(referenceDateIso)
+
+  if (Number.isNaN(referenceDate.getTime())) {
+    throw new Error('Invalid reference date')
+  }
+
+  const sourceWeekStart = startOfWeek(referenceDate, {
+    weekStartsOn: WEEK_STARTS_ON_MONDAY,
+  })
+  const sourceWeekEnd = endOfWeek(referenceDate, {
+    weekStartsOn: WEEK_STARTS_ON_MONDAY,
+  })
+  const targetWeekStart = addWeeks(sourceWeekStart, 1)
+  const targetWeekEnd = endOfWeek(targetWeekStart, {
+    weekStartsOn: WEEK_STARTS_ON_MONDAY,
+  })
+
+  const userProjectRows = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .innerJoin(areas, eq(projects.areaId, areas.id))
+    .where(eq(areas.userId, session.user.id))
+
+  const userProjectIds = userProjectRows.map((project) => project.id)
+  if (userProjectIds.length === 0) {
+    return { createdCount: 0, skippedCount: 0, sourceCount: 0 }
+  }
+
+  const sourceEntries = await db.query.timeEntries.findMany({
+    where: and(
+      inArray(timeEntries.projectId, userProjectIds),
+      gte(timeEntries.startTime, sourceWeekStart),
+      lte(timeEntries.startTime, sourceWeekEnd),
+    ),
+  })
+
+  if (sourceEntries.length === 0) {
+    return { createdCount: 0, skippedCount: 0, sourceCount: 0 }
+  }
+
+  const targetEntries = await db.query.timeEntries.findMany({
+    where: and(
+      inArray(timeEntries.projectId, userProjectIds),
+      gte(timeEntries.startTime, targetWeekStart),
+      lte(timeEntries.startTime, targetWeekEnd),
+    ),
+  })
+
+  const existingKeys = new Set(
+    targetEntries.map((entry) =>
+      buildTimeEntryDedupKey({
+        projectId: entry.projectId,
+        startTime: entry.startTime,
+        durationMinutes: entry.durationMinutes,
+        description: entry.description,
+        billable: entry.billable,
+      }),
+    ),
+  )
+
+  let skippedCount = 0
+  const entriesToCreate = sourceEntries.reduce<NewTimeEntry[]>((acc, entry) => {
+    const shiftedStart = addWeeks(new Date(entry.startTime), 1)
+    const dedupKey = buildTimeEntryDedupKey({
+      projectId: entry.projectId,
+      startTime: shiftedStart,
+      durationMinutes: entry.durationMinutes,
+      description: entry.description,
+      billable: entry.billable,
+    })
+
+    if (existingKeys.has(dedupKey)) {
+      skippedCount += 1
+      return acc
+    }
+
+    existingKeys.add(dedupKey)
+    acc.push({
+      projectId: entry.projectId,
+      description: entry.description ?? undefined,
+      startTime: shiftedStart,
+      endTime: entry.endTime ? addWeeks(new Date(entry.endTime), 1) : undefined,
+      durationMinutes: entry.durationMinutes,
+      billable: entry.billable,
+    })
+    return acc
+  }, [])
+
+  const createdEntries =
+    entriesToCreate.length > 0
+      ? await db.insert(timeEntries).values(entriesToCreate).returning()
+      : []
+
+  revalidateTag('time-entries', 'max')
+  revalidateTag('projects', 'max')
+
+  return {
+    createdCount: createdEntries.length,
+    skippedCount,
+    sourceCount: sourceEntries.length,
+  }
 }

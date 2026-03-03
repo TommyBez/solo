@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { getTimeEntriesForProjectAndDateRange } from '@/lib/queries/time-entries'
 
 const MAX_FILENAME_PART_LENGTH = 100
+const CSV_FORMULA_PREFIX_PATTERN = /^[=+\-@]/
 
 /**
  * Sanitizes a string for safe use in Content-Disposition filenames.
@@ -70,8 +71,8 @@ function buildCsv(
     const trimmed = field.trim()
     // CSV formula injection mitigation: prefix fields starting with =, +, -, @
     let processed = field
-    if (/^[=+\-@]/.test(trimmed)) {
-      processed = "'" + field
+    if (CSV_FORMULA_PREFIX_PATTERN.test(trimmed)) {
+      processed = `'${field}`
     }
     if (
       processed.includes(',') ||

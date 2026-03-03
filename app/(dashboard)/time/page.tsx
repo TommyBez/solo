@@ -8,6 +8,7 @@ import {
 import Link from 'next/link'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { CalendarView } from '@/components/time/calendar-view'
+import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
@@ -57,7 +58,15 @@ export default async function TimeTrackingPage(props: {
             Track your work hours and manage time entries
           </p>
         </div>
-        <AddTimeEntryDialog projects={activeProjects} />
+        <div className="flex items-center gap-2">
+          {viewParam === 'week' ? (
+            <ScheduleNextWeekDialog
+              projects={activeProjects}
+              referenceDateIso={currentDate.toISOString()}
+            />
+          ) : null}
+          <AddTimeEntryDialog projects={activeProjects} />
+        </div>
       </div>
 
       <CalendarView

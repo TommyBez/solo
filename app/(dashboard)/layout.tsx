@@ -2,6 +2,7 @@ import type React from 'react'
 import { Suspense } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
 import { KeyboardShortcutsProvider } from '@/components/keyboard-shortcuts-provider'
+import { MainContentSkeleton } from '@/components/main-content-skeleton'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,7 +22,11 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="w-[--sidebar-width] shrink-0 border-r bg-sidebar" />
+        }
+      >
         <AppSidebar />
       </Suspense>
       <SidebarInset>
@@ -36,7 +41,7 @@ export default function DashboardLayout({
           </Breadcrumb>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          <Suspense fallback={children}>
+          <Suspense fallback={<MainContentSkeleton />}>
             <KeyboardShortcutsProvider>{children}</KeyboardShortcutsProvider>
           </Suspense>
         </main>
