@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs'
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSession } from '@/lib/auth/session'
@@ -141,6 +142,18 @@ async function getDashboardStatsCached(userId: string) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
+  // #region agent log
+  appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    `${JSON.stringify({
+      hypothesisId: 'A',
+      location: 'lib/queries/time-entries.ts:getDashboardStatsCached:entry',
+      message: 'Entered getDashboardStatsCached',
+      data: { hasUserId: Boolean(userId) },
+      timestamp: Date.now(),
+    })}\n`,
+  )
+  // #endregion
   const userProjectIds = await getUserProjectIds(userId)
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -215,6 +228,26 @@ async function getDashboardStatsCached(userId: string) {
   const activeAreas = await db.query.areas.findMany({
     where: and(eq(areas.userId, userId), eq(areas.archived, false)),
   })
+  // #region agent log
+  appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    `${JSON.stringify({
+      hypothesisId: 'B',
+      location:
+        'lib/queries/time-entries.ts:getDashboardStatsCached:activeAreas',
+      message: 'Loaded active areas and user projects',
+      data: {
+        userProjectIdsCount: userProjectIds.length,
+        activeAreasCount: activeAreas.length,
+        activeAreasExpectedHoursTotal: activeAreas.reduce(
+          (sum, area) => sum + area.expectedHoursPerWeek,
+          0,
+        ),
+      },
+      timestamp: Date.now(),
+    })}\n`,
+  )
+  // #endregion
 
   const userAreaIds = activeAreas.map((a) => a.id)
   const activeProjects =
@@ -279,6 +312,28 @@ async function getDashboardStatsCached(userId: string) {
       hours: Math.round((dayMinutes / 60) * 10) / 10,
     }
   })
+  // #region agent log
+  appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    `${JSON.stringify({
+      hypothesisId: 'D',
+      location:
+        'lib/queries/time-entries.ts:getDashboardStatsCached:dailyBreakdown',
+      message: 'Computed daily breakdown',
+      data: {
+        weekEntriesCount: weekEntries.length,
+        dailyBreakdownCount: dailyBreakdown.length,
+        dailyBreakdownNonZeroDays: dailyBreakdown.filter((d) => d.hours > 0)
+          .length,
+        dailyBreakdownMaxHours: dailyBreakdown.reduce(
+          (max, d) => Math.max(max, d.hours),
+          0,
+        ),
+      },
+      timestamp: Date.now(),
+    })}\n`,
+  )
+  // #endregion
 
   // Expected vs actual for areas
   const areasComparison = activeAreas.map((area) => {
@@ -293,14 +348,37 @@ async function getDashboardStatsCached(userId: string) {
       actual: Math.round((areaMinutes / 60) * 10) / 10,
     }
   })
+  // #region agent log
+  appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    `${JSON.stringify({
+      hypothesisId: 'C',
+      location:
+        'lib/queries/time-entries.ts:getDashboardStatsCached:areasComparison',
+      message: 'Computed areas comparison',
+      data: {
+        areasComparisonCount: areasComparison.length,
+        areasComparisonNonZeroExpected: areasComparison.filter(
+          (area) => area.expected > 0,
+        ).length,
+        areasComparisonNonZeroActual: areasComparison.filter(
+          (area) => area.actual > 0,
+        ).length,
+        areasComparisonAllZero: areasComparison.every(
+          (area) => area.expected === 0 && area.actual === 0,
+        ),
+      },
+      timestamp: Date.now(),
+    })}\n`,
+  )
+  // #endregion
 
   // Calculate total expected hours for goal tracking
   const totalExpectedWeeklyHours = activeAreas.reduce(
     (sum, area) => sum + area.expectedHoursPerWeek,
     0,
   )
-
-  return {
+  const result = {
     weeklyHours: Math.round((weeklyMinutes / 60) * 10) / 10,
     prevWeeklyHours: Math.round((prevWeeklyMinutes / 60) * 10) / 10,
     weeklyChange,
@@ -324,10 +402,40 @@ async function getDashboardStatsCached(userId: string) {
     dailyBreakdown,
     areasComparison,
   }
+  // #region agent log
+  appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    `${JSON.stringify({
+      hypothesisId: 'E',
+      location: 'lib/queries/time-entries.ts:getDashboardStatsCached:return',
+      message: 'Returning dashboard stats summary',
+      data: {
+        weeklyHours: result.weeklyHours,
+        activeAreasCount: result.activeAreasCount,
+        dailyBreakdownCount: result.dailyBreakdown.length,
+        areasComparisonCount: result.areasComparison.length,
+      },
+      timestamp: Date.now(),
+    })}\n`,
+  )
+  // #endregion
+  return result
 }
 
 export async function getDashboardStats() {
   const session = await getSession()
+  // #region agent log
+  appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    `${JSON.stringify({
+      hypothesisId: 'A',
+      location: 'lib/queries/time-entries.ts:getDashboardStats:session',
+      message: 'Resolved dashboard session',
+      data: { hasUser: Boolean(session?.user) },
+      timestamp: Date.now(),
+    })}\n`,
+  )
+  // #endregion
   if (!session?.user) {
     return {
       weeklyHours: 0,
