@@ -152,7 +152,7 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
               <FormControl>
                 <div className="flex flex-wrap gap-2">
                   {PRESET_COLORS.map((presetColor) => (
-                    <button
+                    <Button
                       aria-label={`Select color ${presetColor}`}
                       className={`transition-all ${
                         field.value === presetColor
@@ -161,10 +161,12 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
                       }`}
                       key={presetColor}
                       onClick={() => field.onChange(presetColor)}
+                      size="icon"
                       type="button"
+                      variant="ghost"
                     >
                       <ColorDot className="size-8" color={presetColor} />
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </FormControl>
