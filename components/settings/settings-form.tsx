@@ -1,6 +1,7 @@
 'use client'
 
 import { Globe, RotateCcw } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -134,9 +135,9 @@ export function SettingsForm() {
           </div>
           <p className="text-muted-foreground text-sm">
             Company information has moved to{' '}
-            <a className="text-primary underline" href="/org/settings">
+            <Link className="text-primary underline" href="/org/settings">
               Workspace Settings
-            </a>
+            </Link>
             .
           </p>
         </CardContent>
