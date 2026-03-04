@@ -1,6 +1,11 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { createAccessControl } from 'better-auth/plugins/access'
 import { organization as organizationPlugin } from 'better-auth/plugins'
+import {
+  defaultRoles,
+  defaultStatements,
+} from 'better-auth/plugins/organization/access'
 import { db } from '@/lib/db'
 import {
   account,
@@ -12,6 +17,9 @@ import {
   user,
   verification,
 } from './schema'
+
+const ac = createAccessControl(defaultStatements)
+const viewer = ac.newRole({})
 
 const appUrl = process.env.BETTER_AUTH_URL
 const trustedOrigins = ['http://localhost:3000', ...(appUrl ? [appUrl] : [])]
@@ -46,6 +54,11 @@ export const auth = betterAuth({
   },
   plugins: [
     organizationPlugin({
+      ac,
+      roles: {
+        ...defaultRoles,
+        viewer,
+      },
       allowUserToCreateOrganization: true,
       organizationLimit: 5,
       creatorRole: 'owner',
