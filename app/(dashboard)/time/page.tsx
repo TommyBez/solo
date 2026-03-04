@@ -6,12 +6,14 @@ import {
   startOfWeek,
 } from 'date-fns'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { CalendarView } from '@/components/time/calendar-view'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getSession } from '@/lib/auth/session'
 import { getProjects } from '@/lib/queries/projects'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
@@ -27,6 +29,30 @@ export default async function TimeTrackingPage(props: {
     typeof searchParams.date === 'string' ? searchParams.date : undefined
   const viewParam =
     typeof searchParams.view === 'string' ? searchParams.view : 'month'
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-bold text-3xl tracking-tight">Time Tracking</h1>
+        <p className="text-muted-foreground">
+          Track your work hours and manage time entries
+        </p>
+      </div>
+
+      <Suspense fallback={<TimeTrackingSkeleton />}>
+        <TimeTrackingContent dateParam={dateParam} viewParam={viewParam} />
+      </Suspense>
+    </div>
+  )
+}
+
+async function TimeTrackingContent({
+  dateParam,
+  viewParam,
+}: {
+  dateParam?: string
+  viewParam: string
+}) {
   const currentDate = dateParam ? parseISO(dateParam) : new Date()
 
   // Fetch user settings for week start preference
@@ -59,23 +85,15 @@ export default async function TimeTrackingPage(props: {
   const activeProjects = projects.filter((p) => p.status === 'active')
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-3xl tracking-tight">Time Tracking</h1>
-          <p className="text-muted-foreground">
-            Track your work hours and manage time entries
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {viewParam === 'week' ? (
-            <ScheduleNextWeekDialog
-              projects={activeProjects}
-              referenceDateIso={currentDate.toISOString()}
-            />
-          ) : null}
-          <AddTimeEntryDialog projects={activeProjects} />
-        </div>
+    <>
+      <div className="flex items-center justify-end gap-2">
+        {viewParam === 'week' ? (
+          <ScheduleNextWeekDialog
+            projects={activeProjects}
+            referenceDateIso={currentDate.toISOString()}
+          />
+        ) : null}
+        <AddTimeEntryDialog projects={activeProjects} />
       </div>
 
       <CalendarView
@@ -104,6 +122,21 @@ export default async function TimeTrackingPage(props: {
           </div>
         </div>
       )}
-    </div>
+    </>
+  )
+}
+
+function TimeTrackingSkeleton() {
+  return (
+    <>
+      <div className="flex items-center justify-end">
+        <Skeleton className="h-10 w-28" />
+      </div>
+      <Skeleton className="h-64" />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Skeleton className="h-64 lg:col-span-1" />
+        <Skeleton className="h-96 lg:col-span-2" />
+      </div>
+    </>
   )
 }

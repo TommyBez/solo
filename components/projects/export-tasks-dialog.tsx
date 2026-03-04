@@ -180,7 +180,10 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                       </FormControl>
                       <SelectContent>
                         {projects.map((project) => (
-                          <SelectItem key={project.id} value={String(project.id)}>
+                          <SelectItem
+                            key={project.id}
+                            value={String(project.id)}
+                          >
                             <div className="flex items-center gap-2">
                               <div
                                 className="size-2 rounded-full"
@@ -220,7 +223,9 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                               variant="outline"
                             >
                               <CalendarIcon className="mr-2 size-4" />
-                              {field.value ? formatDate(field.value) : 'Pick date'}
+                              {field.value
+                                ? formatDate(field.value)
+                                : 'Pick date'}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -228,7 +233,9 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                           <Calendar
                             disabled={(date) =>
                               date > new Date() ||
-                              (form.getValues('endDate') ? date > form.getValues('endDate') : false)
+                              (form.getValues('endDate')
+                                ? date > form.getValues('endDate')
+                                : false)
                             }
                             mode="single"
                             onSelect={field.onChange}
@@ -259,7 +266,9 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                               variant="outline"
                             >
                               <CalendarIcon className="mr-2 size-4" />
-                              {field.value ? formatDate(field.value) : 'Pick date'}
+                              {field.value
+                                ? formatDate(field.value)
+                                : 'Pick date'}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -267,7 +276,9 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                           <Calendar
                             disabled={(date) =>
                               date > new Date() ||
-                              (form.getValues('startDate') ? date < form.getValues('startDate') : false)
+                              (form.getValues('startDate')
+                                ? date < form.getValues('startDate')
+                                : false)
                             }
                             mode="single"
                             onSelect={field.onChange}
@@ -299,7 +310,8 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                         <label
                           className={cn(
                             'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
-                            field.value === 'csv' && 'border-primary bg-primary/5',
+                            field.value === 'csv' &&
+                              'border-primary bg-primary/5',
                           )}
                           htmlFor="format-csv"
                         >
@@ -315,7 +327,8 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                         <label
                           className={cn(
                             'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
-                            field.value === 'pdf' && 'border-primary bg-primary/5',
+                            field.value === 'pdf' &&
+                              'border-primary bg-primary/5',
                           )}
                           htmlFor="format-pdf"
                         >
@@ -337,7 +350,11 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
             </div>
 
             <DialogFooter>
-              <Button onClick={() => setOpen(false)} type="button" variant="outline">
+              <Button
+                onClick={() => setOpen(false)}
+                type="button"
+                variant="outline"
+              >
                 Cancel
               </Button>
               <Button disabled={isExporting} type="submit">

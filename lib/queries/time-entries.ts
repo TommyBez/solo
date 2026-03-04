@@ -105,17 +105,17 @@ export async function getTimeEntriesForDateRange(
   )
 }
 
-export async function getTimeEntriesForProjectAndDateRange(
+async function getTimeEntriesForProjectAndDateRangeCached(
+  organizationId: string,
   projectId: number,
-  startDate: Date,
-  endDate: Date,
+  startDateIso: string,
+  endDateIso: string,
 ) {
-  const orgId = await getActiveOrganizationId()
-  if (!orgId) {
-    return []
-  }
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('time-entries', 'projects')
 
-  const orgProjectIds = await getOrgProjectIds(orgId)
+  const orgProjectIds = await getOrgProjectIds(organizationId)
   if (!orgProjectIds.includes(projectId)) {
     return []
   }
@@ -123,8 +123,8 @@ export async function getTimeEntriesForProjectAndDateRange(
   return db.query.timeEntries.findMany({
     where: and(
       eq(timeEntries.projectId, projectId),
-      gte(timeEntries.startTime, startDate),
-      lte(timeEntries.startTime, endDate),
+      gte(timeEntries.startTime, new Date(startDateIso)),
+      lte(timeEntries.startTime, new Date(endDateIso)),
     ),
     orderBy: [desc(timeEntries.startTime)],
     with: {
@@ -135,6 +135,24 @@ export async function getTimeEntriesForProjectAndDateRange(
       },
     },
   })
+}
+
+export async function getTimeEntriesForProjectAndDateRange(
+  projectId: number,
+  startDate: Date,
+  endDate: Date,
+) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
+    return []
+  }
+
+  return getTimeEntriesForProjectAndDateRangeCached(
+    orgId,
+    projectId,
+    startDate.toISOString(),
+    endDate.toISOString(),
+  )
 }
 
 async function getDashboardStatsCached(organizationId: string) {

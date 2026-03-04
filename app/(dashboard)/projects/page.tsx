@@ -1,13 +1,32 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { CreateProjectDialog } from '@/components/projects/create-project-dialog'
 import { ExportTasksDialog } from '@/components/projects/export-tasks-dialog'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getAreas } from '@/lib/queries/areas'
 import { getClients } from '@/lib/queries/clients'
 import { getProjectsWithStats } from '@/lib/queries/projects'
 
-export default async function ProjectsPage() {
+export default function ProjectsPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-bold text-3xl tracking-tight">Projects</h1>
+        <p className="text-muted-foreground">
+          Manage your specific endeavors and track progress
+        </p>
+      </div>
+
+      <Suspense fallback={<ProjectsSkeleton />}>
+        <ProjectsContent />
+      </Suspense>
+    </div>
+  )
+}
+
+async function ProjectsContent() {
   const [projects, areas, clients] = await Promise.all([
     getProjectsWithStats(),
     getAreas(),
@@ -34,24 +53,16 @@ export default async function ProjectsPage() {
   )
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-3xl tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">
-            Manage your specific endeavors and track progress
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ExportTasksDialog
-            projects={projects.map((p) => ({
-              id: p.id,
-              name: p.name,
-              area: p.area,
-            }))}
-          />
-          <CreateProjectDialog areas={areas} clients={clients} />
-        </div>
+    <>
+      <div className="flex items-center justify-end gap-2">
+        <ExportTasksDialog
+          projects={projects.map((p) => ({
+            id: p.id,
+            name: p.name,
+            area: p.area,
+          }))}
+        />
+        <CreateProjectDialog areas={areas} clients={clients} />
       </div>
 
       {areas.length === 0 && (
@@ -104,6 +115,33 @@ export default async function ProjectsPage() {
           )}
         </div>
       )}
-    </div>
+    </>
+  )
+}
+
+function ProjectsSkeleton() {
+  const skeletonGroups = [
+    { id: 'group-1', cards: ['card-1', 'card-2', 'card-3'] },
+    { id: 'group-2', cards: ['card-4', 'card-5', 'card-6'] },
+  ]
+
+  return (
+    <>
+      <div className="flex items-center justify-end">
+        <Skeleton className="h-10 w-32" />
+      </div>
+      <div className="space-y-8">
+        {skeletonGroups.map((group) => (
+          <div className="space-y-4" key={group.id}>
+            <Skeleton className="h-7 w-48" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {group.cards.map((cardId) => (
+                <Skeleton className="h-52" key={cardId} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }

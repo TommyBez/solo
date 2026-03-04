@@ -60,7 +60,9 @@ const timeEntrySchema = z.object({
   date: z.date(),
   durationInput: z.string().refine(
     (val) => {
-      if (!val.trim()) return false
+      if (!val.trim()) {
+        return false
+      }
       const parsed = parseDuration(val)
       return parsed.isValid && parsed.minutes > 0
     },
@@ -85,7 +87,9 @@ export function TimeEntryForm({
       projectId: entry?.projectId?.toString() ?? '',
       description: entry?.description ?? '',
       date: entry?.startTime ? new Date(entry.startTime) : new Date(),
-      durationInput: entry ? formatDurationForInput(entry.durationMinutes) : '1h',
+      durationInput: entry
+        ? formatDurationForInput(entry.durationMinutes)
+        : '1h',
     },
   })
   const isLoading = form.formState.isSubmitting
@@ -233,7 +237,10 @@ export function TimeEntryForm({
                           {area.name}
                         </SelectLabel>
                         {areaProjects.map((project) => (
-                          <SelectItem key={project.id} value={project.id.toString()}>
+                          <SelectItem
+                            key={project.id}
+                            value={project.id.toString()}
+                          >
                             {project.name}
                           </SelectItem>
                         ))}
@@ -276,7 +283,9 @@ export function TimeEntryForm({
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
-                      className={cn('w-full justify-start text-left font-normal')}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                      )}
                       disabled={isLoading}
                       variant="outline"
                     >
@@ -289,7 +298,9 @@ export function TimeEntryForm({
                   <Calendar
                     mode="single"
                     onSelect={(d) => {
-                      if (d) field.onChange(d)
+                      if (d) {
+                        field.onChange(d)
+                      }
                     }}
                     selected={field.value}
                     weekStartsOn={weekStartsOn}

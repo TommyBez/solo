@@ -68,7 +68,9 @@ const manualTaskSchema = z.object({
   dayOffset: z.string(),
   durationInput: z.string().refine(
     (val) => {
-      if (!val.trim()) return false
+      if (!val.trim()) {
+        return false
+      }
       const parsed = parseDuration(val)
       return parsed.isValid && parsed.minutes > 0
     },
@@ -265,7 +267,7 @@ export function ScheduleNextWeekDialog({
               </p>
             ) : (
               <Form {...form}>
-                <form onSubmit={handleCreateManualTask} className="space-y-4">
+                <form className="space-y-4" onSubmit={handleCreateManualTask}>
                   <FormField
                     control={form.control}
                     name="projectId"
@@ -284,7 +286,10 @@ export function ScheduleNextWeekDialog({
                           </FormControl>
                           <SelectContent>
                             {Object.entries(projectsByArea).map(
-                              ([areaName, { area, projects: areaProjects }]) => (
+                              ([
+                                areaName,
+                                { area, projects: areaProjects },
+                              ]) => (
                                 <SelectGroup key={areaName}>
                                   <SelectLabel className="flex items-center gap-2">
                                     <div
@@ -330,7 +335,10 @@ export function ScheduleNextWeekDialog({
                             </FormControl>
                             <SelectContent>
                               {nextWeekDayOptions.map((day) => (
-                                <SelectItem key={day.dayOffset} value={day.dayOffset}>
+                                <SelectItem
+                                  key={day.dayOffset}
+                                  value={day.dayOffset}
+                                >
                                   {day.label} ({day.dateLabel})
                                 </SelectItem>
                               ))}
@@ -378,10 +386,7 @@ export function ScheduleNextWeekDialog({
                     )}
                   />
 
-                  <Button
-                    disabled={isBusy}
-                    type="submit"
-                  >
+                  <Button disabled={isBusy} type="submit">
                     {isCreating ? 'Creating...' : 'Create next-week task'}
                   </Button>
                 </form>

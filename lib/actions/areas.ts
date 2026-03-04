@@ -44,9 +44,7 @@ export async function updateArea(
   const result = await db
     .update(areas)
     .set({ ...data, updatedAt: new Date() })
-    .where(
-      and(eq(areas.id, id), eq(areas.organizationId, organizationId)),
-    )
+    .where(and(eq(areas.id, id), eq(areas.organizationId, organizationId)))
     .returning()
   revalidateTag('areas', 'max')
   return result[0]
@@ -58,8 +56,6 @@ export async function deleteArea(id: number) {
 
   await db
     .delete(areas)
-    .where(
-      and(eq(areas.id, id), eq(areas.organizationId, organizationId)),
-    )
+    .where(and(eq(areas.id, id), eq(areas.organizationId, organizationId)))
   revalidateTag('areas', 'max')
 }

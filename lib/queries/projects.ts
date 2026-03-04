@@ -96,9 +96,7 @@ async function getProjectsWithStatsCached(organizationId: string) {
     const expectedHours = project.expectedHours
     const progressHours = project.recurring ? hoursThisWeek : totalHours
     const percentageComplete =
-      expectedHours > 0
-        ? Math.round((progressHours / expectedHours) * 100)
-        : 0
+      expectedHours > 0 ? Math.round((progressHours / expectedHours) * 100) : 0
 
     return {
       ...project,

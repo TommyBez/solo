@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { organization } from '@/lib/auth/client'
-import type { OrgRole } from '@/lib/auth/permissions'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,7 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { toast } from 'sonner'
+import { organization } from '@/lib/auth/client'
+import type { OrgRole } from '@/lib/auth/permissions'
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
@@ -38,6 +38,7 @@ const ROLE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
 }
 
 interface Member {
+  createdAt: Date
   id: string
   role: string
   user: {
@@ -46,7 +47,6 @@ interface Member {
     email: string
     image?: string | null
   }
-  createdAt: Date
 }
 
 export function MembersList({
@@ -114,7 +114,9 @@ export function MembersList({
         <TableRow>
           <TableHead>Member</TableHead>
           <TableHead>Role</TableHead>
-          {canManageMembers && <TableHead className="w-[100px]">Actions</TableHead>}
+          {canManageMembers && (
+            <TableHead className="w-[100px]">Actions</TableHead>
+          )}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -129,7 +131,7 @@ export function MembersList({
                   <p className="font-medium">
                     {m.user.name}
                     {isCurrentUser && (
-                      <span className="text-muted-foreground ml-1 text-sm">
+                      <span className="ml-1 text-muted-foreground text-sm">
                         (you)
                       </span>
                     )}
@@ -142,9 +144,9 @@ export function MembersList({
               <TableCell>
                 {canChangeRoles && !isOwner && !isCurrentUser ? (
                   <Select
-                    value={m.role}
-                    onValueChange={(value) => handleRoleChange(m.id, value)}
                     disabled={loading === m.id}
+                    onValueChange={(value) => handleRoleChange(m.id, value)}
+                    value={m.role}
                   >
                     <SelectTrigger className="w-[120px]">
                       <SelectValue />
@@ -163,12 +165,12 @@ export function MembersList({
               </TableCell>
               {canManageMembers && (
                 <TableCell>
-                  {!isCurrentUser && !isOwner && (
+                  {!(isCurrentUser || isOwner) && (
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveMember(m.id)}
                       disabled={loading === m.id}
+                      onClick={() => handleRemoveMember(m.id)}
+                      size="sm"
+                      variant="ghost"
                     >
                       Remove
                     </Button>

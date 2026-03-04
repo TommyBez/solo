@@ -58,10 +58,7 @@ interface AreaFormProps {
   onSuccess?: () => void
 }
 
-export function AreaForm({
-  area,
-  onSuccess,
-}: AreaFormProps) {
+export function AreaForm({ area, onSuccess }: AreaFormProps) {
   const router = useRouter()
   const isEditing = !!area
   const form = useForm<AreaFormValues>({

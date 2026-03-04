@@ -9,18 +9,12 @@ import { areas, projects } from '@/lib/db/schema'
 
 async function verifyAreaInOrg(areaId: number, organizationId: string) {
   const area = await db.query.areas.findFirst({
-    where: and(
-      eq(areas.id, areaId),
-      eq(areas.organizationId, organizationId),
-    ),
+    where: and(eq(areas.id, areaId), eq(areas.organizationId, organizationId)),
   })
   return !!area
 }
 
-async function verifyProjectInOrg(
-  projectId: number,
-  organizationId: string,
-) {
+async function verifyProjectInOrg(projectId: number, organizationId: string) {
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
     with: { area: true },

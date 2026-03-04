@@ -19,7 +19,10 @@ interface CreateProjectDialogProps {
   clients?: Client[]
 }
 
-export function CreateProjectDialog({ areas, clients }: CreateProjectDialogProps) {
+export function CreateProjectDialog({
+  areas,
+  clients,
+}: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false)
 
   if (areas.length === 0) {
@@ -47,7 +50,11 @@ export function CreateProjectDialog({ areas, clients }: CreateProjectDialogProps
             Agency" or "Build Mobile App".
           </DialogDescription>
         </DialogHeader>
-        <ProjectForm areas={areas} clients={clients} onSuccess={() => setOpen(false)} />
+        <ProjectForm
+          areas={areas}
+          clients={clients}
+          onSuccess={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   )

@@ -78,7 +78,6 @@ export function InviteMemberDialog() {
 
   return (
     <Dialog
-      open={open}
       onOpenChange={(value) => {
         setOpen(value)
         if (!value) {
@@ -86,6 +85,7 @@ export function InviteMemberDialog() {
           setError('')
         }
       }}
+      open={open}
     >
       <DialogTrigger asChild>
         <Button size="sm">
@@ -101,7 +101,7 @@ export function InviteMemberDialog() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {error ? (
               <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
                 {error}
@@ -148,8 +148,8 @@ export function InviteMemberDialog() {
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Viewers can only view data and export. Members can create and edit.
-                    Admins can also manage workspace settings.
+                    Viewers can only view data and export. Members can create
+                    and edit. Admins can also manage workspace settings.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -157,13 +157,13 @@ export function InviteMemberDialog() {
             />
             <div className="flex justify-end gap-2">
               <Button
+                onClick={() => setOpen(false)}
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button disabled={isLoading} type="submit">
                 {isLoading ? 'Sending...' : 'Send Invitation'}
               </Button>
             </div>

@@ -60,7 +60,7 @@ export function OrgSettingsForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
           <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
             {error}
@@ -136,7 +136,7 @@ export function OrgSettingsForm({
           )}
         />
         {!readOnly && (
-          <Button type="submit" disabled={isLoading}>
+          <Button disabled={isLoading} type="submit">
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         )}

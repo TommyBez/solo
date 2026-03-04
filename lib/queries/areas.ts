@@ -13,10 +13,7 @@ async function getAreasCached(
   cacheTag('areas', 'projects')
   const conditions = includeArchived
     ? eq(areas.organizationId, organizationId)
-    : and(
-        eq(areas.organizationId, organizationId),
-        eq(areas.archived, false),
-      )
+    : and(eq(areas.organizationId, organizationId), eq(areas.archived, false))
 
   return await db.query.areas.findMany({
     where: conditions,
@@ -77,9 +74,7 @@ async function getAreasWithStatsCached(organizationId: string) {
     const hoursThisWeek = Math.round((totalMinutesThisWeek / 60) * 10) / 10
     const expectedHours = area.expectedHoursPerWeek
     const percentageComplete =
-      expectedHours > 0
-        ? Math.round((hoursThisWeek / expectedHours) * 100)
-        : 0
+      expectedHours > 0 ? Math.round((hoursThisWeek / expectedHours) * 100) : 0
 
     return {
       ...area,

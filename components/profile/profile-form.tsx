@@ -144,11 +144,7 @@ export function ProfileForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                disabled
-                id="email"
-                value={user.email}
-              />
+              <Input disabled id="email" value={user.email} />
               <p className="text-muted-foreground text-xs">
                 Email cannot be changed
               </p>

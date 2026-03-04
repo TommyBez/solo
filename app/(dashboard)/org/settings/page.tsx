@@ -1,7 +1,6 @@
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getMemberRole } from '@/lib/auth/permissions'
-import { getActiveOrganizationId, requireSession } from '@/lib/auth/session'
-import { getOrganizationSettings } from '@/lib/queries/organization-settings'
+import { Suspense } from 'react'
 import { InviteMemberDialog } from '@/components/org/invite-member-dialog'
 import { MembersList } from '@/components/org/members-list'
 import { OrgGeneralForm } from '@/components/org/org-general-form'
@@ -13,11 +12,39 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { getMemberRole } from '@/lib/auth/permissions'
 import { auth } from '@/lib/auth/server'
-import { headers } from 'next/headers'
+import { getActiveOrganizationId, requireSession } from '@/lib/auth/session'
+import { getOrganizationSettings } from '@/lib/queries/organization-settings'
 
-export default async function OrgSettingsPage() {
+interface Invitation {
+  email: string
+  id: string
+  role: string | null
+  status: string
+}
+
+export default function OrgSettingsPage() {
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <h1 className="font-bold text-2xl tracking-tight">
+          Workspace Settings
+        </h1>
+        <p className="text-muted-foreground">
+          Manage your workspace, members, and company information.
+        </p>
+      </div>
+
+      <Suspense fallback={<OrgSettingsSkeleton />}>
+        <OrgSettingsContent />
+      </Suspense>
+    </div>
+  )
+}
+
+async function OrgSettingsContent() {
   const session = await requireSession()
   const orgId = await getActiveOrganizationId()
 
@@ -45,28 +72,17 @@ export default async function OrgSettingsPage() {
   const canEditSettings = role === 'owner' || role === 'admin'
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Workspace Settings
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your workspace, members, and company information.
-        </p>
-      </div>
-
+    <>
       <Card>
         <CardHeader>
           <CardTitle>General</CardTitle>
-          <CardDescription>
-            Workspace name and identifier.
-          </CardDescription>
+          <CardDescription>Workspace name and identifier.</CardDescription>
         </CardHeader>
         <CardContent>
           <OrgGeneralForm
-            orgId={orgId}
             initialName={fullOrg?.name ?? ''}
             initialSlug={fullOrg?.slug ?? ''}
+            orgId={orgId}
             readOnly={!canEditSettings}
           />
         </CardContent>
@@ -80,10 +96,7 @@ export default async function OrgSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <OrgSettingsForm
-            settings={orgSettings}
-            readOnly={!canEditSettings}
-          />
+          <OrgSettingsForm readOnly={!canEditSettings} settings={orgSettings} />
         </CardContent>
       </Card>
 
@@ -100,10 +113,22 @@ export default async function OrgSettingsPage() {
         </CardHeader>
         <CardContent>
           <MembersList
-            members={members as any}
-            orgId={orgId}
             currentUserId={session.user.id}
             currentUserRole={role}
+            members={
+              members as {
+                createdAt: Date
+                id: string
+                role: string
+                user: {
+                  id: string
+                  name: string
+                  email: string
+                  image?: string | null
+                }
+              }[]
+            }
+            orgId={orgId}
           />
         </CardContent>
       </Card>
@@ -113,9 +138,13 @@ export default async function OrgSettingsPage() {
           <CardHeader>
             <CardTitle>Pending Invitations</CardTitle>
             <CardDescription>
-              {invitations.filter((i: any) => i.status === 'pending').length}{' '}
+              {
+                invitations.filter((i: Invitation) => i.status === 'pending')
+                  .length
+              }{' '}
               pending invitation
-              {invitations.filter((i: any) => i.status === 'pending').length !== 1
+              {invitations.filter((i: Invitation) => i.status === 'pending')
+                .length !== 1
                 ? 's'
                 : ''}
             </CardDescription>
@@ -123,14 +152,14 @@ export default async function OrgSettingsPage() {
           <CardContent>
             <div className="space-y-2">
               {invitations
-                .filter((i: any) => i.status === 'pending')
-                .map((inv: any) => (
+                .filter((i: Invitation) => i.status === 'pending')
+                .map((inv: Invitation) => (
                   <div
-                    key={inv.id}
                     className="flex items-center justify-between rounded-md border p-3"
+                    key={inv.id}
                   >
                     <div>
-                      <p className="text-sm font-medium">{inv.email}</p>
+                      <p className="font-medium text-sm">{inv.email}</p>
                       <p className="text-muted-foreground text-xs">
                         Role: {inv.role ?? 'member'}
                       </p>
@@ -142,6 +171,27 @@ export default async function OrgSettingsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
+  )
+}
+
+function OrgSettingsSkeleton() {
+  return (
+    <>
+      {['card-1', 'card-2', 'card-3'].map((key) => (
+        <Card key={key}>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </>
   )
 }

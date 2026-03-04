@@ -14,10 +14,7 @@ import {
 } from '@/lib/db/schema'
 import { getSettings } from '@/lib/queries/settings'
 
-async function verifyProjectInOrg(
-  projectId: number,
-  organizationId: string,
-) {
+async function verifyProjectInOrg(projectId: number, organizationId: string) {
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
     with: { area: true },
@@ -67,10 +64,7 @@ export async function createTimeEntry(data: {
   await requireRole(session.user.id, organizationId, 'member')
 
   // Verify project belongs to this org (through area)
-  const projectInOrg = await verifyProjectInOrg(
-    data.projectId,
-    organizationId,
-  )
+  const projectInOrg = await verifyProjectInOrg(data.projectId, organizationId)
   if (!projectInOrg) {
     throw new Error('Unauthorized')
   }
@@ -222,9 +216,7 @@ export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
       projectId: entry.projectId,
       description: entry.description ?? undefined,
       startTime: shiftedStart,
-      endTime: entry.endTime
-        ? addWeeks(new Date(entry.endTime), 1)
-        : undefined,
+      endTime: entry.endTime ? addWeeks(new Date(entry.endTime), 1) : undefined,
       durationMinutes: entry.durationMinutes,
       billable: entry.billable,
     })

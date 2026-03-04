@@ -134,7 +134,7 @@ export function SettingsForm() {
           </div>
           <p className="text-muted-foreground text-sm">
             Company information has moved to{' '}
-            <a href="/org/settings" className="text-primary underline">
+            <a className="text-primary underline" href="/org/settings">
               Workspace Settings
             </a>
             .

@@ -21,15 +21,16 @@ export async function requireSession() {
 
 export async function getActiveOrganizationId(): Promise<string | null> {
   const session = await getSession()
-  return (session?.session as { activeOrganizationId?: string })
-    ?.activeOrganizationId ?? null
+  return (
+    (session?.session as { activeOrganizationId?: string })
+      ?.activeOrganizationId ?? null
+  )
 }
 
 export async function requireOrganization() {
   const session = await requireSession()
-  const organizationId = (
-    session.session as { activeOrganizationId?: string }
-  )?.activeOrganizationId
+  const organizationId = (session.session as { activeOrganizationId?: string })
+    ?.activeOrganizationId
   if (!organizationId) {
     throw new Error('No active organization')
   }
@@ -38,18 +39,23 @@ export async function requireOrganization() {
 
 export async function ensureActiveOrganization(): Promise<void> {
   const session = await getSession()
-  if (!session?.user) return
+  if (!session?.user) {
+    return
+  }
 
-  const activeOrgId = (
-    session.session as { activeOrganizationId?: string }
-  )?.activeOrganizationId
-  if (activeOrgId) return
+  const activeOrgId = (session.session as { activeOrganizationId?: string })
+    ?.activeOrganizationId
+  if (activeOrgId) {
+    return
+  }
 
   // No active org — find user's first membership and set it
   const firstMembership = await db.query.member.findFirst({
     where: eq(member.userId, session.user.id),
   })
-  if (!firstMembership) return
+  if (!firstMembership) {
+    return
+  }
 
   await auth.api.setActiveOrganization({
     headers: await headers(),

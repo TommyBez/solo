@@ -46,12 +46,7 @@ export async function updateClient(
       ...data,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(clients.id, id),
-        eq(clients.organizationId, organizationId),
-      ),
-    )
+    .where(and(eq(clients.id, id), eq(clients.organizationId, organizationId)))
     .returning()
 
   revalidateTag('clients', 'max')
@@ -65,12 +60,7 @@ export async function deleteClient(id: number) {
 
   await db
     .delete(clients)
-    .where(
-      and(
-        eq(clients.id, id),
-        eq(clients.organizationId, organizationId),
-      ),
-    )
+    .where(and(eq(clients.id, id), eq(clients.organizationId, organizationId)))
   revalidateTag('clients', 'max')
   revalidateTag('projects', 'max')
 }
@@ -85,12 +75,7 @@ export async function archiveClient(id: number) {
       archived: true,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(clients.id, id),
-        eq(clients.organizationId, organizationId),
-      ),
-    )
+    .where(and(eq(clients.id, id), eq(clients.organizationId, organizationId)))
     .returning()
 
   revalidateTag('clients', 'max')

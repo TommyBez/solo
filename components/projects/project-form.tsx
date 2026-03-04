@@ -57,7 +57,12 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>
 
-export function ProjectForm({ project, areas, clients = [], onSuccess }: ProjectFormProps) {
+export function ProjectForm({
+  project,
+  areas,
+  clients = [],
+  onSuccess,
+}: ProjectFormProps) {
   const router = useRouter()
   const { settings, formatDate } = useSettingsContext()
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
@@ -167,7 +172,9 @@ export function ProjectForm({ project, areas, clients = [], onSuccess }: Project
                 <FormLabel>Client (optional)</FormLabel>
                 <Select
                   disabled={isLoading}
-                  onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                  onValueChange={(value) =>
+                    field.onChange(value === 'none' ? '' : value)
+                  }
                   value={field.value || 'none'}
                 >
                   <FormControl>
@@ -176,8 +183,9 @@ export function ProjectForm({ project, areas, clients = [], onSuccess }: Project
                         {field.value ? (
                           <div className="flex items-center gap-2">
                             <Building2 className="size-4" />
-                            {clients.find((c) => c.id.toString() === field.value)
-                              ?.name ?? 'Unknown client'}
+                            {clients.find(
+                              (c) => c.id.toString() === field.value,
+                            )?.name ?? 'Unknown client'}
                           </div>
                         ) : (
                           'No client assigned'

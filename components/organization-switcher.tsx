@@ -3,11 +3,6 @@
 import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
-  organization,
-  useActiveOrganization,
-  useListOrganizations,
-} from '@/lib/auth/client'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -16,6 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenuButton } from '@/components/ui/sidebar'
+import {
+  organization,
+  useActiveOrganization,
+  useListOrganizations,
+} from '@/lib/auth/client'
 
 export function OrganizationSwitcher() {
   const router = useRouter()
@@ -30,7 +30,7 @@ export function OrganizationSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton size="lg" className="w-full">
+        <SidebarMenuButton className="w-full" size="lg">
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Building2 className="size-4" />
           </div>
@@ -45,14 +45,11 @@ export function OrganizationSwitcher() {
           <ChevronsUpDown className="ml-auto size-4" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="right" className="w-64">
+      <DropdownMenuContent align="start" className="w-64" side="right">
         <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {orgs?.map((org) => (
-          <DropdownMenuItem
-            key={org.id}
-            onClick={() => handleSwitch(org.id)}
-          >
+          <DropdownMenuItem key={org.id} onClick={() => handleSwitch(org.id)}>
             <Building2 className="mr-2 size-4" />
             <span className="flex-1 truncate">{org.name}</span>
             {org.id === activeOrg?.id && (
