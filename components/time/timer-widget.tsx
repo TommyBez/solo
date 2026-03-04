@@ -1,11 +1,13 @@
 'use client'
 
 import { Clock, Pause, Play, Square } from 'lucide-react'
+import { ColorDot } from '@/components/color-indicator'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -168,7 +170,10 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
   }
 
   return (
-    <Card>
+    <Card className={cn(
+      'transition-all duration-300',
+      isRunning && 'timer-running border-l-2 border-primary bg-primary/5 dark:bg-primary/10',
+    )}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Quick Timer</CardTitle>
       </CardHeader>
@@ -195,10 +200,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
                       value={project.id.toString()}
                     >
                       <div className="flex items-center gap-2">
-                        <div
-                          className="size-2 rounded-full"
-                          style={{ backgroundColor: project.area.color }}
-                        />
+                        <ColorDot color={project.area.color} />
                         {project.name}
                       </div>
                     </SelectItem>
@@ -211,10 +213,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
               ([areaName, { area, projects: areaProjects }]) => (
                 <SelectGroup key={areaName}>
                   <SelectLabel className="flex items-center gap-2">
-                    <div
-                      className="size-2 rounded-full"
-                      style={{ backgroundColor: area.color }}
-                    />
+                    <ColorDot color={area.color} />
                     {areaName}
                   </SelectLabel>
                   {areaProjects.map((project) => (
@@ -236,16 +235,13 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
 
         {selectedProject ? (
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <div
-              className="size-2 rounded-full"
-              style={{ backgroundColor: selectedProject.area.color }}
-            />
+            <ColorDot color={selectedProject.area.color} />
             <span>{selectedProject.area.name}</span>
           </div>
         ) : null}
 
         <div className="flex items-center justify-between">
-          <span className="font-bold font-mono text-3xl tabular-nums">
+          <span className="font-bold font-mono text-4xl tabular-nums tracking-wider">
             {formatTime(seconds)}
           </span>
           <div className="flex gap-2">
@@ -272,11 +268,11 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
               </>
             ) : (
               <Button
-                className="size-10 rounded-full"
+                className="size-12 rounded-full shadow-md"
                 onClick={handleStart}
                 size="icon"
               >
-                <Play className="size-5" />
+                <Play className="size-6" />
                 <span className="sr-only">Start timer</span>
               </Button>
             )}

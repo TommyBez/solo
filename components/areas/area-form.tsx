@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ColorDot } from '@/components/color-indicator'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -153,16 +154,17 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
                   {PRESET_COLORS.map((presetColor) => (
                     <button
                       aria-label={`Select color ${presetColor}`}
-                      className={`size-8 rounded-full transition-all ${
+                      className={`transition-all ${
                         field.value === presetColor
                           ? 'ring-2 ring-primary ring-offset-2'
                           : 'hover:scale-110'
                       }`}
                       key={presetColor}
                       onClick={() => field.onChange(presetColor)}
-                      style={{ backgroundColor: presetColor }}
                       type="button"
-                    />
+                    >
+                      <ColorDot className="size-8" color={presetColor} />
+                    </button>
                   ))}
                 </div>
               </FormControl>

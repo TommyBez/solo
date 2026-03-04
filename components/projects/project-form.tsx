@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ColorDot } from '@/components/color-indicator'
 import { Building2, CalendarIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -148,10 +149,7 @@ export function ProjectForm({
                   {areas.map((area) => (
                     <SelectItem key={area.id} value={area.id.toString()}>
                       <div className="flex items-center gap-2">
-                        <div
-                          className="size-3 rounded-full"
-                          style={{ backgroundColor: area.color }}
-                        />
+                        <ColorDot className="size-3" color={area.color} />
                         {area.name}
                       </div>
                     </SelectItem>

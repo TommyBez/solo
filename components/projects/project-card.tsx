@@ -1,5 +1,6 @@
 'use client'
 
+import { ColorBar } from '@/components/color-indicator'
 import {
   Archive,
   Calendar,
@@ -71,6 +72,12 @@ const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
   completed: 'outline',
 }
 
+const statusClassNames: Record<string, string> = {
+  active: 'border-0 bg-success/10 text-success',
+  'on-hold': '',
+  completed: '',
+}
+
 export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
   const router = useRouter()
   const { formatDate } = useSettingsContext()
@@ -101,16 +108,16 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
 
   return (
     <>
-      <Card className="relative overflow-hidden">
-        <div
-          className="absolute top-0 left-0 h-full w-1"
-          style={{ backgroundColor: project.area.color }}
-        />
+      <Card className="relative overflow-hidden transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
+        <ColorBar color={project.area.color} />
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg">{project.name}</CardTitle>
-              <Badge variant={statusVariants[project.status]}>
+              <Badge
+                className={statusClassNames[project.status] || ''}
+                variant={statusVariants[project.status]}
+              >
                 {project.status}
               </Badge>
             </div>

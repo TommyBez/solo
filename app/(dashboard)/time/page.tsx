@@ -5,8 +5,11 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
+import { FolderKanban } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { EmptyState } from '@/components/empty-state'
+import { PageHeader } from '@/components/page-header'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { CalendarView } from '@/components/time/calendar-view'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
@@ -32,12 +35,10 @@ export default async function TimeTrackingPage(props: {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-bold text-3xl tracking-tight">Time Tracking</h1>
-        <p className="text-muted-foreground">
-          Track your work hours and manage time entries
-        </p>
-      </div>
+      <PageHeader
+        description="Track your work hours and manage time entries"
+        title="Time Tracking"
+      />
 
       <Suspense fallback={<TimeTrackingSkeleton />}>
         <TimeTrackingContent dateParam={dateParam} viewParam={viewParam} />
@@ -103,15 +104,16 @@ async function TimeTrackingContent({
       />
 
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <h3 className="font-semibold text-lg">Create a project first</h3>
-          <p className="mb-4 text-muted-foreground text-sm">
-            You need to create a project before tracking time
-          </p>
-          <Button asChild>
-            <Link href="/projects">Go to Projects</Link>
-          </Button>
-        </div>
+        <EmptyState
+          action={
+            <Button asChild>
+              <Link href="/projects">Go to Projects</Link>
+            </Button>
+          }
+          description="You need to create a project before tracking time"
+          icon={FolderKanban}
+          title="Create a project first"
+        />
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-1">

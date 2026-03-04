@@ -1,4 +1,6 @@
 import { formatDistanceToNow } from 'date-fns'
+import { Clock } from 'lucide-react'
+import { ColorDot } from '@/components/color-indicator'
 import { Badge } from '@/components/ui/badge'
 import {
   Card,
@@ -45,9 +47,12 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
-          <p className="py-8 text-center text-muted-foreground">
-            No recent entries
-          </p>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="mb-3 flex size-10 items-center justify-center rounded-md bg-muted">
+              <Clock className="size-5 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground text-sm">No recent entries</p>
+          </div>
         ) : (
           <div className="space-y-4">
             {entries.map((entry) => (
@@ -57,10 +62,7 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
               >
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="size-2 rounded-full"
-                      style={{ backgroundColor: entry.project.area.color }}
-                    />
+                    <ColorDot color={entry.project.area.color} />
                     <span className="font-medium text-sm">
                       {entry.project.name}
                     </span>
@@ -76,7 +78,7 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
                     })}
                   </p>
                 </div>
-                <Badge variant="secondary">
+                <Badge className="font-mono tabular-nums" variant="secondary">
                   {formatDuration(entry.durationMinutes)}
                 </Badge>
               </div>

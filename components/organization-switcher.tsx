@@ -1,5 +1,6 @@
 'use client'
 
+import { GeistPixelSquare } from 'geist/font/pixel'
 import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
@@ -35,11 +36,11 @@ export function OrganizationSwitcher() {
             <Building2 className="size-4" />
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-semibold">
+            <span className={`font-semibold ${GeistPixelSquare.className}`}>
               {activeOrg?.name ?? 'Select Workspace'}
             </span>
             <span className="text-muted-foreground text-xs">
-              Freelance Tracker
+              Solo Time Tracker
             </span>
           </div>
           <ChevronsUpDown className="ml-auto size-4" />

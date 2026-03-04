@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { CalendarIcon, Download, FileSpreadsheet, FileText } from 'lucide-react'
+import { ColorDot } from '@/components/color-indicator'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -185,10 +186,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                             value={String(project.id)}
                           >
                             <div className="flex items-center gap-2">
-                              <div
-                                className="size-2 rounded-full"
-                                style={{ backgroundColor: project.area.color }}
-                              />
+                              <ColorDot color={project.area.color} />
                               {project.name}
                               <span className="text-muted-foreground">
                                 ({project.area.name})

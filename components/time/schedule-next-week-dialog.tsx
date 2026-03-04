@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ColorDot } from '@/components/color-indicator'
 import {
   addDays,
   addWeeks,
@@ -292,10 +293,7 @@ export function ScheduleNextWeekDialog({
                               ]) => (
                                 <SelectGroup key={areaName}>
                                   <SelectLabel className="flex items-center gap-2">
-                                    <div
-                                      className="size-2 rounded-full"
-                                      style={{ backgroundColor: area.color }}
-                                    />
+                                    <ColorDot color={area.color} />
                                     {areaName}
                                   </SelectLabel>
                                   {areaProjects.map((project) => (
