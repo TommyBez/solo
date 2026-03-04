@@ -1,13 +1,32 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { updateOrganizationSettings } from '@/lib/actions/organization-settings'
 import type { OrgSettings } from '@/lib/queries/organization-settings'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
+
+const orgSettingsSchema = z.object({
+  companyName: z.string(),
+  companyEmail: z.string(),
+  companyPhone: z.string(),
+  companyAddress: z.string(),
+})
+
+type OrgSettingsFormValues = z.infer<typeof orgSettingsSchema>
 
 export function OrgSettingsForm({
   settings,
@@ -16,78 +35,112 @@ export function OrgSettingsForm({
   settings: OrgSettings
   readOnly: boolean
 }) {
-  const [formData, setFormData] = useState(settings)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const form = useForm<OrgSettingsFormValues>({
+    resolver: zodResolver(orgSettingsSchema),
+    defaultValues: {
+      companyName: settings.companyName,
+      companyEmail: settings.companyEmail,
+      companyPhone: settings.companyPhone,
+      companyAddress: settings.companyAddress,
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  const handleSubmit = form.handleSubmit(async (values) => {
+    setError('')
     try {
-      await updateOrganizationSettings(formData)
+      await updateOrganizationSettings(values)
       toast.success('Settings updated')
     } catch {
+      setError('Failed to update settings')
       toast.error('Failed to update settings')
-    } finally {
-      setLoading(false)
     }
-  }
+  })
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="companyName">Company Name</Label>
-        <Input
-          id="companyName"
-          value={formData.companyName}
-          onChange={(e) =>
-            setFormData({ ...formData, companyName: e.target.value })
-          }
-          placeholder="Your Company"
-          disabled={readOnly}
+    <Form {...form}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error ? (
+          <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
+            {error}
+          </div>
+        ) : null}
+        <FormField
+          control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Name</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={readOnly || isLoading}
+                  placeholder="Your Company"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="companyEmail">Company Email</Label>
-        <Input
-          id="companyEmail"
-          type="email"
-          value={formData.companyEmail}
-          onChange={(e) =>
-            setFormData({ ...formData, companyEmail: e.target.value })
-          }
-          placeholder="billing@company.com"
-          disabled={readOnly}
+        <FormField
+          control={form.control}
+          name="companyEmail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Email</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={readOnly || isLoading}
+                  placeholder="billing@company.com"
+                  type="email"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="companyPhone">Company Phone</Label>
-        <Input
-          id="companyPhone"
-          value={formData.companyPhone}
-          onChange={(e) =>
-            setFormData({ ...formData, companyPhone: e.target.value })
-          }
-          placeholder="+1 (555) 123-4567"
-          disabled={readOnly}
+        <FormField
+          control={form.control}
+          name="companyPhone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Phone</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={readOnly || isLoading}
+                  placeholder="+1 (555) 123-4567"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="companyAddress">Company Address</Label>
-        <Textarea
-          id="companyAddress"
-          value={formData.companyAddress}
-          onChange={(e) =>
-            setFormData({ ...formData, companyAddress: e.target.value })
-          }
-          placeholder="123 Main St, City, State 12345"
-          disabled={readOnly}
+        <FormField
+          control={form.control}
+          name="companyAddress"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Address</FormLabel>
+              <FormControl>
+                <Textarea
+                  disabled={readOnly || isLoading}
+                  placeholder="123 Main St, City, State 12345"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      {!readOnly && (
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Changes'}
-        </Button>
-      )}
-    </form>
+        {!readOnly && (
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        )}
+      </form>
+    </Form>
   )
 }

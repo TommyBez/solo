@@ -1,14 +1,24 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarIcon, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type React from 'react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Popover,
   PopoverContent,
@@ -44,13 +54,21 @@ interface TimeEntryFormProps {
   projects: (Project & { area: Area })[]
 }
 
-interface TimeEntryFormState {
-  date: Date
-  description: string
-  durationError: string | null
-  durationInput: string
-  projectId: string
-}
+const timeEntrySchema = z.object({
+  projectId: z.string().min(1, 'Please select a project'),
+  description: z.string(),
+  date: z.date(),
+  durationInput: z.string().refine(
+    (val) => {
+      if (!val.trim()) return false
+      const parsed = parseDuration(val)
+      return parsed.isValid && parsed.minutes > 0
+    },
+    { message: 'Please enter a valid duration (e.g. "1h 30m", "90m", "1.5h")' },
+  ),
+})
+
+type TimeEntryFormValues = z.infer<typeof timeEntrySchema>
 
 export function TimeEntryForm({
   entry,
@@ -60,17 +78,18 @@ export function TimeEntryForm({
   const router = useRouter()
   const { settings, formatDate } = useSettingsContext()
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
-  const [isLoading, setIsLoading] = useState(false)
-  const [form, setForm] = useState<TimeEntryFormState>(() => ({
-    projectId: entry?.projectId?.toString() ?? '',
-    description: entry?.description ?? '',
-    date: entry?.startTime ? new Date(entry.startTime) : new Date(),
-    durationInput: entry ? formatDurationForInput(entry.durationMinutes) : '1h',
-    durationError: null,
-  }))
-  const [recentProjectIds] = useState<string[]>(() => getRecentProjects())
-
   const isEditing = !!entry
+  const form = useForm<TimeEntryFormValues>({
+    resolver: zodResolver(timeEntrySchema),
+    defaultValues: {
+      projectId: entry?.projectId?.toString() ?? '',
+      description: entry?.description ?? '',
+      date: entry?.startTime ? new Date(entry.startTime) : new Date(),
+      durationInput: entry ? formatDurationForInput(entry.durationMinutes) : '1h',
+    },
+  })
+  const isLoading = form.formState.isSubmitting
+  const [recentProjectIds] = useState<string[]>(() => getRecentProjects())
 
   // Deduplicate projects by id to prevent duplicate key errors
   const uniqueProjects = projects.filter(
@@ -107,43 +126,26 @@ export function TimeEntryForm({
     {} as Record<string, { area: Area; projects: typeof uniqueProjects }>,
   )
 
-  const handleDurationChange = (value: string) => {
-    let durationError: string | null = null
-    const parsed = parseDuration(value)
-    if (value.trim() && !parsed.isValid) {
-      durationError = 'Invalid format. Try "1h 30m", "90m", or "1.5h"'
-    } else if (parsed.isValid && parsed.minutes <= 0 && value.trim()) {
-      durationError = 'Duration must be greater than 0'
-    }
-    setForm((prev) => ({ ...prev, durationInput: value, durationError }))
-  }
+  // Get duration preview from current input
+  const durationInput = form.watch('durationInput')
+  const parsed = parseDuration(durationInput)
+  const durationPreview =
+    parsed.isValid && parsed.minutes > 0 ? parsed.formatted : null
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.projectId) {
-      toast.error('Please select a project')
-      return
-    }
-
-    const parsed = parseDuration(form.durationInput)
-    if (!parsed.isValid || parsed.minutes <= 0) {
-      toast.error('Please enter a valid duration')
-      return
-    }
-
-    const durationMinutes = parsed.minutes
-    const startTime = new Date(form.date)
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const durationParsed = parseDuration(values.durationInput)
+    const durationMinutes = durationParsed.minutes
+    const startTime = new Date(values.date)
     startTime.setHours(9, 0, 0, 0)
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000)
 
-    setIsLoading(true)
     try {
       if (isEditing) {
         await updateTimeEntry(entry.id, {
-          ...(form.projectId && {
-            projectId: Number.parseInt(form.projectId, 10),
+          ...(values.projectId && {
+            projectId: Number.parseInt(values.projectId, 10),
           }),
-          description: form.description.trim() || undefined,
+          description: values.description.trim() || undefined,
           startTime,
           endTime,
           durationMinutes,
@@ -151,24 +153,22 @@ export function TimeEntryForm({
         toast.success('Time entry updated')
       } else {
         await createTimeEntry({
-          projectId: Number.parseInt(form.projectId, 10),
-          description: form.description.trim() || undefined,
+          projectId: Number.parseInt(values.projectId, 10),
+          description: values.description.trim() || undefined,
           startTime,
           endTime,
           durationMinutes,
         })
         // Add to recent projects
-        addRecentProject(form.projectId)
+        addRecentProject(values.projectId)
         toast.success('Time entry added')
       }
       router.refresh()
       onSuccess?.()
     } catch {
       toast.error(isEditing ? 'Failed to update entry' : 'Failed to add entry')
-    } finally {
-      setIsLoading(false)
     }
-  }
+  })
 
   let buttonText = 'Add Entry'
   if (isLoading) {
@@ -177,147 +177,171 @@ export function TimeEntryForm({
     buttonText = 'Update Entry'
   }
 
-  // Get duration preview
-  const parsed = parseDuration(form.durationInput)
-  const durationPreview =
-    parsed.isValid && parsed.minutes > 0 ? parsed.formatted : null
-
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="project">Project</Label>
-        <Select
-          onValueChange={(projectId) => {
-            setForm((prev) => ({ ...prev, projectId }))
-          }}
-          value={form.projectId}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a project" />
-          </SelectTrigger>
-          <SelectContent>
-            {recentProjects.length > 0 && (
-              <>
-                <SelectGroup>
-                  <SelectLabel className="flex items-center gap-2">
-                    <Clock className="size-3" />
-                    Recent
-                  </SelectLabel>
-                  {recentProjects.map((project) => (
-                    <SelectItem
-                      key={`recent-${project.id}`}
-                      value={project.id.toString()}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="size-2 rounded-full"
-                          style={{ backgroundColor: project.area.color }}
-                        />
-                        {project.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-                <Separator className="my-1" />
-              </>
-            )}
-            {Object.values(projectsByArea).map(
-              ({ area, projects: areaProjects }) => (
-                <SelectGroup key={area.id}>
-                  <SelectLabel className="flex items-center gap-2">
-                    <div
-                      className="size-2 rounded-full"
-                      style={{ backgroundColor: area.color }}
-                    />
-                    {area.name}
-                  </SelectLabel>
-                  {areaProjects.map((project) => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              ),
-            )}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description (optional)</Label>
-        <Textarea
-          id="description"
-          onChange={(e) => {
-            setForm((prev) => ({ ...prev, description: e.target.value }))
-          }}
-          placeholder="What did you work on?"
-          rows={2}
-          value={form.description}
+    <Form {...form}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <FormField
+          control={form.control}
+          name="projectId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Project</FormLabel>
+              <Select
+                disabled={isLoading}
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {recentProjects.length > 0 && (
+                    <>
+                      <SelectGroup>
+                        <SelectLabel className="flex items-center gap-2">
+                          <Clock className="size-3" />
+                          Recent
+                        </SelectLabel>
+                        {recentProjects.map((project) => (
+                          <SelectItem
+                            key={`recent-${project.id}`}
+                            value={project.id.toString()}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="size-2 rounded-full"
+                                style={{ backgroundColor: project.area.color }}
+                              />
+                              {project.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <Separator className="my-1" />
+                    </>
+                  )}
+                  {Object.values(projectsByArea).map(
+                    ({ area, projects: areaProjects }) => (
+                      <SelectGroup key={area.id}>
+                        <SelectLabel className="flex items-center gap-2">
+                          <div
+                            className="size-2 rounded-full"
+                            style={{ backgroundColor: area.color }}
+                          />
+                          {area.name}
+                        </SelectLabel>
+                        {areaProjects.map((project) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label>Date</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              className={cn('w-full justify-start text-left font-normal')}
-              variant="outline"
-            >
-              <CalendarIcon className="mr-2 size-4" />
-              {formatDate(form.date, 'PPP')}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-0">
-            <Calendar
-              mode="single"
-              onSelect={(d) => {
-                if (d) {
-                  setForm((prev) => ({ ...prev, date: d }))
-                }
-              }}
-              selected={form.date}
-              weekStartsOn={weekStartsOn}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description (optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  disabled={isLoading}
+                  placeholder="What did you work on?"
+                  rows={2}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="space-y-2">
-        <Label htmlFor="duration">Duration</Label>
-        <div className="relative">
-          <Input
-            className={cn(
-              'pr-20',
-              !!form.durationError &&
-                'border-destructive focus-visible:ring-destructive',
-            )}
-            id="duration"
-            onChange={(e) => handleDurationChange(e.target.value)}
-            placeholder="e.g. 1h 30m, 90m, 1.5h"
-            value={form.durationInput}
-          />
-          {durationPreview ? (
-            <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
-              <Clock className="size-3.5" />
-              <span>{durationPreview}</span>
-            </div>
-          ) : null}
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      className={cn('w-full justify-start text-left font-normal')}
+                      disabled={isLoading}
+                      variant="outline"
+                    >
+                      <CalendarIcon className="mr-2 size-4" />
+                      {formatDate(field.value, 'PPP')}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    onSelect={(d) => {
+                      if (d) field.onChange(d)
+                    }}
+                    selected={field.value}
+                    weekStartsOn={weekStartsOn}
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="durationInput"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Duration</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    className={cn(
+                      'pr-20',
+                      form.formState.errors.durationInput &&
+                        'border-destructive focus-visible:ring-destructive',
+                    )}
+                    disabled={isLoading}
+                    placeholder="e.g. 1h 30m, 90m, 1.5h"
+                    {...field}
+                  />
+                  {durationPreview ? (
+                    <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
+                      <Clock className="size-3.5" />
+                      <span>{durationPreview}</span>
+                    </div>
+                  ) : null}
+                </div>
+              </FormControl>
+              <FormMessage />
+              <FormDescription>
+                Examples: &quot;1h 30m&quot;, &quot;90m&quot;, &quot;1.5h&quot;,
+                &quot;1:30&quot;
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button disabled={isLoading} type="submit">
+            {buttonText}
+          </Button>
         </div>
-        {form.durationError ? (
-          <p className="text-destructive text-sm">{form.durationError}</p>
-        ) : null}
-        <p className="text-muted-foreground text-xs">
-          Examples: &quot;1h 30m&quot;, &quot;90m&quot;, &quot;1.5h&quot;,
-          &quot;1:30&quot;
-        </p>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button disabled={isLoading || !!form.durationError} type="submit">
-          {buttonText}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   )
 }

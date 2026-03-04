@@ -1,9 +1,12 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { CalendarIcon, Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -15,7 +18,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import {
   Popover,
   PopoverContent,
@@ -45,30 +55,34 @@ interface ExportTasksDialogProps {
   projects: ProjectOption[]
 }
 
-interface ExportFormState {
-  endDate: Date | undefined
-  exportFormat: 'csv' | 'pdf'
-  selectedProjectId: string
-  startDate: Date | undefined
-}
+const exportSchema = z
+  .object({
+    selectedProjectId: z.string().min(1, 'Please select a project'),
+    startDate: z.date({ required_error: 'Please select a start date' }),
+    endDate: z.date({ required_error: 'Please select an end date' }),
+    exportFormat: z.enum(['csv', 'pdf']),
+  })
+  .refine((data) => data.startDate <= data.endDate, {
+    message: 'Start date must be before end date',
+    path: ['endDate'],
+  })
 
-const initialFormState: ExportFormState = {
-  selectedProjectId: '',
-  startDate: undefined,
-  endDate: undefined,
-  exportFormat: 'csv',
-}
+type ExportFormValues = z.infer<typeof exportSchema>
 
 export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
   const { settings, formatDate } = useSettingsContext()
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<ExportFormState>(initialFormState)
-  const [isExporting, setIsExporting] = useState(false)
-
-  function resetForm() {
-    setForm(initialFormState)
-  }
+  const form = useForm<ExportFormValues>({
+    resolver: zodResolver(exportSchema),
+    defaultValues: {
+      selectedProjectId: '',
+      startDate: undefined,
+      endDate: undefined,
+      exportFormat: 'csv',
+    },
+  })
+  const isExporting = form.formState.isSubmitting
 
   function downloadBlob(response: Response, fallbackFormat: string) {
     const blob = response.blob()
@@ -80,25 +94,13 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
     return { blob, filename }
   }
 
-  async function handleExport() {
-    if (!(form.selectedProjectId && form.startDate && form.endDate)) {
-      toast.error('Please fill in all fields')
-      return
-    }
-
-    if (form.startDate > form.endDate) {
-      toast.error('Start date must be before end date')
-      return
-    }
-
-    setIsExporting(true)
-
+  const handleSubmit = form.handleSubmit(async (values) => {
     try {
       const params = new URLSearchParams({
-        projectId: form.selectedProjectId,
-        startDate: format(form.startDate, 'yyyy-MM-dd'),
-        endDate: format(form.endDate, 'yyyy-MM-dd'),
-        format: form.exportFormat,
+        projectId: values.selectedProjectId,
+        startDate: format(values.startDate, 'yyyy-MM-dd'),
+        endDate: format(values.endDate, 'yyyy-MM-dd'),
+        format: values.exportFormat,
       })
 
       const response = await fetch(`/api/export?${params.toString()}`)
@@ -108,7 +110,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
         throw new Error(error.error || 'Export failed')
       }
 
-      const { blob, filename } = downloadBlob(response, form.exportFormat)
+      const { blob, filename } = downloadBlob(response, values.exportFormat)
       const url = window.URL.createObjectURL(await blob)
       const link = document.createElement('a')
       link.href = url
@@ -120,27 +122,23 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
       window.URL.revokeObjectURL(url)
 
       toast.success(
-        `Tasks exported as ${form.exportFormat.toUpperCase()} successfully`,
+        `Tasks exported as ${values.exportFormat.toUpperCase()} successfully`,
       )
       setOpen(false)
-      resetForm()
+      form.reset()
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : 'Failed to export tasks',
       )
-    } finally {
-      setIsExporting(false)
     }
-  }
-
-  const isFormValid = form.selectedProjectId && form.startDate && form.endDate
+  })
 
   return (
     <Dialog
       onOpenChange={(value) => {
         setOpen(value)
         if (!value) {
-          resetForm()
+          form.reset()
         }
       }}
       open={open}
@@ -160,168 +158,201 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-5 py-4">
-          {/* Project Selection */}
-          <div className="grid gap-2">
-            <Label htmlFor="project-select">Project</Label>
-            <Select
-              onValueChange={(selectedProjectId) => {
-                setForm((prev) => ({ ...prev, selectedProjectId }))
-              }}
-              value={form.selectedProjectId}
-            >
-              <SelectTrigger className="w-full" id="project-select">
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={String(project.id)}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="size-2 rounded-full"
-                        style={{ backgroundColor: project.area.color }}
-                      />
-                      {project.name}
-                      <span className="text-muted-foreground">
-                        ({project.area.name})
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Date Range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !form.startDate && 'text-muted-foreground',
-                    )}
-                    variant="outline"
-                  >
-                    <CalendarIcon className="mr-2 size-4" />
-                    {form.startDate ? formatDate(form.startDate) : 'Pick date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto p-0">
-                  <Calendar
-                    disabled={(date) =>
-                      date > new Date() ||
-                      (form.endDate ? date > form.endDate : false)
-                    }
-                    mode="single"
-                    onSelect={(startDate) => {
-                      setForm((prev) => ({ ...prev, startDate }))
-                    }}
-                    selected={form.startDate}
-                    weekStartsOn={weekStartsOn}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="grid gap-2">
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !form.endDate && 'text-muted-foreground',
-                    )}
-                    variant="outline"
-                  >
-                    <CalendarIcon className="mr-2 size-4" />
-                    {form.endDate ? formatDate(form.endDate) : 'Pick date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto p-0">
-                  <Calendar
-                    disabled={(date) =>
-                      date > new Date() ||
-                      (form.startDate ? date < form.startDate : false)
-                    }
-                    mode="single"
-                    onSelect={(endDate) => {
-                      setForm((prev) => ({ ...prev, endDate }))
-                    }}
-                    selected={form.endDate}
-                    weekStartsOn={weekStartsOn}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          {/* Export Format */}
-          <div className="grid gap-3">
-            <Label>Export Format</Label>
-            <RadioGroup
-              className="grid grid-cols-2 gap-3"
-              onValueChange={(exportFormat) => {
-                setForm((prev) => ({
-                  ...prev,
-                  exportFormat: exportFormat as 'csv' | 'pdf',
-                }))
-              }}
-              value={form.exportFormat}
-            >
-              <Label
-                className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
-                  form.exportFormat === 'csv' && 'border-primary bg-primary/5',
+        <Form {...form}>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-5 py-4">
+              {/* Project Selection */}
+              <FormField
+                control={form.control}
+                name="selectedProjectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <Select
+                      disabled={isExporting}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={String(project.id)}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="size-2 rounded-full"
+                                style={{ backgroundColor: project.area.color }}
+                              />
+                              {project.name}
+                              <span className="text-muted-foreground">
+                                ({project.area.name})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                htmlFor="format-csv"
-              >
-                <RadioGroupItem id="format-csv" value="csv" />
-                <FileSpreadsheet className="size-4 text-green-600" />
-                <div className="grid gap-0.5">
-                  <span className="font-medium">CSV</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Spreadsheet
-                  </span>
-                </div>
-              </Label>
-              <Label
-                className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
-                  form.exportFormat === 'pdf' && 'border-primary bg-primary/5',
-                )}
-                htmlFor="format-pdf"
-              >
-                <RadioGroupItem id="format-pdf" value="pdf" />
-                <FileText className="size-4 text-red-600" />
-                <div className="grid gap-0.5">
-                  <span className="font-medium">PDF</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Document
-                  </span>
-                </div>
-              </Label>
-            </RadioGroup>
-          </div>
-        </div>
+              />
 
-        <DialogFooter>
-          <Button onClick={() => setOpen(false)} variant="outline">
-            Cancel
-          </Button>
-          <Button disabled={!isFormValid || isExporting} onClick={handleExport}>
-            {isExporting ? (
-              'Exporting...'
-            ) : (
-              <>
-                <Download className="mr-2 size-4" />
-                Export {form.exportFormat.toUpperCase()}
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+              {/* Date Range */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              className={cn(
+                                'w-full justify-start text-left font-normal',
+                                !field.value && 'text-muted-foreground',
+                              )}
+                              disabled={isExporting}
+                              variant="outline"
+                            >
+                              <CalendarIcon className="mr-2 size-4" />
+                              {field.value ? formatDate(field.value) : 'Pick date'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-auto p-0">
+                          <Calendar
+                            disabled={(date) =>
+                              date > new Date() ||
+                              (form.getValues('endDate') ? date > form.getValues('endDate') : false)
+                            }
+                            mode="single"
+                            onSelect={field.onChange}
+                            selected={field.value}
+                            weekStartsOn={weekStartsOn}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              className={cn(
+                                'w-full justify-start text-left font-normal',
+                                !field.value && 'text-muted-foreground',
+                              )}
+                              disabled={isExporting}
+                              variant="outline"
+                            >
+                              <CalendarIcon className="mr-2 size-4" />
+                              {field.value ? formatDate(field.value) : 'Pick date'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-auto p-0">
+                          <Calendar
+                            disabled={(date) =>
+                              date > new Date() ||
+                              (form.getValues('startDate') ? date < form.getValues('startDate') : false)
+                            }
+                            mode="single"
+                            onSelect={field.onChange}
+                            selected={field.value}
+                            weekStartsOn={weekStartsOn}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Export Format */}
+              <FormField
+                control={form.control}
+                name="exportFormat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Export Format</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        className="grid grid-cols-2 gap-3"
+                        disabled={isExporting}
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <label
+                          className={cn(
+                            'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
+                            field.value === 'csv' && 'border-primary bg-primary/5',
+                          )}
+                          htmlFor="format-csv"
+                        >
+                          <RadioGroupItem id="format-csv" value="csv" />
+                          <FileSpreadsheet className="size-4 text-green-600" />
+                          <div className="grid gap-0.5">
+                            <span className="font-medium">CSV</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Spreadsheet
+                            </span>
+                          </div>
+                        </label>
+                        <label
+                          className={cn(
+                            'flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50',
+                            field.value === 'pdf' && 'border-primary bg-primary/5',
+                          )}
+                          htmlFor="format-pdf"
+                        >
+                          <RadioGroupItem id="format-pdf" value="pdf" />
+                          <FileText className="size-4 text-red-600" />
+                          <div className="grid gap-0.5">
+                            <span className="font-medium">PDF</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Document
+                            </span>
+                          </div>
+                        </label>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)} type="button" variant="outline">
+                Cancel
+              </Button>
+              <Button disabled={isExporting} type="submit">
+                {isExporting ? (
+                  'Exporting...'
+                ) : (
+                  <>
+                    <Download className="mr-2 size-4" />
+                    Export {form.watch('exportFormat').toUpperCase()}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

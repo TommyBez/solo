@@ -1,11 +1,20 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -38,54 +47,50 @@ const CURRENCIES = [
   { value: 'JPY', label: 'JPY (¥)' },
 ]
 
+const clientSchema = z.object({
+  name: z.string().min(1, 'Client name is required'),
+  email: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  hourlyRate: z.string(),
+  currency: z.string(),
+  notes: z.string(),
+})
+
+type ClientFormValues = z.infer<typeof clientSchema>
+
 interface ClientFormProps {
   client?: ClientFormData
   onSuccess?: () => void
 }
 
-interface ClientFormState {
-  address: string
-  currency: string
-  email: string
-  hourlyRate: string
-  name: string
-  notes: string
-  phone: string
-}
-
 export function ClientForm({ client, onSuccess }: ClientFormProps) {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [form, setForm] = useState<ClientFormState>(() => ({
-    name: client?.name ?? '',
-    email: client?.email ?? '',
-    phone: client?.phone ?? '',
-    address: client?.address ?? '',
-    hourlyRate: client?.hourlyRate ?? '',
-    currency: client?.currency ?? 'USD',
-    notes: client?.notes ?? '',
-  }))
-
   const isEditing = !!client
+  const form = useForm<ClientFormValues>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      name: client?.name ?? '',
+      email: client?.email ?? '',
+      phone: client?.phone ?? '',
+      address: client?.address ?? '',
+      hourlyRate: client?.hourlyRate ?? '',
+      currency: client?.currency ?? 'USD',
+      notes: client?.notes ?? '',
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    if (!form.name.trim()) {
-      toast.error('Client name is required')
-      return
-    }
-
-    setIsLoading(true)
+  const handleSubmit = form.handleSubmit(async (values) => {
     try {
       const data = {
-        name: form.name.trim(),
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
-        address: form.address.trim() || null,
-        hourlyRate: form.hourlyRate ? String(form.hourlyRate) : null,
-        currency: form.currency,
-        notes: form.notes.trim() || null,
+        name: values.name.trim(),
+        email: values.email.trim() || null,
+        phone: values.phone.trim() || null,
+        address: values.address.trim() || null,
+        hourlyRate: values.hourlyRate ? String(values.hourlyRate) : null,
+        currency: values.currency,
+        notes: values.notes.trim() || null,
       }
 
       if (isEditing) {
@@ -102,122 +107,165 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
       toast.error(
         isEditing ? 'Failed to update client' : 'Failed to create client',
       )
-    } finally {
-      setIsLoading(false)
     }
-  }
+  })
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="name">Client Name *</Label>
-        <Input
-          id="name"
-          onChange={(e) => {
-            setForm((prev) => ({ ...prev, name: e.target.value }))
-          }}
-          placeholder="Acme Corp"
-          required
-          value={form.name}
+    <Form {...form}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Client Name</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={isLoading}
+                  placeholder="Acme Corp"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            onChange={(e) => {
-              setForm((prev) => ({ ...prev, email: e.target.value }))
-            }}
-            placeholder="contact@acme.com"
-            type="email"
-            value={form.email}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    disabled={isLoading}
+                    placeholder="contact@acme.com"
+                    type="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input
+                    disabled={isLoading}
+                    placeholder="+1 (555) 123-4567"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input
-            id="phone"
-            onChange={(e) => {
-              setForm((prev) => ({ ...prev, phone: e.target.value }))
-            }}
-            placeholder="+1 (555) 123-4567"
-            value={form.phone}
+
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Textarea
+                  disabled={isLoading}
+                  placeholder="123 Main St, City, Country"
+                  rows={2}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="hourlyRate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Default Hourly Rate</FormLabel>
+                <FormControl>
+                  <Input
+                    disabled={isLoading}
+                    min="0"
+                    placeholder="150.00"
+                    step="0.01"
+                    type="number"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Currency</FormLabel>
+                <Select
+                  disabled={isLoading}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CURRENCIES.map((curr) => (
+                      <SelectItem key={curr.value} value={curr.value}>
+                        {curr.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
-        <Textarea
-          id="address"
-          onChange={(e) => {
-            setForm((prev) => ({ ...prev, address: e.target.value }))
-          }}
-          placeholder="123 Main St, City, Country"
-          rows={2}
-          value={form.address}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  disabled={isLoading}
+                  placeholder="Additional notes about the client..."
+                  rows={3}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="hourlyRate">Default Hourly Rate</Label>
-          <Input
-            id="hourlyRate"
-            min="0"
-            onChange={(e) => {
-              setForm((prev) => ({ ...prev, hourlyRate: e.target.value }))
-            }}
-            placeholder="150.00"
-            step="0.01"
-            type="number"
-            value={form.hourlyRate}
-          />
+        <div className="flex justify-end gap-2 pt-4">
+          <Button disabled={isLoading} type="submit">
+            {isLoading ? 'Saving...' : null}
+            {!isLoading && isEditing ? 'Update Client' : null}
+            {isLoading || isEditing ? null : 'Create Client'}
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="currency">Currency</Label>
-          <Select
-            onValueChange={(currency) => {
-              setForm((prev) => ({ ...prev, currency }))
-            }}
-            value={form.currency}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCIES.map((curr) => (
-                <SelectItem key={curr.value} value={curr.value}>
-                  {curr.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          onChange={(e) => {
-            setForm((prev) => ({ ...prev, notes: e.target.value }))
-          }}
-          placeholder="Additional notes about the client..."
-          rows={3}
-          value={form.notes}
-        />
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button disabled={isLoading} type="submit">
-          {isLoading ? 'Saving...' : null}
-          {!isLoading && isEditing ? 'Update Client' : null}
-          {isLoading || isEditing ? null : 'Create Client'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   )
 }

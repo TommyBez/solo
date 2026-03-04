@@ -1,8 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { UserPlus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { organization } from '@/lib/auth/client'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,8 +16,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -21,45 +33,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { UserPlus } from 'lucide-react'
-import { toast } from 'sonner'
+import { organization } from '@/lib/auth/client'
+
+const inviteMemberSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  role: z.enum(['admin', 'member', 'viewer']),
+})
+
+type InviteMemberFormValues = z.infer<typeof inviteMemberSchema>
 
 export function InviteMemberDialog() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState('member')
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const form = useForm<InviteMemberFormValues>({
+    resolver: zodResolver(inviteMemberSchema),
+    defaultValues: {
+      email: '',
+      role: 'member',
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email.trim()) return
-
-    setLoading(true)
+  const handleSubmit = form.handleSubmit(async (values) => {
+    setError('')
     try {
-      const { error } = await organization.inviteMember({
-        email: email.trim(),
-        role: role as 'member' | 'admin',
+      const { error: apiError } = await organization.inviteMember({
+        email: values.email.trim(),
+        role: values.role as 'member' | 'admin',
       })
 
-      if (error) {
-        toast.error(error.message || 'Failed to send invitation')
+      if (apiError) {
+        setError(apiError.message || 'Failed to send invitation')
       } else {
-        toast.success(`Invitation sent to ${email}`)
-        setEmail('')
-        setRole('member')
+        toast.success(`Invitation sent to ${values.email}`)
+        form.reset()
         setOpen(false)
         router.refresh()
       }
     } catch {
-      toast.error('Failed to send invitation')
-    } finally {
-      setLoading(false)
+      setError('Failed to send invitation')
     }
-  }
+  })
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value)
+        if (!value) {
+          form.reset()
+          setError('')
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button size="sm">
           <UserPlus className="mr-2 size-4" />
@@ -73,48 +100,75 @@ export function InviteMemberDialog() {
             Send an invitation to join this workspace.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="colleague@example.com"
-              required
+        <Form {...form}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error ? (
+              <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
+                {error}
+              </div>
+            ) : null}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="colleague@example.com"
+                      type="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="viewer">Viewer</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-muted-foreground text-xs">
-              Viewers can only view data and export. Members can create and edit.
-              Admins can also manage workspace settings.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !email.trim()}>
-              {loading ? 'Sending...' : 'Send Invitation'}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select
+                    disabled={isLoading}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Viewers can only view data and export. Members can create and edit.
+                    Admins can also manage workspace settings.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Sending...' : 'Send Invitation'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

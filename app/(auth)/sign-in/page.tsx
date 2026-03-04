@@ -1,9 +1,12 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,26 +16,43 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { signIn } from '@/lib/auth/client'
+
+const signInSchema = z.object({
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(1, 'Password is required'),
+})
+
+type SignInFormValues = z.infer<typeof signInSchema>
 
 export default function SignInPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const form = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = form.handleSubmit(async (values) => {
     setError('')
-    setIsLoading(true)
 
     try {
       const result = await signIn.email({
-        email,
-        password,
+        email: values.email,
+        password: values.password,
       })
 
       if (result.error) {
@@ -43,10 +63,8 @@ export default function SignInPage() {
       }
     } catch {
       setError('An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
     }
-  }
+  })
 
   return (
     <Card>
@@ -56,51 +74,65 @@ export default function SignInPage() {
           Enter your email and password to access your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4 py-4">
-          {error ? (
-            <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
-              {error}
-            </div>
-          ) : null}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              disabled={isLoading}
-              id="email"
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              type="email"
-              value={email}
+      <Form {...form}>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4 py-4">
+            {error ? (
+              <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
+                {error}
+              </div>
+            ) : null}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="you@example.com"
+                      type="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              disabled={isLoading}
-              id="password"
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              type="password"
-              value={password}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isLoading}
+                      placeholder="Enter your password"
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col gap-4">
-          <Button className="w-full" disabled={isLoading} type="submit">
-            {isLoading ? <Loader2 className="animate-spin" /> : null}
-            Sign In
-          </Button>
-          <p className="text-center text-muted-foreground text-xs">
-            Don&apos;t have an account?{' '}
-            <Link className="text-primary hover:underline" href="/sign-up">
-              Sign up
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
+          </CardContent>
+          <CardFooter className="flex-col gap-4">
+            <Button className="w-full" disabled={isLoading} type="submit">
+              {isLoading ? <Loader2 className="animate-spin" /> : null}
+              Sign In
+            </Button>
+            <p className="text-center text-muted-foreground text-xs">
+              Don&apos;t have an account?{' '}
+              <Link className="text-primary hover:underline" href="/sign-up">
+                Sign up
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   )
 }

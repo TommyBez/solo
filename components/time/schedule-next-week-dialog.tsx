@@ -1,5 +1,6 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
   addDays,
   addWeeks,
@@ -11,7 +12,9 @@ import {
 import { CalendarClock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -22,8 +25,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -52,6 +62,22 @@ function formatTaskCount(value: number) {
   return `${value} task${value === 1 ? '' : 's'}`
 }
 
+const manualTaskSchema = z.object({
+  projectId: z.string().min(1, 'Please select a project'),
+  description: z.string(),
+  dayOffset: z.string(),
+  durationInput: z.string().refine(
+    (val) => {
+      if (!val.trim()) return false
+      const parsed = parseDuration(val)
+      return parsed.isValid && parsed.minutes > 0
+    },
+    { message: 'Use "1h 30m", "90m", or "1.5h"' },
+  ),
+})
+
+type ManualTaskFormValues = z.infer<typeof manualTaskSchema>
+
 export function ScheduleNextWeekDialog({
   projects,
   referenceDateIso,
@@ -61,14 +87,17 @@ export function ScheduleNextWeekDialog({
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const [open, setOpen] = useState(false)
   const [isCopying, startCopying] = useTransition()
-  const [isCreating, startCreating] = useTransition()
-  const [manualTask, setManualTask] = useState(() => ({
-    projectId: '',
-    description: '',
-    dayOffset: '0',
-    durationInput: '1h',
-    durationError: null as string | null,
-  }))
+
+  const form = useForm<ManualTaskFormValues>({
+    resolver: zodResolver(manualTaskSchema),
+    defaultValues: {
+      projectId: '',
+      description: '',
+      dayOffset: '0',
+      durationInput: '1h',
+    },
+  })
+  const isCreating = form.formState.isSubmitting
 
   const sourceWeekStart = useMemo(() => {
     const referenceDate = parseISO(referenceDateIso)
@@ -128,23 +157,6 @@ export function ScheduleNextWeekDialog({
     [projects],
   )
 
-  function handleDurationChange(value: string) {
-    let durationError: string | null = null
-    const parsed = parseDuration(value)
-
-    if (value.trim() && !parsed.isValid) {
-      durationError = 'Use "1h 30m", "90m", or "1.5h"'
-    } else if (parsed.isValid && parsed.minutes <= 0 && value.trim()) {
-      durationError = 'Duration must be greater than 0'
-    }
-
-    setManualTask((prev) => ({
-      ...prev,
-      durationInput: value,
-      durationError,
-    }))
-  }
-
   const handleSchedule = () => {
     startCopying(async () => {
       try {
@@ -172,47 +184,29 @@ export function ScheduleNextWeekDialog({
     })
   }
 
-  const handleCreateManualTask = () => {
-    if (!manualTask.projectId) {
-      toast.error('Please select a project')
-      return
-    }
-
-    const parsed = parseDuration(manualTask.durationInput)
-    if (!parsed.isValid || parsed.minutes <= 0) {
-      toast.error('Please enter a valid duration')
-      return
-    }
-
-    const dayOffset = Number.parseInt(manualTask.dayOffset, 10)
+  const handleCreateManualTask = form.handleSubmit(async (values) => {
+    const parsed = parseDuration(values.durationInput)
+    const dayOffset = Number.parseInt(values.dayOffset, 10)
     const selectedDate = addDays(nextWeekStart, dayOffset)
     const startTime = new Date(selectedDate)
     startTime.setHours(9, 0, 0, 0)
     const endTime = new Date(startTime.getTime() + parsed.minutes * 60 * 1000)
 
-    startCreating(async () => {
-      try {
-        await createTimeEntry({
-          projectId: Number.parseInt(manualTask.projectId, 10),
-          description: manualTask.description.trim() || undefined,
-          startTime,
-          endTime,
-          durationMinutes: parsed.minutes,
-        })
-        toast.success('Task created for next week')
-        setManualTask({
-          projectId: '',
-          description: '',
-          dayOffset: '0',
-          durationInput: '1h',
-          durationError: null,
-        })
-        router.refresh()
-      } catch {
-        toast.error('Failed to create next-week task')
-      }
-    })
-  }
+    try {
+      await createTimeEntry({
+        projectId: Number.parseInt(values.projectId, 10),
+        description: values.description.trim() || undefined,
+        startTime,
+        endTime,
+        durationMinutes: parsed.minutes,
+      })
+      toast.success('Task created for next week')
+      form.reset()
+      router.refresh()
+    } catch {
+      toast.error('Failed to create next-week task')
+    }
+  })
 
   const isBusy = isCopying || isCreating
 
@@ -270,105 +264,128 @@ export function ScheduleNextWeekDialog({
                 Add at least one active project to create a task.
               </p>
             ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="next-week-project">Project</Label>
-                  <Select
-                    onValueChange={(projectId) => {
-                      setManualTask((prev) => ({ ...prev, projectId }))
-                    }}
-                    value={manualTask.projectId}
-                  >
-                    <SelectTrigger id="next-week-project">
-                      <SelectValue placeholder="Select a project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(projectsByArea).map(
-                        ([areaName, { area, projects: areaProjects }]) => (
-                          <SelectGroup key={areaName}>
-                            <SelectLabel className="flex items-center gap-2">
-                              <div
-                                className="size-2 rounded-full"
-                                style={{ backgroundColor: area.color }}
-                              />
-                              {areaName}
-                            </SelectLabel>
-                            {areaProjects.map((project) => (
-                              <SelectItem
-                                key={project.id}
-                                value={project.id.toString()}
-                              >
-                                {project.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="next-week-day">Day</Label>
-                    <Select
-                      onValueChange={(dayOffset) => {
-                        setManualTask((prev) => ({ ...prev, dayOffset }))
-                      }}
-                      value={manualTask.dayOffset}
-                    >
-                      <SelectTrigger id="next-week-day">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {nextWeekDayOptions.map((day) => (
-                          <SelectItem key={day.dayOffset} value={day.dayOffset}>
-                            {day.label} ({day.dateLabel})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="next-week-duration">Duration</Label>
-                    <Input
-                      id="next-week-duration"
-                      onChange={(event) =>
-                        handleDurationChange(event.target.value)
-                      }
-                      placeholder="1h 30m"
-                      value={manualTask.durationInput}
-                    />
-                    {manualTask.durationError ? (
-                      <p className="text-destructive text-xs">
-                        {manualTask.durationError}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="next-week-description">Description</Label>
-                  <Textarea
-                    id="next-week-description"
-                    onChange={(event) => {
-                      setManualTask((prev) => ({
-                        ...prev,
-                        description: event.target.value,
-                      }))
-                    }}
-                    placeholder="What needs to be done?"
-                    rows={2}
-                    value={manualTask.description}
+              <Form {...form}>
+                <form onSubmit={handleCreateManualTask} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project</FormLabel>
+                        <Select
+                          disabled={isBusy}
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a project" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.entries(projectsByArea).map(
+                              ([areaName, { area, projects: areaProjects }]) => (
+                                <SelectGroup key={areaName}>
+                                  <SelectLabel className="flex items-center gap-2">
+                                    <div
+                                      className="size-2 rounded-full"
+                                      style={{ backgroundColor: area.color }}
+                                    />
+                                    {areaName}
+                                  </SelectLabel>
+                                  {areaProjects.map((project) => (
+                                    <SelectItem
+                                      key={project.id}
+                                      value={project.id.toString()}
+                                    >
+                                      {project.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <Button
-                  disabled={isBusy || !!manualTask.durationError}
-                  onClick={handleCreateManualTask}
-                >
-                  {isCreating ? 'Creating...' : 'Create next-week task'}
-                </Button>
-              </>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="dayOffset"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Day</FormLabel>
+                          <Select
+                            disabled={isBusy}
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {nextWeekDayOptions.map((day) => (
+                                <SelectItem key={day.dayOffset} value={day.dayOffset}>
+                                  {day.label} ({day.dateLabel})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="durationInput"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration</FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled={isBusy}
+                              placeholder="1h 30m"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            disabled={isBusy}
+                            placeholder="What needs to be done?"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    disabled={isBusy}
+                    type="submit"
+                  >
+                    {isCreating ? 'Creating...' : 'Create next-week task'}
+                  </Button>
+                </form>
+              </Form>
             )}
           </div>
         </div>

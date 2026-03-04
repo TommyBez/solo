@@ -1,12 +1,21 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import type React from 'react'
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createArea, updateArea } from '@/lib/actions/areas'
 import { DEFAULT_EXPECTED_HOURS_PER_WEEK } from '@/lib/constants/areas'
@@ -35,16 +44,18 @@ const PRESET_COLORS = [
   '#3b82f6', // blue
 ]
 
+const areaSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string(),
+  color: z.string(),
+  expectedHoursPerWeek: z.coerce.number().min(0).max(168),
+})
+
+type AreaFormValues = z.infer<typeof areaSchema>
+
 interface AreaFormProps {
   area?: AreaFormData
   onSuccess?: () => void
-}
-
-interface AreaFormState {
-  color: string
-  description: string
-  expectedHoursPerWeek: number
-  name: string
 }
 
 export function AreaForm({
@@ -52,36 +63,27 @@ export function AreaForm({
   onSuccess,
 }: AreaFormProps) {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [form, setForm] = useState<AreaFormState>(() => ({
-    name: area?.name ?? '',
-    description: area?.description ?? '',
-    color: area?.color ?? PRESET_COLORS[0],
-    expectedHoursPerWeek:
-      area?.expectedHoursPerWeek ?? DEFAULT_EXPECTED_HOURS_PER_WEEK,
-  }))
-
   const isEditing = !!area
+  const form = useForm<AreaFormValues>({
+    resolver: zodResolver(areaSchema),
+    defaultValues: {
+      name: area?.name ?? '',
+      description: area?.description ?? '',
+      color: area?.color ?? PRESET_COLORS[0],
+      expectedHoursPerWeek:
+        area?.expectedHoursPerWeek ?? DEFAULT_EXPECTED_HOURS_PER_WEEK,
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  function getFormData() {
-    return {
-      name: form.name.trim(),
-      description: form.description.trim() || undefined,
-      color: form.color,
-      expectedHoursPerWeek: form.expectedHoursPerWeek,
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.name.trim()) {
-      toast.error('Name is required')
-      return
-    }
-
-    setIsLoading(true)
+  const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      const formData = getFormData()
+      const formData = {
+        name: values.name.trim(),
+        description: values.description.trim() || undefined,
+        color: values.color,
+        expectedHoursPerWeek: values.expectedHoursPerWeek,
+      }
       if (isEditing) {
         await updateArea(area.id, formData)
         toast.success('Area updated successfully')
@@ -93,10 +95,8 @@ export function AreaForm({
       onSuccess?.()
     } catch {
       toast.error(isEditing ? 'Failed to update area' : 'Failed to create area')
-    } finally {
-      setIsLoading(false)
     }
-  }
+  })
 
   let buttonText = 'Create Area'
   if (isLoading) {
@@ -106,80 +106,103 @@ export function AreaForm({
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          onChange={(e) => {
-            setForm((prev) => ({ ...prev, name: e.target.value }))
-          }}
-          placeholder="e.g., Fractional CTO"
-          required
-          value={form.name}
+    <Form {...form}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={isLoading}
+                  placeholder="e.g., Fractional CTO"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          onChange={(e) => {
-            setForm((prev) => ({ ...prev, description: e.target.value }))
-          }}
-          placeholder="Brief description of this area..."
-          rows={3}
-          value={form.description}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  disabled={isLoading}
+                  placeholder="Brief description of this area..."
+                  rows={3}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label>Color</Label>
-        <div className="flex flex-wrap gap-2">
-          {PRESET_COLORS.map((presetColor) => (
-            <button
-              aria-label={`Select color ${presetColor}`}
-              className={`size-8 rounded-full transition-all ${
-                form.color === presetColor
-                  ? 'ring-2 ring-primary ring-offset-2'
-                  : 'hover:scale-110'
-              }`}
-              key={presetColor}
-              onClick={() => {
-                setForm((prev) => ({ ...prev, color: presetColor }))
-              }}
-              style={{ backgroundColor: presetColor }}
-              type="button"
-            />
-          ))}
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Color</FormLabel>
+              <FormControl>
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_COLORS.map((presetColor) => (
+                    <button
+                      aria-label={`Select color ${presetColor}`}
+                      className={`size-8 rounded-full transition-all ${
+                        field.value === presetColor
+                          ? 'ring-2 ring-primary ring-offset-2'
+                          : 'hover:scale-110'
+                      }`}
+                      key={presetColor}
+                      onClick={() => field.onChange(presetColor)}
+                      style={{ backgroundColor: presetColor }}
+                      type="button"
+                    />
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="expectedHoursPerWeek"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Expected Hours per Week</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={isLoading}
+                  max={168}
+                  min={0}
+                  type="number"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Set your weekly time allocation goal for this area
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button disabled={isLoading} type="submit">
+            {buttonText}
+          </Button>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="expectedHours">Expected Hours per Week</Label>
-        <Input
-          id="expectedHours"
-          max={168}
-          min={0}
-          onChange={(e) => {
-            setForm((prev) => ({
-              ...prev,
-              expectedHoursPerWeek: Number(e.target.value),
-            }))
-          }}
-          type="number"
-          value={form.expectedHoursPerWeek}
-        />
-        <p className="text-muted-foreground text-xs">
-          Set your weekly time allocation goal for this area
-        </p>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button disabled={isLoading} type="submit">
-          {buttonText}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   )
 }

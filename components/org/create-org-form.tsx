@@ -1,44 +1,65 @@
 'use client'
 
-import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { organization } from '@/lib/auth/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { organization } from '@/lib/auth/client'
+
+const createOrgSchema = z.object({
+  name: z.string().min(1, 'Workspace name is required'),
+  slug: z.string(),
+})
+
+type CreateOrgFormValues = z.infer<typeof createOrgSchema>
+
+function generateSlug(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+}
 
 export function CreateOrgForm() {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const form = useForm<CreateOrgFormValues>({
+    resolver: zodResolver(createOrgSchema),
+    defaultValues: {
+      name: '',
+      slug: '',
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-  }
+  const name = form.watch('name')
+  useEffect(() => {
+    form.setValue('slug', generateSlug(name))
+  }, [name, form])
 
-  const handleNameChange = (value: string) => {
-    setName(value)
-    setSlug(generateSlug(value))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
-
-    setLoading(true)
+  const handleSubmit = form.handleSubmit(async (values) => {
+    setError('')
     try {
-      const { data, error } = await organization.create({
-        name: name.trim(),
-        slug: slug || generateSlug(name),
+      const { data, error: apiError } = await organization.create({
+        name: values.name.trim(),
+        slug: values.slug || generateSlug(values.name),
       })
 
-      if (error) {
-        toast.error(error.message || 'Failed to create workspace')
+      if (apiError) {
+        setError(apiError.message || 'Failed to create workspace')
         return
       }
 
@@ -49,48 +70,68 @@ export function CreateOrgForm() {
         router.refresh()
       }
     } catch {
-      toast.error('Failed to create workspace')
-    } finally {
-      setLoading(false)
+      setError('Failed to create workspace')
     }
-  }
+  })
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Workspace Name</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => handleNameChange(e.target.value)}
-          placeholder="My Company"
-          required
+    <Form {...form}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error ? (
+          <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
+            {error}
+          </div>
+        ) : null}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Workspace Name</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={isLoading}
+                  placeholder="My Company"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="slug">URL Slug</Label>
-        <Input
-          id="slug"
-          value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-          placeholder="my-company"
+        <FormField
+          control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL Slug</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={isLoading}
+                  placeholder="my-company"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Used in URLs to identify your workspace.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <p className="text-muted-foreground text-xs">
-          Used in URLs to identify your workspace.
-        </p>
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={loading || !name.trim()}>
-          {loading ? 'Creating...' : 'Create Workspace'}
-        </Button>
-      </div>
-    </form>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Creating...' : 'Create Workspace'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   )
 }
