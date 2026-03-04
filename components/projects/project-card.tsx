@@ -1,6 +1,5 @@
 'use client'
 
-import { ColorBar } from '@/components/color-indicator'
 import {
   Archive,
   Calendar,
@@ -12,6 +11,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ColorBar } from '@/components/color-indicator'
 import {
   AlertDialog,
   AlertDialogAction,

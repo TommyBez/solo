@@ -1,10 +1,10 @@
 import type React from 'react'
 
 interface EmptyStateProps {
+  action?: React.ReactNode
+  description: string
   icon: React.ComponentType<{ className?: string }>
   title: string
-  description: string
-  action?: React.ReactNode
 }
 
 export function EmptyState({

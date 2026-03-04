@@ -1,7 +1,7 @@
 import { FolderKanban, Layers } from 'lucide-react'
-import { ColorDot } from '@/components/color-indicator'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { ColorDot } from '@/components/color-indicator'
 import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
 import { CreateProjectDialog } from '@/components/projects/create-project-dialog'

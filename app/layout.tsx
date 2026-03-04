@@ -22,7 +22,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html className={`${GeistSans.variable} ${GeistMono.variable}`} lang="en" suppressHydrationWarning>
+    <html
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      lang="en"
+      suppressHydrationWarning
+    >
       <body className={'antialiased'}>
         <ThemeProvider
           attribute="class"

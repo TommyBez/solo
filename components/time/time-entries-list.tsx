@@ -2,10 +2,10 @@
 
 import { format } from 'date-fns'
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
-import { ColorDot } from '@/components/color-indicator'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ColorDot } from '@/components/color-indicator'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,7 +136,10 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                       <h3 className="font-medium text-sm">
                         {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
                       </h3>
-                      <Badge className="font-mono tabular-nums" variant="secondary">
+                      <Badge
+                        className="font-mono tabular-nums"
+                        variant="secondary"
+                      >
                         {formatDuration(totalMinutes)}
                       </Badge>
                     </div>
@@ -166,7 +169,10 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge className="font-mono tabular-nums" variant="outline">
+                            <Badge
+                              className="font-mono tabular-nums"
+                              variant="outline"
+                            >
                               {formatDuration(entry.durationMinutes)}
                             </Badge>
                             <DropdownMenu>

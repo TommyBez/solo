@@ -1,13 +1,12 @@
 'use client'
 
 import { Clock, Pause, Play, Square } from 'lucide-react'
-import { ColorDot } from '@/components/color-indicator'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -30,6 +29,7 @@ import {
   getRecentProjects,
   usePersistedTimer,
 } from '@/lib/hooks/use-persisted-timer'
+import { cn } from '@/lib/utils'
 
 interface TimerWidgetProps {
   projects: (Project & { area: Area })[]
@@ -170,10 +170,13 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
   }
 
   return (
-    <Card className={cn(
-      'transition-all duration-300',
-      isRunning && 'timer-running border-l-2 border-primary bg-primary/5 dark:bg-primary/10',
-    )}>
+    <Card
+      className={cn(
+        'transition-all duration-300',
+        isRunning &&
+          'timer-running border-primary border-l-2 bg-primary/5 dark:bg-primary/10',
+      )}
+    >
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Quick Timer</CardTitle>
       </CardHeader>

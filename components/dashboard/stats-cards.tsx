@@ -74,7 +74,9 @@ export function StatsCards({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">{weeklyHours}h</div>
+          <div className="font-bold font-mono text-2xl tabular-nums">
+            {weeklyHours}h
+          </div>
           <div className="flex flex-col gap-1">
             <p className="text-muted-foreground text-xs">
               ~{avgDailyHours}h daily average
@@ -91,7 +93,9 @@ export function StatsCards({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">{monthlyHours}h</div>
+          <div className="font-bold font-mono text-2xl tabular-nums">
+            {monthlyHours}h
+          </div>
           <div className="flex flex-col gap-1">
             <p className="text-muted-foreground text-xs">Total tracked time</p>
             <TrendIndicator change={monthlyChange} label="vs last month" />
@@ -112,7 +116,10 @@ export function StatsCards({
           <div className="flex flex-col gap-1">
             {totalExpectedWeeklyHours > 0 ? (
               <>
-                <Progress className="my-1 h-2" value={Math.min(goalProgress, 100)} />
+                <Progress
+                  className="my-1 h-2"
+                  value={Math.min(goalProgress, 100)}
+                />
                 <p className="text-muted-foreground text-xs">
                   {weeklyHours}h / {totalExpectedWeeklyHours}h target
                 </p>
@@ -141,7 +148,9 @@ export function StatsCards({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">{activeProjectsCount}</div>
+          <div className="font-bold font-mono text-2xl tabular-nums">
+            {activeProjectsCount}
+          </div>
           <div className="flex flex-col gap-1">
             <p className="text-muted-foreground text-xs">
               projects across {activeAreasCount} areas

@@ -31,8 +31,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { archiveClient, deleteClient } from '@/lib/actions/clients'
-import { cn } from '@/lib/utils'
 import type { Client } from '@/lib/db/schema'
+import { cn } from '@/lib/utils'
 import { ClientForm } from './client-form'
 
 const avatarColors = [
@@ -109,9 +109,7 @@ export function ClientCard({ client }: ClientCardProps) {
               {client.name.charAt(0).toUpperCase()}
             </div>
             <div className="space-y-1">
-              <CardTitle className="text-lg">
-                {client.name}
-              </CardTitle>
+              <CardTitle className="text-lg">{client.name}</CardTitle>
               {client.hourlyRate ? (
                 <Badge className="font-mono tabular-nums" variant="secondary">
                   {formatCurrency(client.hourlyRate, client.currency)}
