@@ -54,7 +54,7 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
             <p className="text-muted-foreground text-sm">No recent entries</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="stagger-children space-y-4">
             {entries.map((entry) => (
               <div
                 className="flex items-start justify-between gap-4 rounded-lg border p-3"

@@ -41,12 +41,12 @@ async function DashboardContent() {
         weeklyHours={stats.weeklyHours}
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="stagger-children grid gap-6 md:grid-cols-2">
         <TimeDistributionChart data={stats.timeByArea} />
         <DailyBreakdownChart data={stats.dailyBreakdown} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="stagger-children grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AreasComparisonChart data={stats.areasComparison} />
         </div>

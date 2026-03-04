@@ -155,6 +155,7 @@
 
 .stagger-children > * {
   animation: fade-in-up 0.3s ease-out both;
+  will-change: transform, opacity;
 }
 .stagger-children > *:nth-child(1) {
   animation-delay: 0ms;
@@ -174,6 +175,23 @@
 .stagger-children > *:nth-child(6) {
   animation-delay: 250ms;
 }
+.stagger-children > *:nth-child(7) {
+  animation-delay: 300ms;
+}
+.stagger-children > *:nth-child(8) {
+  animation-delay: 350ms;
+}
+.stagger-children > *:nth-child(9) {
+  animation-delay: 400ms;
+}
+.stagger-children > *:nth-child(10) {
+  animation-delay: 450ms;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out both;
+  will-change: transform, opacity;
+}
 
 .timer-running {
   animation: timer-pulse 2s ease-in-out infinite;
@@ -181,6 +199,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .stagger-children > * {
+    animation: none !important;
+  }
+  .animate-fade-in-up {
     animation: none !important;
   }
   .timer-running {
