@@ -7,7 +7,9 @@
       "mcp__hades-tools__navigate",
       "mcp__hades-tools__get_browser_state",
       "mcp__hades-tools__click_element",
-      "mcp__hades-tools__browser_use_end"
+      "mcp__hades-tools__browser_use_end",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run build)"
     ]
   }
 }
