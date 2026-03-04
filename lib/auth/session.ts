@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
@@ -19,18 +20,48 @@ export async function requireSession() {
   return session
 }
 
+// Request-scoped cache: resolves the org ID once per request,
+// including the case where ensureActiveOrganization() just set it
+// but the cookie hasn't round-tripped yet.
+const resolveOrganizationId = cache(
+  async (): Promise<string | null> => {
+    const session = await getSession()
+    if (!session?.user) {
+      return null
+    }
+
+    const orgId = (session?.session as { activeOrganizationId?: string })
+      ?.activeOrganizationId
+    if (orgId) {
+      return orgId
+    }
+
+    // No active org in cookie — find user's first membership
+    const firstMembership = await db.query.member.findFirst({
+      where: eq(member.userId, session.user.id),
+    })
+    if (!firstMembership) {
+      return null
+    }
+
+    // Set it for future requests (updates DB + response cookie)
+    await auth.api.setActiveOrganization({
+      headers: await headers(),
+      body: { organizationId: firstMembership.organizationId },
+    })
+
+    // Return the org ID directly so this request sees it immediately
+    return firstMembership.organizationId
+  },
+)
+
 export async function getActiveOrganizationId(): Promise<string | null> {
-  const session = await getSession()
-  return (
-    (session?.session as { activeOrganizationId?: string })
-      ?.activeOrganizationId ?? null
-  )
+  return resolveOrganizationId()
 }
 
 export async function requireOrganization() {
   const session = await requireSession()
-  const organizationId = (session.session as { activeOrganizationId?: string })
-    ?.activeOrganizationId
+  const organizationId = await getActiveOrganizationId()
   if (!organizationId) {
     throw new Error('No active organization')
   }
@@ -38,27 +69,6 @@ export async function requireOrganization() {
 }
 
 export async function ensureActiveOrganization(): Promise<void> {
-  const session = await getSession()
-  if (!session?.user) {
-    return
-  }
-
-  const activeOrgId = (session.session as { activeOrganizationId?: string })
-    ?.activeOrganizationId
-  if (activeOrgId) {
-    return
-  }
-
-  // No active org — find user's first membership and set it
-  const firstMembership = await db.query.member.findFirst({
-    where: eq(member.userId, session.user.id),
-  })
-  if (!firstMembership) {
-    return
-  }
-
-  await auth.api.setActiveOrganization({
-    headers: await headers(),
-    body: { organizationId: firstMembership.organizationId },
-  })
+  // Now handled by resolveOrganizationId() — just trigger it
+  await resolveOrganizationId()
 }
