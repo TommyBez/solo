@@ -1,6 +1,7 @@
 'use client'
 
 import { Building2, Mail, MoreHorizontal, Phone, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
@@ -40,6 +41,7 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client }: ClientCardProps) {
+  const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -65,6 +67,7 @@ export function ClientCard({ client }: ClientCardProps) {
     try {
       await deleteClient(client.id)
       toast.success('Client deleted')
+      router.refresh()
     } catch {
       toast.error('Failed to delete client')
     }
@@ -74,6 +77,7 @@ export function ClientCard({ client }: ClientCardProps) {
     try {
       await archiveClient(client.id)
       toast.success('Client archived')
+      router.refresh()
     } catch {
       toast.error('Failed to archive client')
     }
