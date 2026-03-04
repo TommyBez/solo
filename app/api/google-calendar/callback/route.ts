@@ -9,8 +9,8 @@ import { saveGoogleCalendarConnection } from '@/lib/google-calendar/service'
 
 const OAUTH_STATE_COOKIE = 'google_calendar_oauth_state'
 
-function buildTimeRedirect(request: NextRequest, status: string) {
-  const url = new URL('/time', request.url)
+function buildSettingsRedirect(request: NextRequest, status: string) {
+  const url = new URL('/settings', request.url)
   url.searchParams.set('googleCalendar', status)
   return NextResponse.redirect(url)
 }
@@ -28,7 +28,7 @@ function clearOAuthStateCookie(response: NextResponse) {
 
 export async function GET(request: NextRequest) {
   if (!isGoogleCalendarConfigured()) {
-    return clearOAuthStateCookie(buildTimeRedirect(request, 'missing-config'))
+    return clearOAuthStateCookie(buildSettingsRedirect(request, 'missing-config'))
   }
 
   const requestUrl = new URL(request.url)
@@ -38,16 +38,16 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get(OAUTH_STATE_COOKIE)?.value
 
   if (authError) {
-    return clearOAuthStateCookie(buildTimeRedirect(request, 'connect-failed'))
+    return clearOAuthStateCookie(buildSettingsRedirect(request, 'connect-failed'))
   }
 
   if (!(code && state && storedState && state === storedState)) {
-    return clearOAuthStateCookie(buildTimeRedirect(request, 'invalid-state'))
+    return clearOAuthStateCookie(buildSettingsRedirect(request, 'invalid-state'))
   }
 
   const session = await getSession()
   if (!session?.user) {
-    return clearOAuthStateCookie(buildTimeRedirect(request, 'unauthorized'))
+    return clearOAuthStateCookie(buildSettingsRedirect(request, 'unauthorized'))
   }
 
   try {
@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
       email,
       tokenPayload,
     })
-    return clearOAuthStateCookie(buildTimeRedirect(request, 'connected'))
+    return clearOAuthStateCookie(buildSettingsRedirect(request, 'connected'))
   } catch {
-    return clearOAuthStateCookie(buildTimeRedirect(request, 'connect-failed'))
+    return clearOAuthStateCookie(buildSettingsRedirect(request, 'connect-failed'))
   }
 }

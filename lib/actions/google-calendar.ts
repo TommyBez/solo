@@ -8,4 +8,5 @@ export async function disconnectGoogleCalendar() {
   const session = await requireSession()
   await disconnectGoogleCalendarForUser(session.user.id)
   revalidatePath('/time')
+  revalidatePath('/settings')
 }
