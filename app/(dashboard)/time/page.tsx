@@ -12,12 +12,18 @@ import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { CalendarView } from '@/components/time/calendar-view'
+import { GoogleCalendarConnectionCard } from '@/components/time/google-calendar-connection-card'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getSession } from '@/lib/auth/session'
+import {
+  getGoogleCalendarEventsForDateRange,
+  getGoogleCalendarMissingConfigMessage,
+  getGoogleCalendarStatus,
+} from '@/lib/queries/google-calendar'
 import { getProjects } from '@/lib/queries/projects'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
@@ -32,6 +38,10 @@ export default async function TimeTrackingPage(props: {
     typeof searchParams.date === 'string' ? searchParams.date : undefined
   const viewParam =
     typeof searchParams.view === 'string' ? searchParams.view : 'month'
+  const googleCalendarParam =
+    typeof searchParams.googleCalendar === 'string'
+      ? searchParams.googleCalendar
+      : undefined
 
   return (
     <div className="space-y-6">
@@ -41,7 +51,11 @@ export default async function TimeTrackingPage(props: {
       />
 
       <Suspense fallback={<TimeTrackingSkeleton />}>
-        <TimeTrackingContent dateParam={dateParam} viewParam={viewParam} />
+        <TimeTrackingContent
+          dateParam={dateParam}
+          googleCalendarParam={googleCalendarParam}
+          viewParam={viewParam}
+        />
       </Suspense>
     </div>
   )
@@ -49,9 +63,11 @@ export default async function TimeTrackingPage(props: {
 
 async function TimeTrackingContent({
   dateParam,
+  googleCalendarParam,
   viewParam,
 }: {
   dateParam?: string
+  googleCalendarParam?: string
   viewParam: string
 }) {
   const currentDate = dateParam ? parseISO(dateParam) : new Date()
@@ -78,15 +94,24 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
-  const [entries, projects] = await Promise.all([
-    getTimeEntriesForDateRange(startDate, endDate),
-    getProjects(),
-  ])
+  const [entries, projects, googleCalendarStatus, googleCalendarEvents] =
+    await Promise.all([
+      getTimeEntriesForDateRange(startDate, endDate),
+      getProjects(),
+      getGoogleCalendarStatus(),
+      getGoogleCalendarEventsForDateRange(startDate, endDate),
+    ])
 
   const activeProjects = projects.filter((p) => p.status === 'active')
 
   return (
     <>
+      <GoogleCalendarConnectionCard
+        callbackStatus={googleCalendarParam}
+        missingConfigMessage={getGoogleCalendarMissingConfigMessage()}
+        status={googleCalendarStatus}
+      />
+
       <div className="flex items-center justify-end gap-2">
         {viewParam === 'week' ? (
           <ScheduleNextWeekDialog
@@ -100,6 +125,8 @@ async function TimeTrackingContent({
       <CalendarView
         currentDate={currentDate}
         entries={entries}
+        googleEvents={googleCalendarEvents}
+        projects={activeProjects}
         view={viewParam as 'month' | 'week'}
       />
 
