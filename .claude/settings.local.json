@@ -9,7 +9,7 @@
       "mcp__hades-tools__click_element",
       "mcp__hades-tools__browser_use_end",
       "Bash(npx tsc --noEmit)",
-      "Bash(npm run build)"
+      "Bash(pnpm build)"
     ]
   }
 }
