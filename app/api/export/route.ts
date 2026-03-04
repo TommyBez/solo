@@ -2,7 +2,8 @@ import { format } from 'date-fns'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { type NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth/session'
+import { getActiveOrganizationId, getSession } from '@/lib/auth/session'
+import { getOrganizationSettings } from '@/lib/queries/organization-settings'
 import { getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForProjectAndDateRange } from '@/lib/queries/time-entries'
 
@@ -274,9 +275,11 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  const orgId = await getActiveOrganizationId()
+  const orgSettings = orgId ? await getOrganizationSettings(orgId) : null
   const companyInfo = {
-    companyName: settings?.companyName,
-    companyAddress: settings?.companyAddress,
+    companyName: orgSettings?.companyName,
+    companyAddress: orgSettings?.companyAddress,
   }
 
   const pdfBytes = buildPdf(

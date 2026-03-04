@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Globe, RotateCcw } from 'lucide-react'
+import { Globe, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -21,7 +20,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Settings } from '@/lib/queries/settings'
 
@@ -54,10 +52,7 @@ export function SettingsForm() {
   const handleReset = async () => {
     try {
       await updateSettings({
-        companyName: '',
-        companyEmail: '',
-        companyPhone: '',
-        companyAddress: '',
+        ...settings,
         weekStartsOn: '1',
         dateFormat: 'MMM d, yyyy',
         timeFormat: '12',
@@ -71,59 +66,6 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-6">
-      {/* Company Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="size-5" />
-            Company Information
-          </CardTitle>
-          <CardDescription>Your company details</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
-              <Input
-                id="companyName"
-                onChange={(e) => updateField('companyName', e.target.value)}
-                placeholder="Your Company LLC"
-                value={form.companyName}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="companyEmail">Email</Label>
-              <Input
-                id="companyEmail"
-                onChange={(e) => updateField('companyEmail', e.target.value)}
-                placeholder="billing@company.com"
-                type="email"
-                value={form.companyEmail}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyPhone">Phone</Label>
-            <Input
-              id="companyPhone"
-              onChange={(e) => updateField('companyPhone', e.target.value)}
-              placeholder="+1 (555) 123-4567"
-              value={form.companyPhone}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyAddress">Address</Label>
-            <Textarea
-              id="companyAddress"
-              onChange={(e) => updateField('companyAddress', e.target.value)}
-              placeholder="123 Main St&#10;City, State 12345&#10;Country"
-              rows={3}
-              value={form.companyAddress}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Display Preferences */}
       <Card>
         <CardHeader>
@@ -190,6 +132,13 @@ export function SettingsForm() {
               </Select>
             </div>
           </div>
+          <p className="text-muted-foreground text-sm">
+            Company information has moved to{' '}
+            <a href="/org/settings" className="text-primary underline">
+              Workspace Settings
+            </a>
+            .
+          </p>
         </CardContent>
       </Card>
 

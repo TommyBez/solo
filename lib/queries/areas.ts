@@ -1,16 +1,22 @@
 import { and, desc, eq, gte } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getSession } from '@/lib/auth/session'
+import { getActiveOrganizationId } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
 
-async function getAreasCached(userId: string, includeArchived: boolean) {
+async function getAreasCached(
+  organizationId: string,
+  includeArchived: boolean,
+) {
   'use cache'
   cacheLife('minutes')
   cacheTag('areas', 'projects')
   const conditions = includeArchived
-    ? eq(areas.userId, userId)
-    : and(eq(areas.userId, userId), eq(areas.archived, false))
+    ? eq(areas.organizationId, organizationId)
+    : and(
+        eq(areas.organizationId, organizationId),
+        eq(areas.archived, false),
+      )
 
   return await db.query.areas.findMany({
     where: conditions,
@@ -24,15 +30,15 @@ async function getAreasCached(userId: string, includeArchived: boolean) {
 }
 
 export async function getAreas(includeArchived = false) {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
-  return getAreasCached(session.user.id, includeArchived)
+  return getAreasCached(orgId, includeArchived)
 }
 
-async function getAreasWithStatsCached(userId: string) {
+async function getAreasWithStatsCached(organizationId: string) {
   'use cache'
   cacheLife('minutes')
   cacheTag('areas', 'projects', 'time-entries')
@@ -40,7 +46,10 @@ async function getAreasWithStatsCached(userId: string) {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   const areasData = await db.query.areas.findMany({
-    where: and(eq(areas.userId, userId), eq(areas.archived, false)),
+    where: and(
+      eq(areas.organizationId, organizationId),
+      eq(areas.archived, false),
+    ),
     orderBy: [desc(areas.createdAt)],
     with: {
       projects: {
@@ -68,7 +77,9 @@ async function getAreasWithStatsCached(userId: string) {
     const hoursThisWeek = Math.round((totalMinutesThisWeek / 60) * 10) / 10
     const expectedHours = area.expectedHoursPerWeek
     const percentageComplete =
-      expectedHours > 0 ? Math.round((hoursThisWeek / expectedHours) * 100) : 0
+      expectedHours > 0
+        ? Math.round((hoursThisWeek / expectedHours) * 100)
+        : 0
 
     return {
       ...area,
@@ -80,10 +91,10 @@ async function getAreasWithStatsCached(userId: string) {
 }
 
 export async function getAreasWithStats() {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
-  return getAreasWithStatsCached(session.user.id)
+  return getAreasWithStatsCached(orgId)
 }

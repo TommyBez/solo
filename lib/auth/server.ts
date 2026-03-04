@@ -1,7 +1,17 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { organization as organizationPlugin } from 'better-auth/plugins'
 import { db } from '@/lib/db'
-import { account, rateLimit, session, user, verification } from './schema'
+import {
+  account,
+  invitation,
+  member,
+  organization,
+  rateLimit,
+  session,
+  user,
+  verification,
+} from './schema'
 
 const appUrl = process.env.BETTER_AUTH_URL
 const trustedOrigins = ['http://localhost:3000', ...(appUrl ? [appUrl] : [])]
@@ -11,7 +21,16 @@ export const auth = betterAuth({
   appName: 'Solo',
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: { account, session, user, verification, rateLimit },
+    schema: {
+      account,
+      session,
+      user,
+      verification,
+      rateLimit,
+      organization,
+      member,
+      invitation,
+    },
   }),
   emailAndPassword: {
     enabled: true,
@@ -23,6 +42,38 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // 5 minutes
+    },
+  },
+  plugins: [
+    organizationPlugin({
+      allowUserToCreateOrganization: true,
+      organizationLimit: 5,
+      creatorRole: 'owner',
+    }),
+  ],
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const orgId = crypto.randomUUID()
+          const slug =
+            user.name
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^a-z0-9-]/g, '') || user.id
+          await db.insert(organization).values({
+            id: orgId,
+            name: `${user.name}'s Workspace`,
+            slug: `${slug}-${orgId.slice(0, 6)}`,
+          })
+          await db.insert(member).values({
+            id: crypto.randomUUID(),
+            organizationId: orgId,
+            userId: user.id,
+            role: 'owner',
+          })
+        },
+      },
     },
   },
   rateLimit: {

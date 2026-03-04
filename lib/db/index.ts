@@ -5,6 +5,12 @@ import pg from 'pg'
 import {
   account,
   accountRelations,
+  invitation,
+  invitationRelations,
+  member,
+  memberRelations,
+  organization,
+  organizationRelations,
   session,
   sessionRelations,
   user,
@@ -16,6 +22,8 @@ import {
   areasRelations,
   clients,
   clientsRelations,
+  organizationSettings,
+  organizationSettingsRelations,
   projects,
   projectsRelations,
   timeEntries,
@@ -35,6 +43,13 @@ const schema = {
   account,
   accountRelations,
   verification,
+  // Organization schema
+  organization,
+  organizationRelations,
+  member,
+  memberRelations,
+  invitation,
+  invitationRelations,
   // App schema
   clients,
   clientsRelations,
@@ -44,6 +59,8 @@ const schema = {
   projectsRelations,
   timeEntries,
   timeEntriesRelations,
+  organizationSettings,
+  organizationSettingsRelations,
 }
 
 function createDb() {

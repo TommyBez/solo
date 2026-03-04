@@ -3,7 +3,8 @@
 import { addWeeks, endOfWeek, startOfWeek } from 'date-fns'
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
-import { requireSession } from '@/lib/auth/session'
+import { requireRole } from '@/lib/auth/permissions'
+import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import {
   areas,
@@ -13,15 +14,21 @@ import {
 } from '@/lib/db/schema'
 import { getSettings } from '@/lib/queries/settings'
 
-async function verifyProjectOwnership(projectId: number, userId: string) {
+async function verifyProjectInOrg(
+  projectId: number,
+  organizationId: string,
+) {
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
     with: { area: true },
   })
-  return project?.area.userId === userId
+  return project?.area.organizationId === organizationId
 }
 
-async function verifyTimeEntryOwnership(timeEntryId: number, userId: string) {
+async function verifyTimeEntryInOrg(
+  timeEntryId: number,
+  organizationId: string,
+) {
   const entry = await db.query.timeEntries.findFirst({
     where: eq(timeEntries.id, timeEntryId),
     with: {
@@ -30,7 +37,7 @@ async function verifyTimeEntryOwnership(timeEntryId: number, userId: string) {
       },
     },
   })
-  return entry?.project.area.userId === userId
+  return entry?.project.area.organizationId === organizationId
 }
 
 function buildTimeEntryDedupKey(entry: {
@@ -56,14 +63,15 @@ export async function createTimeEntry(data: {
   endTime?: Date
   durationMinutes: number
 }) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
 
-  // Verify user owns the project (through area)
-  const ownsProject = await verifyProjectOwnership(
+  // Verify project belongs to this org (through area)
+  const projectInOrg = await verifyProjectInOrg(
     data.projectId,
-    session.user.id,
+    organizationId,
   )
-  if (!ownsProject) {
+  if (!projectInOrg) {
     throw new Error('Unauthorized')
   }
 
@@ -82,21 +90,22 @@ export async function updateTimeEntry(
     durationMinutes?: number
   },
 ) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
 
-  // Verify user owns the time entry (through project/area chain)
-  const ownsEntry = await verifyTimeEntryOwnership(id, session.user.id)
-  if (!ownsEntry) {
+  // Verify time entry belongs to this org (through project/area chain)
+  const entryInOrg = await verifyTimeEntryInOrg(id, organizationId)
+  if (!entryInOrg) {
     throw new Error('Unauthorized')
   }
 
   const updateData = { ...data }
   if (updateData.projectId !== undefined) {
-    const ownsProject = await verifyProjectOwnership(
+    const projectInOrg = await verifyProjectInOrg(
       updateData.projectId,
-      session.user.id,
+      organizationId,
     )
-    if (!ownsProject) {
+    if (!projectInOrg) {
       throw new Error('Unauthorized')
     }
   }
@@ -111,11 +120,12 @@ export async function updateTimeEntry(
 }
 
 export async function deleteTimeEntry(id: number) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
 
-  // Verify user owns the time entry (through project/area chain)
-  const ownsEntry = await verifyTimeEntryOwnership(id, session.user.id)
-  if (!ownsEntry) {
+  // Verify time entry belongs to this org (through project/area chain)
+  const entryInOrg = await verifyTimeEntryInOrg(id, organizationId)
+  if (!entryInOrg) {
     throw new Error('Unauthorized')
   }
 
@@ -124,7 +134,9 @@ export async function deleteTimeEntry(id: number) {
 }
 
 export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
+
   const referenceDate = new Date(referenceDateIso)
 
   if (Number.isNaN(referenceDate.getTime())) {
@@ -146,20 +158,20 @@ export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
     weekStartsOn,
   })
 
-  const userProjectRows = await db
+  const orgProjectRows = await db
     .select({ id: projects.id })
     .from(projects)
     .innerJoin(areas, eq(projects.areaId, areas.id))
-    .where(eq(areas.userId, session.user.id))
+    .where(eq(areas.organizationId, organizationId))
 
-  const userProjectIds = userProjectRows.map((project) => project.id)
-  if (userProjectIds.length === 0) {
+  const orgProjectIds = orgProjectRows.map((project) => project.id)
+  if (orgProjectIds.length === 0) {
     return { createdCount: 0, skippedCount: 0, sourceCount: 0 }
   }
 
   const sourceEntries = await db.query.timeEntries.findMany({
     where: and(
-      inArray(timeEntries.projectId, userProjectIds),
+      inArray(timeEntries.projectId, orgProjectIds),
       gte(timeEntries.startTime, sourceWeekStart),
       lte(timeEntries.startTime, sourceWeekEnd),
     ),
@@ -171,7 +183,7 @@ export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
 
   const targetEntries = await db.query.timeEntries.findMany({
     where: and(
-      inArray(timeEntries.projectId, userProjectIds),
+      inArray(timeEntries.projectId, orgProjectIds),
       gte(timeEntries.startTime, targetWeekStart),
       lte(timeEntries.startTime, targetWeekEnd),
     ),
@@ -210,7 +222,9 @@ export async function scheduleTasksForFollowingWeek(referenceDateIso: string) {
       projectId: entry.projectId,
       description: entry.description ?? undefined,
       startTime: shiftedStart,
-      endTime: entry.endTime ? addWeeks(new Date(entry.endTime), 1) : undefined,
+      endTime: entry.endTime
+        ? addWeeks(new Date(entry.endTime), 1)
+        : undefined,
       durationMinutes: entry.durationMinutes,
       billable: entry.billable,
     })

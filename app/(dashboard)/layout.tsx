@@ -14,18 +14,21 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { getSession } from '@/lib/auth/session'
+import { ensureActiveOrganization, getSession } from '@/lib/auth/session'
 import { SettingsProvider } from '@/lib/context/settings-context'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 
-// Async component to fetch settings - wrapped in Suspense
+// Async component to fetch settings and ensure active org - wrapped in Suspense
 async function SettingsProviderWrapper({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Fetch settings for the current user
   const session = await getSession()
+
+  // Ensure the user has an active organization set server-side
+  await ensureActiveOrganization()
+
   const settings = session?.user
     ? await getSettings(session.user.id)
     : defaultSettings

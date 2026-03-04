@@ -2,23 +2,30 @@
 
 import { and, eq } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
-import { requireSession } from '@/lib/auth/session'
+import { requireRole } from '@/lib/auth/permissions'
+import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects } from '@/lib/db/schema'
 
-async function verifyAreaOwnership(areaId: number, userId: string) {
+async function verifyAreaInOrg(areaId: number, organizationId: string) {
   const area = await db.query.areas.findFirst({
-    where: and(eq(areas.id, areaId), eq(areas.userId, userId)),
+    where: and(
+      eq(areas.id, areaId),
+      eq(areas.organizationId, organizationId),
+    ),
   })
   return !!area
 }
 
-async function verifyProjectOwnership(projectId: number, userId: string) {
+async function verifyProjectInOrg(
+  projectId: number,
+  organizationId: string,
+) {
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
     with: { area: true },
   })
-  return project?.area.userId === userId
+  return project?.area.organizationId === organizationId
 }
 
 export async function createProject(data: {
@@ -31,11 +38,12 @@ export async function createProject(data: {
   recurring?: boolean
   deadline?: Date
 }) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
 
-  // Verify user owns the area
-  const ownsArea = await verifyAreaOwnership(data.areaId, session.user.id)
-  if (!ownsArea) {
+  // Verify area belongs to this org
+  const areaInOrg = await verifyAreaInOrg(data.areaId, organizationId)
+  if (!areaInOrg) {
     throw new Error('Unauthorized')
   }
 
@@ -57,11 +65,12 @@ export async function updateProject(
     archived?: boolean
   },
 ) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
 
-  // Verify user owns the project (through area)
-  const ownsProject = await verifyProjectOwnership(id, session.user.id)
-  if (!ownsProject) {
+  // Verify project belongs to this org (through area)
+  const projectInOrg = await verifyProjectInOrg(id, organizationId)
+  if (!projectInOrg) {
     throw new Error('Unauthorized')
   }
 
@@ -75,11 +84,12 @@ export async function updateProject(
 }
 
 export async function deleteProject(id: number) {
-  const session = await requireSession()
+  const { session, organizationId } = await requireOrganization()
+  await requireRole(session.user.id, organizationId, 'member')
 
-  // Verify user owns the project (through area)
-  const ownsProject = await verifyProjectOwnership(id, session.user.id)
-  if (!ownsProject) {
+  // Verify project belongs to this org (through area)
+  const projectInOrg = await verifyProjectInOrg(id, organizationId)
+  if (!projectInOrg) {
     throw new Error('Unauthorized')
   }
 

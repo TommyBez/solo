@@ -9,7 +9,7 @@ import {
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core'
-import { user } from '@/lib/auth/schema'
+import { organization, user } from '@/lib/auth/schema'
 
 // Clients - customers/companies you work with
 export const clients = pgTable('clients', {
@@ -17,6 +17,9 @@ export const clients = pgTable('clients', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }),
   phone: varchar('phone', { length: 50 }),
@@ -35,6 +38,9 @@ export const areas = pgTable('areas', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   color: varchar('color', { length: 7 }).notNull().default('#6366f1'), // hex color
@@ -79,7 +85,7 @@ export const timeEntries = pgTable('time_entries', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
-// User Settings - user preferences and company information
+// User Settings - personal preferences (per-user)
 export const userSettings = pgTable('user_settings', {
   userId: text('user_id')
     .primaryKey()
@@ -96,11 +102,27 @@ export const userSettings = pgTable('user_settings', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+// Organization Settings - company info (per-organization)
+export const organizationSettings = pgTable('organization_settings', {
+  organizationId: text('organization_id')
+    .primaryKey()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  companyName: varchar('company_name', { length: 255 }),
+  companyEmail: varchar('company_email', { length: 255 }),
+  companyPhone: varchar('company_phone', { length: 50 }),
+  companyAddress: text('company_address'),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
 // Relations
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   user: one(user, {
     fields: [clients.userId],
     references: [user.id],
+  }),
+  organization: one(organization, {
+    fields: [clients.organizationId],
+    references: [organization.id],
   }),
   projects: many(projects),
 }))
@@ -109,6 +131,10 @@ export const areasRelations = relations(areas, ({ one, many }) => ({
   user: one(user, {
     fields: [areas.userId],
     references: [user.id],
+  }),
+  organization: one(organization, {
+    fields: [areas.organizationId],
+    references: [organization.id],
   }),
   projects: many(projects),
 }))
@@ -139,6 +165,16 @@ export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   }),
 }))
 
+export const organizationSettingsRelations = relations(
+  organizationSettings,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [organizationSettings.organizationId],
+      references: [organization.id],
+    }),
+  }),
+)
+
 // Types
 export type Client = typeof clients.$inferSelect
 export type NewClient = typeof clients.$inferInsert
@@ -150,3 +186,5 @@ export type TimeEntry = typeof timeEntries.$inferSelect
 export type NewTimeEntry = typeof timeEntries.$inferInsert
 export type UserSettings = typeof userSettings.$inferSelect
 export type NewUserSettings = typeof userSettings.$inferInsert
+export type OrganizationSettings = typeof organizationSettings.$inferSelect
+export type NewOrganizationSettings = typeof organizationSettings.$inferInsert

@@ -1,16 +1,17 @@
 'use client'
 import {
+  Building2,
   Clock,
   FolderKanban,
   Layers,
   LayoutDashboard,
   Settings,
-  Timer,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { OrganizationSwitcher } from '@/components/organization-switcher'
 import {
   Sidebar,
   SidebarContent,
@@ -63,19 +64,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg">
-              <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Timer className="size-4" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Freelance Tracker</span>
-                  <span className="text-muted-foreground text-xs">
-                    Activity & Time
-                  </span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
+            <OrganizationSwitcher />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -108,6 +97,14 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-sidebar-border border-t">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Organization">
+              <Link href="/org/settings">
+                <Building2 className="size-4" />
+                <span>Organization</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Settings">
               <Link href="/settings">

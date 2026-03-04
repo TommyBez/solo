@@ -1,33 +1,33 @@
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getSession } from '@/lib/auth/session'
+import { getActiveOrganizationId } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
 
-// Helper to get user's project IDs for filtering time entries
-async function getUserProjectIds(userId: string): Promise<number[]> {
-  const userProjects = await db
+// Helper to get org's project IDs for filtering time entries
+async function getOrgProjectIds(organizationId: string): Promise<number[]> {
+  const orgProjects = await db
     .select({ id: projects.id })
     .from(projects)
     .innerJoin(areas, eq(projects.areaId, areas.id))
-    .where(eq(areas.userId, userId))
-  return userProjects.map((p) => p.id)
+    .where(eq(areas.organizationId, organizationId))
+  return orgProjects.map((p) => p.id)
 }
 
 async function getTimeEntriesCached(
-  userId: string,
+  organizationId: string,
   projectId?: number,
   limit = 50,
 ) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
-  const userProjectIds = await getUserProjectIds(userId)
-  if (userProjectIds.length === 0) {
+  const orgProjectIds = await getOrgProjectIds(organizationId)
+  if (orgProjectIds.length === 0) {
     return []
   }
 
-  const conditions = [inArray(timeEntries.projectId, userProjectIds)]
+  const conditions = [inArray(timeEntries.projectId, orgProjectIds)]
 
   if (projectId) {
     conditions.push(eq(timeEntries.projectId, projectId))
@@ -48,24 +48,24 @@ async function getTimeEntriesCached(
 }
 
 export async function getTimeEntries(projectId?: number, limit = 50) {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
-  return getTimeEntriesCached(session.user.id, projectId, limit)
+  return getTimeEntriesCached(orgId, projectId, limit)
 }
 
 async function getTimeEntriesForDateRangeCached(
-  userId: string,
+  organizationId: string,
   startDateIso: string,
   endDateIso: string,
 ) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
-  const userProjectIds = await getUserProjectIds(userId)
-  if (userProjectIds.length === 0) {
+  const orgProjectIds = await getOrgProjectIds(organizationId)
+  if (orgProjectIds.length === 0) {
     return []
   }
 
@@ -74,7 +74,7 @@ async function getTimeEntriesForDateRangeCached(
 
   return db.query.timeEntries.findMany({
     where: and(
-      inArray(timeEntries.projectId, userProjectIds),
+      inArray(timeEntries.projectId, orgProjectIds),
       gte(timeEntries.startTime, startDate),
       lte(timeEntries.startTime, endDate),
     ),
@@ -93,13 +93,13 @@ export async function getTimeEntriesForDateRange(
   startDate: Date,
   endDate: Date,
 ) {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
   return getTimeEntriesForDateRangeCached(
-    session.user.id,
+    orgId,
     startDate.toISOString(),
     endDate.toISOString(),
   )
@@ -110,13 +110,13 @@ export async function getTimeEntriesForProjectAndDateRange(
   startDate: Date,
   endDate: Date,
 ) {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
-  const userProjectIds = await getUserProjectIds(session.user.id)
-  if (!userProjectIds.includes(projectId)) {
+  const orgProjectIds = await getOrgProjectIds(orgId)
+  if (!orgProjectIds.includes(projectId)) {
     return []
   }
 
@@ -137,25 +137,25 @@ export async function getTimeEntriesForProjectAndDateRange(
   })
 }
 
-async function getDashboardStatsCached(userId: string) {
+async function getDashboardStatsCached(organizationId: string) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
-  const userProjectIds = await getUserProjectIds(userId)
+  const orgProjectIds = await getOrgProjectIds(organizationId)
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
-  // Helper to get time entries for a date range filtered by user's projects
+  // Helper to get time entries for a date range filtered by org's projects
   async function getFilteredTimeEntries(startDate: Date, endDate?: Date) {
-    if (userProjectIds.length === 0) {
+    if (orgProjectIds.length === 0) {
       return []
     }
 
     const conditions = [
-      inArray(timeEntries.projectId, userProjectIds),
+      inArray(timeEntries.projectId, orgProjectIds),
       gte(timeEntries.startTime, startDate),
     ]
     if (endDate) {
@@ -211,17 +211,20 @@ async function getDashboardStatsCached(userId: string) {
   const weeklyChange = calculateChange(weeklyMinutes, prevWeeklyMinutes)
   const monthlyChange = calculateChange(monthlyMinutes, prevMonthlyMinutes)
 
-  // Get active areas and projects count for this user
+  // Get active areas and projects count for this org
   const activeAreas = await db.query.areas.findMany({
-    where: and(eq(areas.userId, userId), eq(areas.archived, false)),
+    where: and(
+      eq(areas.organizationId, organizationId),
+      eq(areas.archived, false),
+    ),
   })
 
-  const userAreaIds = activeAreas.map((a) => a.id)
+  const orgAreaIds = activeAreas.map((a) => a.id)
   const activeProjects =
-    userAreaIds.length > 0
+    orgAreaIds.length > 0
       ? await db.query.projects.findMany({
           where: and(
-            inArray(projects.areaId, userAreaIds),
+            inArray(projects.areaId, orgAreaIds),
             eq(projects.archived, false),
             eq(projects.status, 'active'),
           ),
@@ -327,8 +330,8 @@ async function getDashboardStatsCached(userId: string) {
 }
 
 export async function getDashboardStats() {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return {
       weeklyHours: 0,
       prevWeeklyHours: 0,
@@ -346,5 +349,5 @@ export async function getDashboardStats() {
     }
   }
 
-  return getDashboardStatsCached(session.user.id)
+  return getDashboardStatsCached(orgId)
 }

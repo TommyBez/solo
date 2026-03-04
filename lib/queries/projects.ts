@@ -1,35 +1,35 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getSession } from '@/lib/auth/session'
+import { getActiveOrganizationId } from '@/lib/auth/session'
 
 const MILLISECONDS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
 
 import { db } from '@/lib/db'
 import { areas, projects } from '@/lib/db/schema'
 
-// Helper to get user's area IDs for filtering
-async function getUserAreaIds(userId: string): Promise<number[]> {
-  const userAreas = await db
+// Helper to get org's area IDs for filtering
+async function getOrgAreaIds(organizationId: string): Promise<number[]> {
+  const orgAreas = await db
     .select({ id: areas.id })
     .from(areas)
-    .where(eq(areas.userId, userId))
-  return userAreas.map((a) => a.id)
+    .where(eq(areas.organizationId, organizationId))
+  return orgAreas.map((a) => a.id)
 }
 
 async function getProjectsCached(
-  userId: string,
+  organizationId: string,
   areaId?: number,
   includeArchived = false,
 ) {
   'use cache'
   cacheLife('minutes')
   cacheTag('projects', 'areas', 'time-entries')
-  const userAreaIds = await getUserAreaIds(userId)
-  if (userAreaIds.length === 0) {
+  const orgAreaIds = await getOrgAreaIds(organizationId)
+  if (orgAreaIds.length === 0) {
     return []
   }
 
-  const conditions = [inArray(projects.areaId, userAreaIds)]
+  const conditions = [inArray(projects.areaId, orgAreaIds)]
 
   if (areaId) {
     conditions.push(eq(projects.areaId, areaId))
@@ -50,20 +50,20 @@ async function getProjectsCached(
 }
 
 export async function getProjects(areaId?: number, includeArchived = false) {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
-  return getProjectsCached(session.user.id, areaId, includeArchived)
+  return getProjectsCached(orgId, areaId, includeArchived)
 }
 
-async function getProjectsWithStatsCached(userId: string) {
+async function getProjectsWithStatsCached(organizationId: string) {
   'use cache'
   cacheLife('minutes')
   cacheTag('projects', 'areas', 'time-entries')
-  const userAreaIds = await getUserAreaIds(userId)
-  if (userAreaIds.length === 0) {
+  const orgAreaIds = await getOrgAreaIds(organizationId)
+  if (orgAreaIds.length === 0) {
     return []
   }
 
@@ -72,7 +72,7 @@ async function getProjectsWithStatsCached(userId: string) {
 
   const projectsData = await db.query.projects.findMany({
     where: and(
-      inArray(projects.areaId, userAreaIds),
+      inArray(projects.areaId, orgAreaIds),
       eq(projects.archived, false),
     ),
     orderBy: [desc(projects.createdAt)],
@@ -96,7 +96,9 @@ async function getProjectsWithStatsCached(userId: string) {
     const expectedHours = project.expectedHours
     const progressHours = project.recurring ? hoursThisWeek : totalHours
     const percentageComplete =
-      expectedHours > 0 ? Math.round((progressHours / expectedHours) * 100) : 0
+      expectedHours > 0
+        ? Math.round((progressHours / expectedHours) * 100)
+        : 0
 
     return {
       ...project,
@@ -109,10 +111,10 @@ async function getProjectsWithStatsCached(userId: string) {
 }
 
 export async function getProjectsWithStats() {
-  const session = await getSession()
-  if (!session?.user) {
+  const orgId = await getActiveOrganizationId()
+  if (!orgId) {
     return []
   }
 
-  return getProjectsWithStatsCached(session.user.id)
+  return getProjectsWithStatsCached(orgId)
 }
