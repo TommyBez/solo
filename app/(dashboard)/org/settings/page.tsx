@@ -109,7 +109,7 @@ async function OrgSettingsContent() {
               workspace.
             </CardDescription>
           </div>
-          {canManage && <InviteMemberDialog />}
+          {canManage && <InviteMemberDialog organizationId={orgId} />}
         </CardHeader>
         <CardContent>
           <MembersList
