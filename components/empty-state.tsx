@@ -14,7 +14,7 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <div className="animate-fade-in-up flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+    <div className="flex animate-fade-in-up flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
       <div className="mb-4 flex size-12 items-center justify-center rounded-md bg-muted">
         <Icon className="size-6 text-muted-foreground" />
       </div>
