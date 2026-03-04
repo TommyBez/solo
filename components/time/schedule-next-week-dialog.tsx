@@ -15,6 +15,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -292,10 +293,7 @@ export function ScheduleNextWeekDialog({
                               ]) => (
                                 <SelectGroup key={areaName}>
                                   <SelectLabel className="flex items-center gap-2">
-                                    <div
-                                      className="size-2 rounded-full"
-                                      style={{ backgroundColor: area.color }}
-                                    />
+                                    <ColorDot color={area.color} />
                                     {areaName}
                                   </SelectLabel>
                                   {areaProjects.map((project) => (

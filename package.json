@@ -54,6 +54,7 @@
     "date-fns": "4.1.0",
     "drizzle-orm": "0.45.1",
     "embla-carousel-react": "8.5.1",
+    "geist": "^1.7.0",
     "input-otp": "1.4.1",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -148,10 +149,7 @@ export function ProjectForm({
                   {areas.map((area) => (
                     <SelectItem key={area.id} value={area.id.toString()}>
                       <div className="flex items-center gap-2">
-                        <div
-                          className="size-3 rounded-full"
-                          style={{ backgroundColor: area.color }}
-                        />
+                        <ColorDot className="size-3" color={area.color} />
                         {area.name}
                       </div>
                     </SelectItem>

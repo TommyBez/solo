@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -214,10 +215,7 @@ export function TimeEntryForm({
                             value={project.id.toString()}
                           >
                             <div className="flex items-center gap-2">
-                              <div
-                                className="size-2 rounded-full"
-                                style={{ backgroundColor: project.area.color }}
-                              />
+                              <ColorDot color={project.area.color} />
                               {project.name}
                             </div>
                           </SelectItem>
@@ -230,10 +228,7 @@ export function TimeEntryForm({
                     ({ area, projects: areaProjects }) => (
                       <SelectGroup key={area.id}>
                         <SelectLabel className="flex items-center gap-2">
-                          <div
-                            className="size-2 rounded-full"
-                            style={{ backgroundColor: area.color }}
-                          />
+                          <ColorDot color={area.color} />
                           {area.name}
                         </SelectLabel>
                         {areaProjects.map((project) => (

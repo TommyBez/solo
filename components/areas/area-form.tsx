@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -151,18 +152,21 @@ export function AreaForm({ area, onSuccess }: AreaFormProps) {
               <FormControl>
                 <div className="flex flex-wrap gap-2">
                   {PRESET_COLORS.map((presetColor) => (
-                    <button
+                    <Button
                       aria-label={`Select color ${presetColor}`}
-                      className={`size-8 rounded-full transition-all ${
+                      className={`transition-all ${
                         field.value === presetColor
                           ? 'ring-2 ring-primary ring-offset-2'
                           : 'hover:scale-110'
                       }`}
                       key={presetColor}
                       onClick={() => field.onChange(presetColor)}
-                      style={{ backgroundColor: presetColor }}
+                      size="icon"
                       type="button"
-                    />
+                      variant="ghost"
+                    >
+                      <ColorDot className="size-8" color={presetColor} />
+                    </Button>
                   ))}
                 </div>
               </FormControl>

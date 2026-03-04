@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ColorBar } from '@/components/color-indicator'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,11 +81,8 @@ export function AreaCard({ area }: AreaCardProps) {
 
   return (
     <>
-      <Card className="relative overflow-hidden">
-        <div
-          className="absolute top-0 left-0 h-full w-1"
-          style={{ backgroundColor: area.color }}
-        />
+      <Card className="relative overflow-hidden transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
+        <ColorBar color={area.color} />
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle className="text-lg">{area.name}</CardTitle>

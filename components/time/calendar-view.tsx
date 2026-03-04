@@ -16,6 +16,7 @@ import {
 } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSettingsContext } from '@/lib/context/settings-context'
@@ -111,7 +112,9 @@ export function CalendarView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-bold text-3xl">{totalHours}h</h2>
+          <h2 className="font-bold font-mono text-4xl tabular-nums">
+            {totalHours}h
+          </h2>
           <p className="text-muted-foreground">
             Total time this {view === 'week' ? 'week' : 'month'}
           </p>
@@ -178,8 +181,11 @@ export function CalendarView({
             return (
               <div
                 className={cn(
-                  'min-h-[120px] border-r border-b p-2 transition-colors hover:bg-muted/50',
+                  'min-h-[140px] border-r border-b p-2 transition-colors hover:bg-muted/50',
                   isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
+                  isToday && isCurrentMonth
+                    ? 'bg-primary/5 dark:bg-primary/10'
+                    : '',
                   isLastRow ? 'border-b-0' : '',
                   isLastCol ? 'border-r-0' : '',
                 )}
@@ -203,14 +209,14 @@ export function CalendarView({
                       key={entry.id}
                       title={`${entry.project.name}: ${entry.description}`}
                     >
-                      <div
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: entry.project.area.color }}
+                      <ColorDot
+                        className="size-1.5"
+                        color={entry.project.area.color}
                       />
                       <span className="truncate font-medium">
                         {entry.project.name}
                       </span>
-                      <span className="shrink-0 opacity-70">
+                      <span className="shrink-0 font-mono tabular-nums opacity-70">
                         ({Math.round((entry.durationMinutes / 60) * 10) / 10}h)
                       </span>
                     </div>

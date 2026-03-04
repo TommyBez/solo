@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -185,10 +186,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                             value={String(project.id)}
                           >
                             <div className="flex items-center gap-2">
-                              <div
-                                className="size-2 rounded-full"
-                                style={{ backgroundColor: project.area.color }}
-                              />
+                              <ColorDot color={project.area.color} />
                               {project.name}
                               <span className="text-muted-foreground">
                                 ({project.area.name})

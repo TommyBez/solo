@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Mail, MoreHorizontal, Phone, Trash2 } from 'lucide-react'
+import { Mail, MoreHorizontal, Phone, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -32,7 +32,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { archiveClient, deleteClient } from '@/lib/actions/clients'
 import type { Client } from '@/lib/db/schema'
+import { cn } from '@/lib/utils'
 import { ClientForm } from './client-form'
+
+const avatarColors = [
+  'bg-blue-600',
+  'bg-emerald-600',
+  'bg-amber-600',
+  'bg-rose-600',
+  'bg-violet-600',
+  'bg-cyan-600',
+  'bg-pink-600',
+  'bg-teal-600',
+]
 
 interface ClientCardProps {
   client: Client & {
@@ -85,18 +97,25 @@ export function ClientCard({ client }: ClientCardProps) {
 
   return (
     <>
-      <Card>
+      <Card className="transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Building2 className="size-4 text-muted-foreground" />
-              {client.name}
-            </CardTitle>
-            {client.hourlyRate ? (
-              <Badge variant="secondary">
-                {formatCurrency(client.hourlyRate, client.currency)}
-              </Badge>
-            ) : null}
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                'flex size-9 shrink-0 items-center justify-center rounded-md font-semibold text-sm text-white',
+                avatarColors[client.name.charCodeAt(0) % avatarColors.length],
+              )}
+            >
+              {client.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg">{client.name}</CardTitle>
+              {client.hourlyRate ? (
+                <Badge className="font-mono tabular-nums" variant="secondary">
+                  {formatCurrency(client.hourlyRate, client.currency)}
+                </Badge>
+              ) : null}
+            </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
