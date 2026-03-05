@@ -9,7 +9,10 @@
       "mcp__hades-tools__click_element",
       "mcp__hades-tools__browser_use_end",
       "Bash(npx tsc --noEmit)",
-      "Bash(pnpm build)"
+      "Bash(pnpm build)",
+      "mcp__hades-tools__take_screenshot",
+      "mcp__hades-tools__scroll_page",
+      "mcp__hades-tools__get_console_logs"
     ]
   }
 }

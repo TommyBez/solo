@@ -15,8 +15,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check for session cookie
-  const sessionCookie = request.cookies.get('better-auth.session_token')
+  // In production, useSecureCookies prefixes cookie names with __Secure-
+  const cookieName =
+    process.env.NODE_ENV === 'production'
+      ? '__Secure-better-auth.session_token'
+      : 'better-auth.session_token'
+  const sessionCookie = request.cookies.get(cookieName)
 
   if (!sessionCookie?.value) {
     const signInUrl = new URL('/sign-in', request.url)
