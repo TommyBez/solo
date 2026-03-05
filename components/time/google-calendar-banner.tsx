@@ -15,11 +15,13 @@ export function GoogleCalendarBanner() {
     }
   }, [])
 
-  if (!visible) return null
+  if (!visible) {
+    return null
+  }
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+      <div className="flex items-center gap-3 text-muted-foreground text-sm">
         <CalendarClock className="size-4 shrink-0" />
         <p>
           Connect Google Calendar to view events alongside your tracked time.{' '}

@@ -28,7 +28,9 @@ function clearOAuthStateCookie(response: NextResponse) {
 
 export async function GET(request: NextRequest) {
   if (!isGoogleCalendarConfigured()) {
-    return clearOAuthStateCookie(buildSettingsRedirect(request, 'missing-config'))
+    return clearOAuthStateCookie(
+      buildSettingsRedirect(request, 'missing-config'),
+    )
   }
 
   const requestUrl = new URL(request.url)
@@ -38,11 +40,15 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get(OAUTH_STATE_COOKIE)?.value
 
   if (authError) {
-    return clearOAuthStateCookie(buildSettingsRedirect(request, 'connect-failed'))
+    return clearOAuthStateCookie(
+      buildSettingsRedirect(request, 'connect-failed'),
+    )
   }
 
   if (!(code && state && storedState && state === storedState)) {
-    return clearOAuthStateCookie(buildSettingsRedirect(request, 'invalid-state'))
+    return clearOAuthStateCookie(
+      buildSettingsRedirect(request, 'invalid-state'),
+    )
   }
 
   const session = await getSession()
@@ -60,6 +66,8 @@ export async function GET(request: NextRequest) {
     })
     return clearOAuthStateCookie(buildSettingsRedirect(request, 'connected'))
   } catch {
-    return clearOAuthStateCookie(buildSettingsRedirect(request, 'connect-failed'))
+    return clearOAuthStateCookie(
+      buildSettingsRedirect(request, 'connect-failed'),
+    )
   }
 }

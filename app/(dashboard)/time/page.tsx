@@ -45,10 +45,7 @@ export default async function TimeTrackingPage(props: {
       />
 
       <Suspense fallback={<TimeTrackingSkeleton />}>
-        <TimeTrackingContent
-          dateParam={dateParam}
-          viewParam={viewParam}
-        />
+        <TimeTrackingContent dateParam={dateParam} viewParam={viewParam} />
       </Suspense>
     </div>
   )
@@ -97,9 +94,7 @@ async function TimeTrackingContent({
 
   return (
     <>
-      {!googleCalendarStatus.connected ? (
-        <GoogleCalendarBanner />
-      ) : null}
+      {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
 
       <div className="flex items-center justify-end gap-2">
         {viewParam === 'week' ? (

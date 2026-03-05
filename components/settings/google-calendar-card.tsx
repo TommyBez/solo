@@ -50,9 +50,7 @@ export function GoogleCalendarCard({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const callback = callbackStatus
-    ? callbackMessages[callbackStatus]
-    : undefined
+  const callback = callbackStatus ? callbackMessages[callbackStatus] : undefined
 
   const handleDisconnect = () => {
     startTransition(() => {
@@ -108,14 +106,14 @@ export function GoogleCalendarCard({
           </div>
         ) : null}
 
-        {!status.connected ? (
+        {status.connected ? null : (
           <Button asChild disabled={!status.enabled}>
             <Link href="/api/google-calendar/connect">
               <Link2 className="mr-2 size-4" />
               Connect Google Calendar
             </Link>
           </Button>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   )
