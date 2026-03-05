@@ -57,7 +57,6 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    // @ts-expect-error - better-auth's generic types don't resolve correctly for custom roles with empty permissions
     organizationPlugin({
       ac,
       roles: {

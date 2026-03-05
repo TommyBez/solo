@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { CreateOrgForm } from '@/components/org/create-org-form'
 import { Button } from '@/components/ui/button'
@@ -14,7 +15,15 @@ import { invitation, member, organization, user } from '@/lib/auth/schema'
 import { requireSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 
-export default async function OnboardingPage() {
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
+  )
+}
+
+async function OnboardingContent() {
   const session = await requireSession()
 
   // Check if user already has an org — if so, redirect to dashboard

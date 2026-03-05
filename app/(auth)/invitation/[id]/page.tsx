@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { AcceptInvitationCard } from '@/components/org/accept-invitation-card'
 import { invitation, organization, user } from '@/lib/auth/schema'
@@ -9,7 +10,15 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-export default async function InvitationPage({ params }: Props) {
+export default function InvitationPage({ params }: Props) {
+  return (
+    <Suspense>
+      <InvitationContent params={params} />
+    </Suspense>
+  )
+}
+
+async function InvitationContent({ params }: Props) {
   const { id } = await params
 
   const result = await db
