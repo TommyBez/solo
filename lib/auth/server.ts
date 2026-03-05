@@ -1,6 +1,11 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { organization as organizationPlugin } from 'better-auth/plugins'
+import { createAccessControl } from 'better-auth/plugins/access'
+import {
+  defaultRoles,
+  defaultStatements,
+} from 'better-auth/plugins/organization/access'
 import { db } from '@/lib/db'
 import {
   account,
@@ -12,6 +17,13 @@ import {
   user,
   verification,
 } from './schema'
+
+const ac = createAccessControl(defaultStatements)
+const viewer = ac.newRole({
+  organization: [],
+  member: [],
+  invitation: [],
+})
 
 const appUrl = process.env.BETTER_AUTH_URL
 const trustedOrigins = ['http://localhost:3000', ...(appUrl ? [appUrl] : [])]
@@ -46,9 +58,37 @@ export const auth = betterAuth({
   },
   plugins: [
     organizationPlugin({
+      ac,
+      roles: {
+        ...defaultRoles,
+        viewer,
+      },
       allowUserToCreateOrganization: true,
       organizationLimit: 5,
       creatorRole: 'owner',
+      sendInvitationEmail: async (data) => {
+        const { sendEmail } = await import('@/lib/email')
+        const baseUrl = appUrl || 'http://localhost:3000'
+        const acceptUrl = `${baseUrl}/invitation/${data.invitation.id}`
+
+        await sendEmail({
+          to: data.email,
+          subject: `Join ${data.organization.name} on Solo`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+              <h2>You've been invited!</h2>
+              <p><strong>${data.inviter.user.name}</strong> invited you to join <strong>${data.organization.name}</strong> on Solo.</p>
+              <p>
+                <a href="${acceptUrl}" style="display: inline-block; padding: 12px 24px; background: #171717; color: #fff; text-decoration: none; border-radius: 4px;">
+                  Accept Invitation
+                </a>
+              </p>
+              <p style="color: #666; font-size: 14px;">Or copy this link: ${acceptUrl}</p>
+              <p style="color: #999; font-size: 12px;">This invitation expires in 48 hours.</p>
+            </div>
+          `,
+        })
+      },
     }),
   ],
   databaseHooks: {

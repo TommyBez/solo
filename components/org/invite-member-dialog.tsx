@@ -42,7 +42,11 @@ const inviteMemberSchema = z.object({
 
 type InviteMemberFormValues = z.infer<typeof inviteMemberSchema>
 
-export function InviteMemberDialog() {
+export function InviteMemberDialog({
+  organizationId,
+}: {
+  organizationId: string
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
@@ -61,6 +65,7 @@ export function InviteMemberDialog() {
       const { error: apiError } = await organization.inviteMember({
         email: values.email.trim(),
         role: values.role as 'member' | 'admin',
+        organizationId,
       })
 
       if (apiError) {

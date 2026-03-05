@@ -12,12 +12,17 @@ import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { CalendarView } from '@/components/time/calendar-view'
+import { GoogleCalendarBanner } from '@/components/time/google-calendar-banner'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getSession } from '@/lib/auth/session'
+import {
+  getGoogleCalendarEventsForDateRange,
+  getGoogleCalendarStatus,
+} from '@/lib/queries/google-calendar'
 import { getProjects } from '@/lib/queries/projects'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
@@ -32,7 +37,6 @@ export default async function TimeTrackingPage(props: {
     typeof searchParams.date === 'string' ? searchParams.date : undefined
   const viewParam =
     typeof searchParams.view === 'string' ? searchParams.view : 'month'
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -78,15 +82,20 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
-  const [entries, projects] = await Promise.all([
-    getTimeEntriesForDateRange(startDate, endDate),
-    getProjects(),
-  ])
+  const [entries, projects, googleCalendarStatus, googleCalendarEvents] =
+    await Promise.all([
+      getTimeEntriesForDateRange(startDate, endDate),
+      getProjects(),
+      getGoogleCalendarStatus(),
+      getGoogleCalendarEventsForDateRange(startDate, endDate),
+    ])
 
   const activeProjects = projects.filter((p) => p.status === 'active')
 
   return (
     <>
+      {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
+
       <div className="flex items-center justify-end gap-2">
         {viewParam === 'week' ? (
           <ScheduleNextWeekDialog
@@ -100,6 +109,8 @@ async function TimeTrackingContent({
       <CalendarView
         currentDate={currentDate}
         entries={entries}
+        googleEvents={googleCalendarEvents}
+        projects={activeProjects}
         view={viewParam as 'month' | 'week'}
       />
 

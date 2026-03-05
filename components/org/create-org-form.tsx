@@ -33,7 +33,11 @@ function generateSlug(name: string) {
     .replace(/[^a-z0-9-]/g, '')
 }
 
-export function CreateOrgForm() {
+export function CreateOrgForm({
+  showCancel = true,
+}: {
+  showCancel?: boolean
+} = {}) {
   const router = useRouter()
   const [error, setError] = useState('')
   const form = useForm<CreateOrgFormValues>({
@@ -120,9 +124,15 @@ export function CreateOrgForm() {
           )}
         />
         <div className="flex justify-end gap-2">
-          <Button onClick={() => router.back()} type="button" variant="outline">
-            Cancel
-          </Button>
+          {showCancel && (
+            <Button
+              onClick={() => router.back()}
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+          )}
           <Button disabled={isLoading} type="submit">
             {isLoading ? 'Creating...' : 'Create Workspace'}
           </Button>

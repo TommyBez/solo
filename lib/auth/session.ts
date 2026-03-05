@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { member } from './schema'
 import { auth } from './server'
@@ -69,6 +70,8 @@ export async function requireOrganization() {
 }
 
 export async function ensureActiveOrganization(): Promise<void> {
-  // Now handled by resolveOrganizationId() — just trigger it
-  await resolveOrganizationId()
+  const orgId = await resolveOrganizationId()
+  if (!orgId) {
+    redirect('/onboarding')
+  }
 }

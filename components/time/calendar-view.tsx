@@ -14,13 +14,15 @@ import {
   subMonths,
   subWeeks,
 } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ColorDot } from '@/components/color-indicator'
+import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
+import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import { cn } from '@/lib/utils'
 
 type TimeEntryWithDetails = TimeEntry & {
@@ -32,16 +34,37 @@ type TimeEntryWithDetails = TimeEntry & {
 interface CalendarViewProps {
   currentDate: Date
   entries: TimeEntryWithDetails[]
+  googleEvents: GoogleCalendarEvent[]
+  projects: (Project & { area: Area })[]
   view: 'month' | 'week'
+}
+
+function getEventDurationMinutes(event: GoogleCalendarEvent) {
+  if (event.allDay) {
+    return 60
+  }
+
+  const start = new Date(event.startTime)
+  const end = new Date(event.endTime)
+  const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60))
+  return diff > 0 ? diff : 60
+}
+
+function getEventDescription(event: GoogleCalendarEvent) {
+  return event.description?.trim()
+    ? `${event.title}\n${event.description.trim()}`
+    : event.title
 }
 
 export function CalendarView({
   entries,
   currentDate,
+  googleEvents,
+  projects,
   view,
 }: CalendarViewProps) {
   const router = useRouter()
-  const { settings, formatDate } = useSettingsContext()
+  const { settings, formatDate, formatTime } = useSettingsContext()
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -168,6 +191,9 @@ export function CalendarView({
             const dayEntries = entries.filter((entry) =>
               isSameDay(new Date(entry.startTime), day),
             )
+            const dayGoogleEvents = googleEvents.filter((event) =>
+              isSameDay(new Date(event.startTime), day),
+            )
             const isToday = isSameDay(day, new Date())
 
             // For month view, we dim outside days. For week view, all days are "current".
@@ -203,6 +229,51 @@ export function CalendarView({
                 </div>
 
                 <div className="space-y-1">
+                  {dayGoogleEvents.map((event) => {
+                    const eventStart = new Date(event.startTime)
+                    const eventEnd = new Date(event.endTime)
+
+                    return (
+                      <div
+                        className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-1 text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
+                        key={`google-event-${event.id}`}
+                        title={event.title}
+                      >
+                        <CalendarClock className="mt-0.5 size-3 shrink-0 text-blue-700 dark:text-blue-300" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{event.title}</p>
+                          <p className="truncate text-blue-700/80 dark:text-blue-300/80">
+                            {event.allDay
+                              ? 'All day'
+                              : `${formatTime(eventStart)} - ${formatTime(eventEnd)}`}
+                          </p>
+                        </div>
+                        {projects.length > 0 ? (
+                          <AddTimeEntryDialog
+                            buttonLabel="Create Entry"
+                            description="Prefilled from your Google Calendar event."
+                            initialValues={{
+                              date: event.startTime,
+                              description: getEventDescription(event),
+                              durationMinutes: getEventDurationMinutes(event),
+                            }}
+                            projects={projects}
+                            title="Create entry from event"
+                            trigger={
+                              <Button
+                                className="h-5 w-5 p-0 text-blue-700/80 hover:text-blue-900 dark:text-blue-300/80 dark:hover:text-blue-100"
+                                size="icon"
+                                type="button"
+                                variant="ghost"
+                              >
+                                <Plus className="size-3" />
+                              </Button>
+                            }
+                          />
+                        ) : null}
+                      </div>
+                    )
+                  })}
                   {dayEntries.map((entry) => (
                     <div
                       className="flex items-center gap-1 truncate rounded bg-muted p-1 text-xs"

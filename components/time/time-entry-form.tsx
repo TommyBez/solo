@@ -51,8 +51,16 @@ import {
 
 interface TimeEntryFormProps {
   entry?: TimeEntry
+  initialValues?: TimeEntryInitialValues
   onSuccess?: () => void
   projects: (Project & { area: Area })[]
+}
+
+export interface TimeEntryInitialValues {
+  date?: Date | string
+  description?: string
+  durationMinutes?: number
+  projectId?: string
 }
 
 const timeEntrySchema = z.object({
@@ -76,21 +84,33 @@ type TimeEntryFormValues = z.infer<typeof timeEntrySchema>
 export function TimeEntryForm({
   entry,
   projects,
+  initialValues,
   onSuccess,
 }: TimeEntryFormProps) {
   const router = useRouter()
   const { settings, formatDate } = useSettingsContext()
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
   const isEditing = !!entry
+  const initialDateValue = initialValues?.date
+    ? new Date(initialValues.date)
+    : undefined
+  const initialDurationInput =
+    typeof initialValues?.durationMinutes === 'number' &&
+    initialValues.durationMinutes > 0
+      ? formatDurationForInput(initialValues.durationMinutes)
+      : undefined
+
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntrySchema),
     defaultValues: {
-      projectId: entry?.projectId?.toString() ?? '',
-      description: entry?.description ?? '',
-      date: entry?.startTime ? new Date(entry.startTime) : new Date(),
+      projectId: entry?.projectId?.toString() ?? initialValues?.projectId ?? '',
+      description: entry?.description ?? initialValues?.description ?? '',
+      date: entry?.startTime
+        ? new Date(entry.startTime)
+        : (initialDateValue ?? new Date()),
       durationInput: entry
         ? formatDurationForInput(entry.durationMinutes)
-        : '1h',
+        : (initialDurationInput ?? '1h'),
     },
   })
   const isLoading = form.formState.isSubmitting
