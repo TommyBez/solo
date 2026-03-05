@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -43,6 +43,8 @@ type SignUpFormValues = z.infer<typeof signUpSchema>
 
 export default function SignUpPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/'
   const [error, setError] = useState('')
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -68,7 +70,7 @@ export default function SignUpPage() {
       if (result.error) {
         setError(result.error.message || 'Failed to create account')
       } else {
-        router.push('/')
+        router.push(redirectTo)
         router.refresh()
       }
     } catch {

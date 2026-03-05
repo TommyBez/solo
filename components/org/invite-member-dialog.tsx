@@ -42,7 +42,11 @@ const inviteMemberSchema = z.object({
 
 type InviteMemberFormValues = z.infer<typeof inviteMemberSchema>
 
-export function InviteMemberDialog({ organizationId }: { organizationId: string }) {
+export function InviteMemberDialog({
+  organizationId,
+}: {
+  organizationId: string
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')

@@ -5,6 +5,7 @@ import { InviteMemberDialog } from '@/components/org/invite-member-dialog'
 import { MembersList } from '@/components/org/members-list'
 import { OrgGeneralForm } from '@/components/org/org-general-form'
 import { OrgSettingsForm } from '@/components/org/org-settings-form'
+import { PendingInvitations } from '@/components/org/pending-invitations'
 import {
   Card,
   CardContent,
@@ -133,7 +134,8 @@ async function OrgSettingsContent() {
         </CardContent>
       </Card>
 
-      {invitations.length > 0 && (
+      {invitations.filter((i: Invitation) => i.status === 'pending').length >
+        0 && (
         <Card>
           <CardHeader>
             <CardTitle>Pending Invitations</CardTitle>
@@ -150,24 +152,10 @@ async function OrgSettingsContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {invitations
-                .filter((i: Invitation) => i.status === 'pending')
-                .map((inv: Invitation) => (
-                  <div
-                    className="flex items-center justify-between rounded-md border p-3"
-                    key={inv.id}
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{inv.email}</p>
-                      <p className="text-muted-foreground text-xs">
-                        Role: {inv.role ?? 'member'}
-                      </p>
-                    </div>
-                    <p className="text-muted-foreground text-xs">Pending</p>
-                  </div>
-                ))}
-            </div>
+            <PendingInvitations
+              canManage={canManage}
+              invitations={invitations as Invitation[]}
+            />
           </CardContent>
         </Card>
       )}

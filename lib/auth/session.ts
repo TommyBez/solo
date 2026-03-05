@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { member } from './schema'
 import { auth } from './server'
@@ -54,7 +55,7 @@ export async function ensureActiveOrganization(): Promise<void> {
     where: eq(member.userId, session.user.id),
   })
   if (!firstMembership) {
-    return
+    redirect('/onboarding')
   }
 
   await auth.api.setActiveOrganization({
