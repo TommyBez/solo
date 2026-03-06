@@ -16,6 +16,11 @@
       "sourceType": "github",
       "computedHash": "747d7f73bd9e2ec5317b8ef88dc70f97df716d00e3d02de4051feebaa48b062d"
     },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "6412eb4eb3b91595ebab937f0c69501240e7ba761b3d82510b5cf506ec5c7adc"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
@@ -36,10 +41,20 @@
       "sourceType": "github",
       "computedHash": "79a5a85b43d10e9fe37582b3506b051a33a991817b938f349099baa5ddba21aa"
     },
+    "product-documentation": {
+      "source": "hack23/homepage",
+      "sourceType": "github",
+      "computedHash": "dcbad5f1bf897b2c3ded5a2cecbe688a235f4d62974578690aa4bd5e16a30185"
+    },
     "react-doctor": {
       "source": "millionco/react-doctor",
       "sourceType": "github",
       "computedHash": "efa8db174b3c60e27b34d76842e3a9a7c0e5e602fd4d66eec897372d0ce3f30b"
+    },
+    "software-ui-ux-design": {
+      "source": "vasilyu1983/ai-agents-public",
+      "sourceType": "github",
+      "computedHash": "612fab6319f300de7746c7a3a6e679a3f690d2b2a4a60fe4570369554d121c5c"
     },
     "two-factor-authentication-best-practices": {
       "source": "better-auth/skills",
