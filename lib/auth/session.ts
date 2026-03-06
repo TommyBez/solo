@@ -56,7 +56,7 @@ const resolveOrganizationId = cache(
   },
 )
 
-export async function getActiveOrganizationId(): Promise<string | null> {
+export function getActiveOrganizationId(): Promise<string | null> {
   return resolveOrganizationId()
 }
 
