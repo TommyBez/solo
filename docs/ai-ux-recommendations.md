@@ -9,6 +9,35 @@ This document focuses on two AI features that fit Solo best:
 
 It intentionally avoids technical architecture and implementation details. The goal is to define the right product behavior, placement, interaction model, and UX guardrails.
 
+## Audience
+
+This document is written for:
+
+- product designers shaping the new flows
+- product managers defining MVP scope
+- founders reviewing UX tradeoffs and rollout order
+- engineers who need a handoff-ready UX direction before implementation begins
+
+## Operating assumptions
+
+These recommendations assume the current Solo product model:
+
+- time is tracked against projects
+- projects sit inside areas
+- Google Calendar is optional context, not the source of truth
+- weekly summaries depend on the quality and completeness of tracked entries
+- AI output should always remain user-reviewable before it is saved or shared
+
+## What "good" should look like
+
+The target outcome is not "an AI feature exists." The target outcome is:
+
+- users log time faster
+- fewer entries are missing or vague
+- weekly review becomes a habit
+- client updates take less effort to prepare
+- the product feels more helpful without feeling less trustworthy
+
 ## Why these two features should come first
 
 Solo already has the right product foundations for both features:
@@ -243,6 +272,17 @@ Before the week ends, the product should offer a gentle audit:
 
 This is especially useful on Fridays and makes weekly summaries better automatically.
 
+### Primary user flow
+
+The intended user journey should be:
+
+1. user lands on the time page
+2. AI surfaces one or more draft suggestions in context
+3. user accepts, edits, or dismisses the draft
+4. saved entries immediately improve the weekly summary quality
+
+This keeps the flow within Solo's existing mental model instead of training users to "talk to AI" for a basic logging task.
+
 ### Solo-specific placement directions
 
 To fit the current product structure, this feature should be anchored to the existing time page rather than introduced as a global assistant.
@@ -262,6 +302,19 @@ Priority order for visual emphasis:
 4. weekly audit layer
 
 This keeps the feature close to the current places where users already select projects, review days, and save entries.
+
+### UI component inventory
+
+To keep the feature consistent and reusable, the design should be built from a small set of repeatable UI patterns:
+
+- `Suggestion card`
+- `Reason chip` or short evidence line
+- `Accept`, `Accept and edit`, `Dismiss` action row
+- `Daily catch-up module`
+- `Weekly audit banner`
+- `Inline description enhancer` near timer stop and manual entry flows
+
+Each view should keep one primary action visible and avoid competing calls to action.
 
 ### Recommended interaction design
 
@@ -342,6 +395,42 @@ Best reasoning style:
 - "Matches your timer activity"
 
 Reasoning should build trust without cluttering the UI.
+
+### State matrix
+
+| State | What the user sees | UX requirement |
+| --- | --- | --- |
+| Default | One or more draft suggestions | One primary CTA per card, clear draft labeling |
+| Loading | Placeholder cards matching final layout | Do not shift surrounding page structure |
+| Empty | "No strong suggestions right now" | Do not show decorative empty AI chrome |
+| Unsure | A low-confidence draft asking for confirmation | Ask for missing input instead of guessing |
+| Error | Short inline error plus retry or manual-entry path | Never trap the user in the AI flow |
+| Degraded | Limited suggestion quality, often without calendar context | Explain what is missing in plain language |
+| Dismissed | Card disappears and stays gone for that review window | Respect user intent and prevent repeated resurfacing |
+
+### Accessibility and content requirements
+
+Use these as non-negotiable design constraints:
+
+- meet WCAG 2.2 AA expectations for focus visibility, contrast, and keyboard use
+- keep interactive targets at least 24x24 CSS px
+- ensure every suggestion card is fully keyboard actionable
+- never rely on color alone to indicate AI state, confidence, or suggestion type
+- use plain-language copy and avoid jargon like "model confidence"
+- support reduced-motion preferences for AI animations and transitions
+- avoid redundant re-entry by pre-filling known data and asking only for uncertain fields
+
+### Handoff acceptance criteria
+
+Design should not be considered ready until all of these are true:
+
+- a user can accept a good suggestion in one obvious step
+- a user can edit the project, description, or duration without restarting the draft
+- dismissing a suggestion removes it from the immediate review flow
+- there is a clear manual fallback whenever AI is wrong or unavailable
+- empty, loading, error, and degraded states are all designed explicitly
+- the feature still works when Google Calendar is not connected
+- copy consistently labels AI output as a draft or suggestion
 
 ### Empty, edge, and failure states
 
@@ -479,6 +568,19 @@ Offer a summary option alongside raw export behavior:
 
 This keeps AI attached to an existing value moment instead of inventing a new one.
 
+### Primary user flow
+
+The intended user journey should be:
+
+1. user reaches the end of the week and opens the dashboard or export flow
+2. Solo signals whether the week's data is complete enough for a useful summary
+3. user chooses `Personal review` or `Client update`
+4. AI produces an editable draft with visible grounding
+5. user adjusts sections, tone, or emphasis
+6. user copies, shares, or exports the refined version
+
+This makes the summary feel like a workspace for review and communication, not a black-box text generator.
+
 ### Solo-specific placement directions
 
 This feature should build on Solo's existing dashboard and export behaviors, not replace them.
@@ -498,6 +600,20 @@ Recommended visual hierarchy for the weekly review screen:
 4. source-entry review drawer or expandable evidence rows
 
 The summary should feel like a decision-and-communication workspace, not just another dashboard chart block.
+
+### UI component inventory
+
+To keep the experience coherent, the summary flow should rely on a small number of reusable UI blocks:
+
+- `Weekly summary card` on the dashboard
+- `Audience mode switcher`
+- `Summary section block`
+- `Section-level rewrite controls`
+- `Source evidence drawer`
+- `Completeness status banner`
+- `Share / copy / export action bar`
+
+The summary workspace should privilege readability first and secondary controls second.
 
 ### Recommended summary structure
 
@@ -597,6 +713,18 @@ If a user likes the internal draft, they should be able to turn it into a client
 
 The system should preserve user edits whenever possible.
 
+### State matrix
+
+| State | What the user sees | UX requirement |
+| --- | --- | --- |
+| Ready | Editable summary draft with evidence links | Keep the narrative primary and evidence secondary |
+| Loading | Skeleton for summary sections, headline, and action bar | Preserve layout and avoid jumpy content |
+| Incomplete data | Warning banner before generation | Explain whether it is safe for internal or external use |
+| Sparse week | Short, honest summary with limited scope | Do not force a grand narrative |
+| Error | Inline failure message plus retry | Offer manual export fallback |
+| Degraded | Partial summary where some sections lack enough evidence | Be explicit about the missing support |
+| Edited | User changes preserved while audience or tone changes | Do not wipe the whole draft unless requested |
+
 ### Recommended content design
 
 ### Lead with meaning, not metrics
@@ -634,6 +762,30 @@ Avoid exaggerated language such as:
 - "fully completed"
 
 unless the user explicitly chooses that tone.
+
+### Accessibility and content requirements
+
+Use these as hard requirements in the summary UI:
+
+- headings and section actions must be keyboard reachable in logical order
+- source-evidence drawers or expandable rows must be screen-reader clear
+- support copy actions without relying on hover-only affordances
+- keep reading width comfortable and avoid dense wall-of-text summaries
+- provide visible distinction between internal and external modes beyond color alone
+- respect reduced-motion preferences when animating generation or section rewrites
+- ensure warnings about weak data are as visually clear as the primary draft itself
+
+### Handoff acceptance criteria
+
+Design should not be signed off until all of these are true:
+
+- the user can clearly choose between personal and client-facing output
+- each section can be edited or rewritten independently
+- the summary shows what inputs it is grounded in
+- the system warns clearly when tracked data is incomplete or too vague
+- a user can move from draft to copy/share/export without unnecessary extra steps
+- empty, sparse, loading, degraded, and error states are all explicitly designed
+- internal review language never appears by default in client-facing mode
 
 ### Empty, edge, and failure states
 
@@ -716,6 +868,49 @@ If only one near-term UX package is possible, prioritize:
 2. a weekly review screen with a personal summary first
 
 That sequence improves the source data before expanding into external communication.
+
+---
+
+## Design QA checklist
+
+Use this checklist before design signoff or implementation handoff.
+
+### Interaction quality
+
+- one primary action per view or card
+- no competing CTAs in the same local context
+- immediate feedback after accept, dismiss, rewrite, and copy actions
+- clear fallback path when AI output is wrong
+
+### State coverage
+
+- loading state maps to final information architecture
+- empty state has clear next step
+- error state has retry or fallback
+- degraded state explains limits clearly
+- dismissed state is respected
+
+### Accessibility
+
+- keyboard flow works end-to-end
+- focus is visible and never obscured
+- target sizes meet WCAG 2.2 guidance
+- color is never the only status signal
+- copy remains understandable without AI literacy
+
+### Content quality
+
+- AI output is labeled as draft content
+- reasoning lines are concrete, brief, and evidence-based
+- personal-review copy is not mixed with client-facing tone
+- summaries lead with meaning before metrics
+
+### Solo fit
+
+- AI appears inside existing routes and workflows, not as a detached assistant surface
+- the time page remains fast for expert users
+- weekly review feels like a value-added layer on the dashboard, not a replacement
+- optional Google Calendar context improves the experience without becoming a dependency
 
 ---
 
