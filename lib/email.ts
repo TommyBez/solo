@@ -21,10 +21,14 @@ export async function sendEmail({
     return
   }
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || 'Solo <noreply@example.com>',
+  const { error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM!,
     to,
     subject,
     html,
   })
+
+  if (error) {
+    console.error('[Email Error]', error)
+  }
 }
