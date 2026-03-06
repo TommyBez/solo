@@ -222,7 +222,10 @@ export async function fetchGoogleCalendarEvents(
     )
 
     if (!response.ok) {
-      throw new Error('Failed to fetch Google Calendar events')
+      const body = await response.text()
+      throw new Error(
+        `Google Calendar API error ${response.status}: ${body}`,
+      )
     }
 
     const payload = (await response.json()) as GoogleCalendarEventsResponse

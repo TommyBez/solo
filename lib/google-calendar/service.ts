@@ -116,6 +116,7 @@ export async function getGoogleCalendarStatusForUser(
 async function ensureValidAccessTokenForUser(userId: string) {
   const calendarAccount = await getGoogleCalendarAccount(userId)
   if (!calendarAccount) {
+    console.warn('[Google Calendar] No account found for user', userId)
     return null
   }
 
@@ -127,6 +128,7 @@ async function ensureValidAccessTokenForUser(userId: string) {
   }
 
   if (!calendarAccount.refreshToken) {
+    console.warn('[Google Calendar] No refresh token available')
     return null
   }
 
@@ -149,8 +151,8 @@ async function ensureValidAccessTokenForUser(userId: string) {
       .returning()
 
     return updatedRows[0]?.accessToken ?? null
-  } catch {
-    // Refresh token can be revoked. We keep the connection record so the user can reconnect.
+  } catch (error) {
+    console.error('[Google Calendar] Token refresh failed:', error)
     return null
   }
 }
@@ -161,21 +163,26 @@ export async function getGoogleCalendarEventsForUser(params: {
   userId: string
 }): Promise<GoogleCalendarEvent[]> {
   if (!isGoogleCalendarConfigured()) {
+    console.warn('[Google Calendar] Not configured, skipping event fetch')
     return []
   }
 
   const accessToken = await ensureValidAccessTokenForUser(params.userId)
   if (!accessToken) {
+    console.warn('[Google Calendar] No valid access token, skipping event fetch')
     return []
   }
 
   try {
-    return await fetchGoogleCalendarEvents(
+    const events = await fetchGoogleCalendarEvents(
       accessToken,
       params.startDate,
       params.endDate,
     )
-  } catch {
+    console.log(`[Google Calendar] Fetched ${events.length} events`)
+    return events
+  } catch (error) {
+    console.error('[Google Calendar] Failed to fetch events:', error)
     return []
   }
 }
