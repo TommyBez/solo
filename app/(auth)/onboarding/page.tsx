@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import Link from 'next/link'
-import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { CreateOrgForm } from '@/components/org/create-org-form'
 import { Button } from '@/components/ui/button'
 import {

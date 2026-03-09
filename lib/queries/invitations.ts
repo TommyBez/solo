@@ -5,8 +5,8 @@ import { db } from '@/lib/db'
 
 export interface PendingInvitation {
   id: string
-  organizationName: string
   inviterName: string
+  organizationName: string
   role: string
 }
 

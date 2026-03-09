@@ -1,8 +1,10 @@
+import { startOfWeek, subWeeks } from 'date-fns'
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getActiveOrganizationId } from '@/lib/auth/session'
+import { getActiveOrganizationId, getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
+import { defaultSettings, getSettings } from '@/lib/queries/settings'
 
 // Helper to get org's project IDs for filtering time entries
 async function getOrgProjectIds(organizationId: string): Promise<number[]> {
@@ -155,14 +157,17 @@ export async function getTimeEntriesForProjectAndDateRange(
   )
 }
 
-async function getDashboardStatsCached(organizationId: string) {
+async function getDashboardStatsCached(
+  organizationId: string,
+  weekStartsOn: 0 | 1,
+) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
   const orgProjectIds = await getOrgProjectIds(organizationId)
   const now = new Date()
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+  const weekStart = startOfWeek(now, { weekStartsOn })
+  const prevWeekStart = subWeeks(weekStart, 1)
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
@@ -195,8 +200,8 @@ async function getDashboardStatsCached(organizationId: string) {
   // Get time entries for different periods
   const [weekEntries, prevWeekEntries, monthEntries, prevMonthEntries] =
     await Promise.all([
-      getFilteredTimeEntries(weekAgo),
-      getFilteredTimeEntries(twoWeeksAgo, weekAgo),
+      getFilteredTimeEntries(weekStart),
+      getFilteredTimeEntries(prevWeekStart, weekStart),
       getFilteredTimeEntries(monthAgo),
       getFilteredTimeEntries(twoMonthsAgo, monthAgo),
     ])
@@ -282,11 +287,13 @@ async function getDashboardStatsCached(organizationId: string) {
     {} as Record<string, { minutes: number; color: string; areaName: string }>,
   )
 
-  // Daily breakdown for the week
+  // Daily breakdown for the week (from week start day through end of week)
   const dailyBreakdown = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000)
-    const dayStart = new Date(date.setHours(0, 0, 0, 0))
-    const dayEnd = new Date(date.setHours(23, 59, 59, 999))
+    const date = new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000)
+    const dayStart = new Date(date)
+    dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(date)
+    dayEnd.setHours(23, 59, 59, 999)
 
     const dayMinutes = weekEntries
       .filter(
@@ -367,5 +374,11 @@ export async function getDashboardStats() {
     }
   }
 
-  return getDashboardStatsCached(orgId)
+  const session = await getSession()
+  const settings = session?.user
+    ? await getSettings(session.user.id)
+    : defaultSettings
+  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
+
+  return getDashboardStatsCached(orgId, weekStartsOn)
 }
