@@ -54,7 +54,21 @@ const resolveOrganizationId = cache(async (): Promise<string | null> => {
   return firstMembership.organizationId
 })
 
-export function getActiveOrganizationId(): Promise<string | null> {
+// Request-scoped override for the active org ID.
+// Set by [slug]/layout.tsx after calling setActiveOrganization so that
+// downstream code in the same render sees the updated value despite the
+// resolveOrganizationId cache.
+const orgIdOverride = cache((): { value: string | null } => ({ value: null }))
+
+export function setActiveOrganizationIdForRequest(orgId: string) {
+  orgIdOverride().value = orgId
+}
+
+export function getActiveOrganizationId(): Promise<string | null> | string {
+  const override = orgIdOverride()
+  if (override.value !== null) {
+    return override.value
+  }
   return resolveOrganizationId()
 }
 

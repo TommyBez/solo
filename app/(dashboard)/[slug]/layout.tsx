@@ -4,7 +4,10 @@ import { notFound } from 'next/navigation'
 import type React from 'react'
 import { organization } from '@/lib/auth/schema'
 import { auth } from '@/lib/auth/server'
-import { getActiveOrganizationId } from '@/lib/auth/session'
+import {
+  getActiveOrganizationId,
+  setActiveOrganizationIdForRequest,
+} from '@/lib/auth/session'
 import { db } from '@/lib/db'
 
 export default async function SlugLayout({
@@ -34,6 +37,11 @@ export default async function SlugLayout({
       body: { organizationId: org.id },
     })
   }
+
+  // Override the request-scoped cache so downstream reads
+  // (page.tsx data fetches, sidebar slug resolution, etc.)
+  // see the correct org even though resolveOrganizationId is cached.
+  setActiveOrganizationIdForRequest(org.id)
 
   return <>{children}</>
 }
