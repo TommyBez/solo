@@ -33,6 +33,9 @@ export function OrganizationSwitcher() {
     if (!activeOrg && orgs && orgs.length > 0) {
       autoSelectAttempted.current = true
       organization.setActive({ organizationId: orgs[0].id }).then(() => {
+        if (orgs[0].slug) {
+          router.push(`/${orgs[0].slug}`)
+        }
         router.refresh()
       })
     }
@@ -40,6 +43,12 @@ export function OrganizationSwitcher() {
 
   const handleSwitch = async (orgId: string) => {
     await organization.setActive({ organizationId: orgId })
+    const targetOrg = orgs?.find((o) => o.id === orgId)
+    if (targetOrg?.slug) {
+      router.push(`/${targetOrg.slug}`)
+    } else {
+      router.push('/')
+    }
     router.refresh()
   }
 

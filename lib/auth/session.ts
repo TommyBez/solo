@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { member } from './schema'
+import { member, organization } from './schema'
 import { auth } from './server'
 
 export async function getSession() {
@@ -74,4 +74,32 @@ export async function ensureActiveOrganization(): Promise<void> {
   if (!orgId) {
     redirect('/onboarding')
   }
+}
+
+// Resolves the active org's slug from the session.
+// Request-scoped via cache() — safe to call multiple times per request.
+export const getActiveOrganizationSlug = cache(
+  async (): Promise<string | null> => {
+    const orgId = await getActiveOrganizationId()
+    if (!orgId) {
+      return null
+    }
+
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, orgId),
+      columns: { slug: true },
+    })
+    return org?.slug ?? null
+  },
+)
+
+// Given a slug, resolves it to an org ID. Used by the proxy.
+export async function resolveOrgIdFromSlug(
+  slug: string,
+): Promise<string | null> {
+  const org = await db.query.organization.findFirst({
+    where: eq(organization.slug, slug),
+    columns: { id: true },
+  })
+  return org?.id ?? null
 }

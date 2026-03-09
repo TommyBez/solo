@@ -70,7 +70,7 @@ export function CreateOrgForm({
       if (data) {
         await organization.setActive({ organizationId: data.id })
         toast.success('Workspace created')
-        router.push('/')
+        router.push(`/${data.slug}`)
         router.refresh()
       }
     } catch {

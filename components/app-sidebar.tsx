@@ -28,36 +28,37 @@ import {
 } from '@/components/ui/sidebar'
 import { UserMenu } from '@/components/user-menu'
 
-const navigationItems = [
-  {
-    title: 'Dashboard',
-    url: '/',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Areas',
-    url: '/areas',
-    icon: Layers,
-  },
-  {
-    title: 'Projects',
-    url: '/projects',
-    icon: FolderKanban,
-  },
-  {
-    title: 'Time Tracking',
-    url: '/time',
-    icon: Clock,
-  },
-  {
-    title: 'Clients',
-    url: '/clients',
-    icon: Users,
-  },
-]
-
-export function AppSidebar() {
+export function AppSidebar({ slug }: { slug: string }) {
   const pathname = usePathname()
+  const prefix = slug ? `/${slug}` : ''
+
+  const navigationItems = [
+    {
+      title: 'Dashboard',
+      url: prefix || '/',
+      icon: LayoutDashboard,
+    },
+    {
+      title: 'Areas',
+      url: `${prefix}/areas`,
+      icon: Layers,
+    },
+    {
+      title: 'Projects',
+      url: `${prefix}/projects`,
+      icon: FolderKanban,
+    },
+    {
+      title: 'Time Tracking',
+      url: `${prefix}/time`,
+      icon: Clock,
+    },
+    {
+      title: 'Clients',
+      url: `${prefix}/clients`,
+      icon: Users,
+    },
+  ]
 
   return (
     <Sidebar collapsible="icon">
@@ -78,8 +79,8 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={
-                      item.url === '/'
-                        ? pathname === '/'
+                      item.url === prefix || item.url === '/'
+                        ? pathname === prefix || pathname === `${prefix}/`
                         : pathname.startsWith(item.url)
                     }
                     tooltip={item.title}
@@ -99,7 +100,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Organization">
-              <Link href="/org/settings">
+              <Link href={`${prefix}/settings`}>
                 <Building2 className="size-4" />
                 <span>Organization</span>
               </Link>

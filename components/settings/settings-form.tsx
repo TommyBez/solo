@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { useActiveOrganization } from '@/lib/auth/client'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Settings } from '@/lib/queries/settings'
 
@@ -33,6 +34,7 @@ const dateFormats = [
 
 export function SettingsForm() {
   const { settings, updateSettings, isPending } = useSettingsContext()
+  const { data: activeOrg } = useActiveOrganization()
   const [draft, setDraft] = useState<Partial<Settings>>({})
   const form: Settings = { ...settings, ...draft }
 
@@ -135,7 +137,10 @@ export function SettingsForm() {
           </div>
           <p className="text-muted-foreground text-sm">
             Company information has moved to{' '}
-            <Link className="text-primary underline" href="/org/settings">
+            <Link
+              className="text-primary underline"
+              href={activeOrg?.slug ? `/${activeOrg.slug}/settings` : '/settings'}
+            >
               Workspace Settings
             </Link>
             .
