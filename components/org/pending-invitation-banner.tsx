@@ -17,8 +17,7 @@ export async function PendingInvitationBanner() {
         <Alert className="border-primary/20 bg-primary/5" key={inv.id}>
           <Mail className="size-4 text-primary" />
           <AlertTitle>
-            You've been invited to join{' '}
-            <strong>{inv.organizationName}</strong>
+            You've been invited to join <strong>{inv.organizationName}</strong>
           </AlertTitle>
           <AlertDescription className="flex items-center gap-3">
             <span>

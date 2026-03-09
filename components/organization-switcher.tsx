@@ -28,8 +28,12 @@ export function OrganizationSwitcher() {
   // Failsafe: auto-select the first org if the server-side resolution
   // hasn't synced to the client cookie yet (e.g. after signup)
   useEffect(() => {
-    if (autoSelectAttempted.current) return
-    if (orgPending || orgsPending) return
+    if (autoSelectAttempted.current) {
+      return
+    }
+    if (orgPending || orgsPending) {
+      return
+    }
     if (!activeOrg && orgs && orgs.length > 0) {
       autoSelectAttempted.current = true
       organization.setActive({ organizationId: orgs[0].id }).then(() => {
