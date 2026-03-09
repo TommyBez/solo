@@ -15,7 +15,11 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { ensureActiveOrganization, getSession } from '@/lib/auth/session'
+import {
+  ensureActiveOrganization,
+  getActiveOrganizationSlug,
+  getSession,
+} from '@/lib/auth/session'
 import { SettingsProvider } from '@/lib/context/settings-context'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 
@@ -37,6 +41,11 @@ async function SettingsProviderWrapper({
   return (
     <SettingsProvider initialSettings={settings}>{children}</SettingsProvider>
   )
+}
+
+async function SidebarWithSlug() {
+  const slug = await getActiveOrganizationSlug()
+  return <AppSidebar slug={slug ?? ''} />
 }
 
 export default function DashboardLayout({
@@ -74,7 +83,7 @@ export default function DashboardLayout({
               <div className="w-[--sidebar-width] shrink-0 border-r bg-sidebar" />
             }
           >
-            <AppSidebar />
+            <SidebarWithSlug />
           </Suspense>
           <SidebarInset>
             <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">

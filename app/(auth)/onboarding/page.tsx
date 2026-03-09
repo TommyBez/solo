@@ -26,12 +26,17 @@ export default function OnboardingPage() {
 async function OnboardingContent() {
   const session = await requireSession()
 
-  // Check if user already has an org — if so, redirect to dashboard
+  // Check if user already has an org — if so, redirect to their workspace
   const membership = await db.query.member.findFirst({
     where: eq(member.userId, session.user.id),
+    columns: { organizationId: true },
   })
   if (membership) {
-    redirect('/')
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, membership.organizationId),
+      columns: { slug: true },
+    })
+    redirect(org ? `/${org.slug}` : '/')
   }
 
   // Fetch pending invitations for this user's email

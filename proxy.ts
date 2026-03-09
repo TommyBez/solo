@@ -1,12 +1,22 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
+function getSessionCookieName(): string {
+  return process.env.NODE_ENV === 'production'
+    ? '__Secure-better-auth.session_token'
+    : 'better-auth.session_token'
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/sign-in', '/sign-up', '/api/auth', '/invitation']
-
-  // Check if the current path is a public route
+  const publicRoutes = [
+    '/sign-in',
+    '/sign-up',
+    '/api/auth',
+    '/invitation',
+    '/onboarding',
+  ]
   const isPublicRoute = publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   )
@@ -15,12 +25,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // In production, useSecureCookies prefixes cookie names with __Secure-
-  const cookieName =
-    process.env.NODE_ENV === 'production'
-      ? '__Secure-better-auth.session_token'
-      : 'better-auth.session_token'
-  const sessionCookie = request.cookies.get(cookieName)
+  // Check for session cookie
+  const sessionCookie = request.cookies.get(getSessionCookieName())
 
   if (!sessionCookie?.value) {
     const signInUrl = new URL('/sign-in', request.url)

@@ -18,7 +18,7 @@ import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getSession } from '@/lib/auth/session'
+import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
 import {
   getGoogleCalendarEventsForDateRange,
   getGoogleCalendarStatus,
@@ -82,12 +82,13 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
-  const [entries, projects, googleCalendarStatus, googleCalendarEvents] =
+  const [entries, projects, googleCalendarStatus, googleCalendarEvents, slug] =
     await Promise.all([
       getTimeEntriesForDateRange(startDate, endDate),
       getProjects(),
       getGoogleCalendarStatus(),
       getGoogleCalendarEventsForDateRange(startDate, endDate),
+      getActiveOrganizationSlug(),
     ])
 
   const activeProjects = projects.filter((p) => p.status === 'active')
@@ -118,7 +119,7 @@ async function TimeTrackingContent({
         <EmptyState
           action={
             <Button asChild>
-              <Link href="/projects">Go to Projects</Link>
+              <Link href={`/${slug}/projects`}>Go to Projects</Link>
             </Button>
           }
           description="You need to create a project before tracking time"

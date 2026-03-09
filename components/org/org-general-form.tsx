@@ -63,7 +63,12 @@ export function OrgGeneralForm({
         setError(apiError.message || 'Failed to update workspace')
       } else {
         toast.success('Workspace updated')
-        router.refresh()
+        const newSlug = values.slug.trim()
+        if (newSlug && newSlug !== initialSlug) {
+          router.push(`/${newSlug}/settings`)
+        } else {
+          router.refresh()
+        }
       }
     } catch {
       setError('Failed to update workspace')

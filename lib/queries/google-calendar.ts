@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from 'next/cache'
 import {
   getGoogleCalendarConfigHelpText,
   isGoogleCalendarConfigured,
@@ -12,6 +13,15 @@ import type {
 } from '@/lib/google-calendar/types'
 import { getSession } from '../auth/session'
 
+async function getGoogleCalendarStatusCached(
+  userId: string,
+): Promise<GoogleCalendarConnectionStatus> {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('google-calendar')
+  return await getGoogleCalendarStatusForUser(userId)
+}
+
 export async function getGoogleCalendarStatus(): Promise<GoogleCalendarConnectionStatus> {
   const enabled = isGoogleCalendarConfigured()
   const session = await getSession()
@@ -22,7 +32,22 @@ export async function getGoogleCalendarStatus(): Promise<GoogleCalendarConnectio
     }
   }
 
-  return getGoogleCalendarStatusForUser(session.user.id)
+  return getGoogleCalendarStatusCached(session.user.id)
+}
+
+async function getGoogleCalendarEventsCached(
+  userId: string,
+  startDate: Date,
+  endDate: Date,
+): Promise<GoogleCalendarEvent[]> {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('google-calendar')
+  return await getGoogleCalendarEventsForUser({
+    userId,
+    startDate,
+    endDate,
+  })
 }
 
 export async function getGoogleCalendarEventsForDateRange(
@@ -34,11 +59,7 @@ export async function getGoogleCalendarEventsForDateRange(
     return []
   }
 
-  return getGoogleCalendarEventsForUser({
-    userId: session.user.id,
-    startDate,
-    endDate,
-  })
+  return getGoogleCalendarEventsCached(session.user.id, startDate, endDate)
 }
 
 export function getGoogleCalendarMissingConfigMessage() {

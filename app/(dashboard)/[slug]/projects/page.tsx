@@ -9,6 +9,7 @@ import { ExportTasksDialog } from '@/components/projects/export-tasks-dialog'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getActiveOrganizationSlug } from '@/lib/auth/session'
 import { getAreas } from '@/lib/queries/areas'
 import { getClients } from '@/lib/queries/clients'
 import { getProjectsWithStats } from '@/lib/queries/projects'
@@ -29,10 +30,11 @@ export default function ProjectsPage() {
 }
 
 async function ProjectsContent() {
-  const [projects, areas, clients] = await Promise.all([
+  const [projects, areas, clients, slug] = await Promise.all([
     getProjectsWithStats(),
     getAreas(),
     getClients(),
+    getActiveOrganizationSlug(),
   ])
 
   // Group projects by area
@@ -71,7 +73,7 @@ async function ProjectsContent() {
         <EmptyState
           action={
             <Button asChild>
-              <Link href="/areas">Go to Areas</Link>
+              <Link href={`/${slug}/areas`}>Go to Areas</Link>
             </Button>
           }
           description="You need to create an area before adding projects"

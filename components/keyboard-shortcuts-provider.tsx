@@ -18,7 +18,7 @@ export function KeyboardShortcutsProvider({
   const pathname = usePathname()
 
   // Only enable time-related shortcuts on the time page
-  const isTimePage = pathname === '/time'
+  const isTimePage = pathname.endsWith('/time')
 
   useKeyboardShortcuts({
     shortcuts: [

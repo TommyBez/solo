@@ -12,7 +12,13 @@
       "Bash(pnpm build)",
       "mcp__hades-tools__take_screenshot",
       "mcp__hades-tools__scroll_page",
-      "mcp__hades-tools__get_console_logs"
+      "mcp__hades-tools__get_console_logs",
+      "Bash(ls -la \"app/\\(dashboard\\)/[slug]/\")",
+      "Bash(ls -la \"app/\\(dashboard\\)/\")",
+      "mcp__hades-tools__get_process_tree",
+      "mcp__hades-tools__get_process_logs",
+      "mcp__hades-tools__type_text",
+      "mcp__hades-tools__get_network_logs"
     ]
   }
 }
