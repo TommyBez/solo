@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
 import { KeyboardShortcutsProvider } from '@/components/keyboard-shortcuts-provider'
 import { MainContentSkeleton } from '@/components/main-content-skeleton'
+import { PendingInvitationBanner } from '@/components/org/pending-invitation-banner'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -86,6 +87,9 @@ export default function DashboardLayout({
                 </BreadcrumbList>
               </Breadcrumb>
             </header>
+            <Suspense fallback={null}>
+              <PendingInvitationBanner />
+            </Suspense>
             <main className="flex-1 overflow-auto p-4 md:p-6">
               <Suspense fallback={<MainContentSkeleton />}>
                 <KeyboardShortcutsProvider>
