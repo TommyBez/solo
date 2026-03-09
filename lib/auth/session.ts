@@ -1,7 +1,7 @@
-import { cache } from 'react'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { cache } from 'react'
 import { db } from '@/lib/db'
 import { member, organization } from './schema'
 import { auth } from './server'
@@ -24,37 +24,35 @@ export async function requireSession() {
 // Request-scoped cache: resolves the org ID once per request,
 // including the case where ensureActiveOrganization() just set it
 // but the cookie hasn't round-tripped yet.
-const resolveOrganizationId = cache(
-  async (): Promise<string | null> => {
-    const session = await getSession()
-    if (!session?.user) {
-      return null
-    }
+const resolveOrganizationId = cache(async (): Promise<string | null> => {
+  const session = await getSession()
+  if (!session?.user) {
+    return null
+  }
 
-    const orgId = (session?.session as { activeOrganizationId?: string })
-      ?.activeOrganizationId
-    if (orgId) {
-      return orgId
-    }
+  const orgId = (session?.session as { activeOrganizationId?: string })
+    ?.activeOrganizationId
+  if (orgId) {
+    return orgId
+  }
 
-    // No active org in cookie — find user's first membership
-    const firstMembership = await db.query.member.findFirst({
-      where: eq(member.userId, session.user.id),
-    })
-    if (!firstMembership) {
-      return null
-    }
+  // No active org in cookie — find user's first membership
+  const firstMembership = await db.query.member.findFirst({
+    where: eq(member.userId, session.user.id),
+  })
+  if (!firstMembership) {
+    return null
+  }
 
-    // Set it for future requests (updates DB + response cookie)
-    await auth.api.setActiveOrganization({
-      headers: await headers(),
-      body: { organizationId: firstMembership.organizationId },
-    })
+  // Set it for future requests (updates DB + response cookie)
+  await auth.api.setActiveOrganization({
+    headers: await headers(),
+    body: { organizationId: firstMembership.organizationId },
+  })
 
-    // Return the org ID directly so this request sees it immediately
-    return firstMembership.organizationId
-  },
-)
+  // Return the org ID directly so this request sees it immediately
+  return firstMembership.organizationId
+})
 
 export function getActiveOrganizationId(): Promise<string | null> {
   return resolveOrganizationId()

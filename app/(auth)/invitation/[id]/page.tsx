@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { AcceptInvitationCard } from '@/components/org/accept-invitation-card'
 import { invitation, organization, user } from '@/lib/auth/schema'
 import { getSession } from '@/lib/auth/session'

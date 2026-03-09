@@ -139,7 +139,9 @@ export function SettingsForm() {
             Company information has moved to{' '}
             <Link
               className="text-primary underline"
-              href={activeOrg?.slug ? `/${activeOrg.slug}/settings` : '/settings'}
+              href={
+                activeOrg?.slug ? `/${activeOrg.slug}/settings` : '/settings'
+              }
             >
               Workspace Settings
             </Link>

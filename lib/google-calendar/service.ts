@@ -169,7 +169,9 @@ export async function getGoogleCalendarEventsForUser(params: {
 
   const accessToken = await ensureValidAccessTokenForUser(params.userId)
   if (!accessToken) {
-    console.warn('[Google Calendar] No valid access token, skipping event fetch')
+    console.warn(
+      '[Google Calendar] No valid access token, skipping event fetch',
+    )
     return []
   }
 

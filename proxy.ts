@@ -1,17 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-// Known non-slug first segments — these are never treated as org slugs
-const NON_SLUG_SEGMENTS = new Set([
-  'sign-in',
-  'sign-up',
-  'api',
-  'invitation',
-  'onboarding',
-  'settings',
-  'profile',
-  'org',
-])
-
 function getSessionCookieName(): string {
   return process.env.NODE_ENV === 'production'
     ? '__Secure-better-auth.session_token'

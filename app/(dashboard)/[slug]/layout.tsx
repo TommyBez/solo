@@ -1,10 +1,10 @@
-import type React from 'react'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
+import type React from 'react'
 import { organization } from '@/lib/auth/schema'
-import { getActiveOrganizationId } from '@/lib/auth/session'
 import { auth } from '@/lib/auth/server'
+import { getActiveOrganizationId } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 
 export default async function SlugLayout({
