@@ -3,6 +3,7 @@
 import { GeistPixelSquare } from 'geist/font/pixel'
 import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +21,22 @@ import {
 
 export function OrganizationSwitcher() {
   const router = useRouter()
-  const { data: activeOrg } = useActiveOrganization()
-  const { data: orgs } = useListOrganizations()
+  const { data: activeOrg, isPending: orgPending } = useActiveOrganization()
+  const { data: orgs, isPending: orgsPending } = useListOrganizations()
+  const autoSelectAttempted = useRef(false)
+
+  // Failsafe: auto-select the first org if the server-side resolution
+  // hasn't synced to the client cookie yet (e.g. after signup)
+  useEffect(() => {
+    if (autoSelectAttempted.current) return
+    if (orgPending || orgsPending) return
+    if (!activeOrg && orgs && orgs.length > 0) {
+      autoSelectAttempted.current = true
+      organization.setActive({ organizationId: orgs[0].id }).then(() => {
+        router.refresh()
+      })
+    }
+  }, [activeOrg, orgs, orgPending, orgsPending, router])
 
   const handleSwitch = async (orgId: string) => {
     await organization.setActive({ organizationId: orgId })
