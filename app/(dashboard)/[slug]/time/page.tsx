@@ -111,6 +111,7 @@ async function TimeTrackingContent({
         currentDate={currentDate}
         entries={entries}
         googleEvents={googleCalendarEvents}
+        organizationSlug={slug ?? ''}
         projects={activeProjects}
         view={viewParam as 'month' | 'week'}
       />

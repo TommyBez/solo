@@ -35,6 +35,7 @@ interface CalendarViewProps {
   currentDate: Date
   entries: TimeEntryWithDetails[]
   googleEvents: GoogleCalendarEvent[]
+  organizationSlug: string
   projects: (Project & { area: Area })[]
   view: 'month' | 'week'
 }
@@ -60,6 +61,7 @@ export function CalendarView({
   entries,
   currentDate,
   googleEvents,
+  organizationSlug,
   projects,
   view,
 }: CalendarViewProps) {
@@ -83,13 +85,13 @@ export function CalendarView({
     const dateString = format(newDate, 'yyyy-MM-dd')
     const params = new URLSearchParams(window.location.search)
     params.set('date', dateString)
-    router.push(`/time?${params.toString()}`)
+    router.push(`/${organizationSlug}/time?${params.toString()}`)
   }
 
   const handleViewChange = (newView: string) => {
     const params = new URLSearchParams(window.location.search)
     params.set('view', newView)
-    router.push(`/time?${params.toString()}`)
+    router.push(`/${organizationSlug}/time?${params.toString()}`)
   }
 
   // Calculate days to display
