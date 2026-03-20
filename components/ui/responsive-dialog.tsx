@@ -1,7 +1,6 @@
 'use client'
 
 import type * as React from 'react'
-import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogClose,
@@ -22,25 +21,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
-
-const MOBILE_BREAKPOINT = 768
-
-// Internal hook that returns undefined until mounted, ensuring consistent SSR behavior
-function useIsMobileInternal() {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined)
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-    mql.addEventListener('change', onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener('change', onChange)
-  }, [])
-
-  return isMobile
-}
+import { cn } from '@/lib/utils'
 
 interface ResponsiveDialogProps {
   children: React.ReactNode
@@ -53,43 +34,39 @@ function ResponsiveDialog({
   open,
   onOpenChange,
 }: ResponsiveDialogProps) {
-  const isMobile = useIsMobileInternal()
-
-  // Don't render anything until we know if we're on mobile or not
-  // This prevents the Dialog/Drawer mismatch that causes the error
-  if (isMobile === undefined) {
-    return null
-  }
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        {children}
-      </Drawer>
-    )
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {children}
-    </Dialog>
+    <>
+      {/* Desktop: Dialog */}
+      <div className="hidden md:contents">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          {children}
+        </Dialog>
+      </div>
+      {/* Mobile: Drawer */}
+      <div className="contents md:hidden">
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          {children}
+        </Drawer>
+      </div>
+    </>
   )
 }
 
 function ResponsiveDialogTrigger({
   children,
+  className,
   ...props
 }: React.ComponentProps<typeof DialogTrigger>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return <DrawerTrigger {...props}>{children}</DrawerTrigger>
-  }
-
-  return <DialogTrigger {...props}>{children}</DialogTrigger>
+  return (
+    <>
+      <DialogTrigger className={cn('hidden md:inline-flex', className)} {...props}>
+        {children}
+      </DialogTrigger>
+      <DrawerTrigger className={cn('md:hidden', className)} {...props}>
+        {children}
+      </DrawerTrigger>
+    </>
+  )
 }
 
 function ResponsiveDialogContent({
@@ -97,23 +74,15 @@ function ResponsiveDialogContent({
   className,
   ...props
 }: React.ComponentProps<typeof DialogContent>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return (
-      <DrawerContent className={className}>
+  return (
+    <>
+      <DialogContent className={cn('hidden md:block', className)} {...props}>
+        {children}
+      </DialogContent>
+      <DrawerContent className={cn('md:hidden', className)}>
         {children}
       </DrawerContent>
-    )
-  }
-
-  return (
-    <DialogContent className={className} {...props}>
-      {children}
-    </DialogContent>
+    </>
   )
 }
 
@@ -122,23 +91,15 @@ function ResponsiveDialogHeader({
   className,
   ...props
 }: React.ComponentProps<typeof DialogHeader>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return (
-      <DrawerHeader className={className} {...props}>
+  return (
+    <>
+      <DialogHeader className={cn('hidden md:block', className)} {...props}>
+        {children}
+      </DialogHeader>
+      <DrawerHeader className={cn('md:hidden', className)} {...props}>
         {children}
       </DrawerHeader>
-    )
-  }
-
-  return (
-    <DialogHeader className={className} {...props}>
-      {children}
-    </DialogHeader>
+    </>
   )
 }
 
@@ -147,23 +108,15 @@ function ResponsiveDialogFooter({
   className,
   ...props
 }: React.ComponentProps<typeof DialogFooter>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return (
-      <DrawerFooter className={className} {...props}>
+  return (
+    <>
+      <DialogFooter className={cn('hidden md:flex', className)} {...props}>
+        {children}
+      </DialogFooter>
+      <DrawerFooter className={cn('md:hidden', className)} {...props}>
         {children}
       </DrawerFooter>
-    )
-  }
-
-  return (
-    <DialogFooter className={className} {...props}>
-      {children}
-    </DialogFooter>
+    </>
   )
 }
 
@@ -172,23 +125,15 @@ function ResponsiveDialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof DialogTitle>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return (
-      <DrawerTitle className={className} {...props}>
+  return (
+    <>
+      <DialogTitle className={cn('hidden md:block', className)} {...props}>
+        {children}
+      </DialogTitle>
+      <DrawerTitle className={cn('md:hidden', className)} {...props}>
         {children}
       </DrawerTitle>
-    )
-  }
-
-  return (
-    <DialogTitle className={className} {...props}>
-      {children}
-    </DialogTitle>
+    </>
   )
 }
 
@@ -197,40 +142,33 @@ function ResponsiveDialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof DialogDescription>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return (
-      <DrawerDescription className={className} {...props}>
+  return (
+    <>
+      <DialogDescription className={cn('hidden md:block', className)} {...props}>
+        {children}
+      </DialogDescription>
+      <DrawerDescription className={cn('md:hidden', className)} {...props}>
         {children}
       </DrawerDescription>
-    )
-  }
-
-  return (
-    <DialogDescription className={className} {...props}>
-      {children}
-    </DialogDescription>
+    </>
   )
 }
 
 function ResponsiveDialogClose({
   children,
+  className,
   ...props
 }: React.ComponentProps<typeof DialogClose>) {
-  const isMobile = useIsMobileInternal()
-
-  // Return null until hydrated to prevent context mismatch
-  if (isMobile === undefined) return null
-
-  if (isMobile) {
-    return <DrawerClose {...props}>{children}</DrawerClose>
-  }
-
-  return <DialogClose {...props}>{children}</DialogClose>
+  return (
+    <>
+      <DialogClose className={cn('hidden md:inline-flex', className)} {...props}>
+        {children}
+      </DialogClose>
+      <DrawerClose className={cn('md:hidden', className)} {...props}>
+        {children}
+      </DrawerClose>
+    </>
+  )
 }
 
 export {
