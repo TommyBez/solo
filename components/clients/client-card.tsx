@@ -18,12 +18,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,20 +98,20 @@ export function ClientCard({ client }: ClientCardProps) {
   return (
     <>
       <Card className="transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="flex items-start gap-3">
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
+          <div className="flex min-w-0 items-start gap-2 sm:gap-3">
             <div
               className={cn(
-                'flex size-9 shrink-0 items-center justify-center rounded-md font-semibold text-sm text-white',
+                'flex size-8 shrink-0 items-center justify-center rounded-md font-semibold text-sm text-white sm:size-9',
                 avatarColors[client.name.charCodeAt(0) % avatarColors.length],
               )}
             >
               {client.name.charAt(0).toUpperCase()}
             </div>
-            <div className="space-y-1">
-              <CardTitle className="text-lg">{client.name}</CardTitle>
+            <div className="min-w-0 space-y-1">
+              <CardTitle className="truncate text-base sm:text-lg">{client.name}</CardTitle>
               {client.hourlyRate ? (
-                <Badge className="font-mono tabular-nums" variant="secondary">
+                <Badge className="font-mono text-[10px] tabular-nums sm:text-xs" variant="secondary">
                   {formatCurrency(client.hourlyRate, client.currency)}
                 </Badge>
               ) : null}
@@ -119,7 +119,7 @@ export function ClientCard({ client }: ClientCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost">
+              <Button className="size-9 shrink-0 sm:size-8" size="icon" variant="ghost">
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -141,24 +141,24 @@ export function ClientCard({ client }: ClientCardProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 p-4 pt-0 sm:space-y-3 sm:p-6 sm:pt-0">
           {client.email ? (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Mail className="size-4" />
-              <a className="hover:underline" href={`mailto:${client.email}`}>
+            <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+              <Mail className="size-3.5 shrink-0 sm:size-4" />
+              <a className="truncate hover:underline" href={`mailto:${client.email}`}>
                 {client.email}
               </a>
             </div>
           ) : null}
           {client.phone ? (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Phone className="size-4" />
+            <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+              <Phone className="size-3.5 shrink-0 sm:size-4" />
               <a className="hover:underline" href={`tel:${client.phone}`}>
                 {client.phone}
               </a>
             </div>
           ) : null}
-          <div className="pt-2 text-muted-foreground text-sm">
+          <div className="pt-1 text-muted-foreground text-xs sm:pt-2 sm:text-sm">
             {projectsCount === 0
               ? 'No projects linked'
               : `${projectsCount} project${projectsCount === 1 ? '' : 's'} linked`}
@@ -166,15 +166,17 @@ export function ClientCard({ client }: ClientCardProps) {
         </CardContent>
       </Card>
 
-      <Dialog onOpenChange={setEditOpen} open={editOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Client</DialogTitle>
-            <DialogDescription>Update client information.</DialogDescription>
-          </DialogHeader>
-          <ClientForm client={client} onSuccess={() => setEditOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <ResponsiveDialog onOpenChange={setEditOpen} open={editOpen}>
+        <ResponsiveDialogContent className="md:max-w-lg">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Edit Client</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>Update client information.</ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="px-4 pb-4 md:px-0 md:pb-0">
+            <ClientForm client={client} onSuccess={() => setEditOpen(false)} />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
         <AlertDialogContent>

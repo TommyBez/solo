@@ -1,11 +1,22 @@
 import { Analytics } from '@vercel/analytics/next'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type React from 'react'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+}
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +46,7 @@ export default function RootLayout({
           enableSystem
         >
           {children}
-          <Toaster position="bottom-right" richColors />
+          <Toaster position="bottom-center" richColors />
           <Analytics />
         </ThemeProvider>
       </body>

@@ -28,12 +28,12 @@ interface Invitation {
 
 export default function OrgSettingsPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
       <div>
-        <h1 className="font-bold text-2xl tracking-tight">
+        <h1 className="font-bold text-xl tracking-tight sm:text-2xl">
           Workspace Settings
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm sm:text-base">
           Manage your workspace, members, and company information.
         </p>
       </div>

@@ -243,15 +243,15 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between">
-          <span className="font-bold font-mono text-4xl tabular-nums tracking-wider">
+        <div className="flex items-center justify-between gap-4">
+          <span className="font-bold font-mono text-2xl tabular-nums tracking-wider sm:text-4xl">
             {formatTime(seconds)}
           </span>
-          <div className="flex gap-2">
+          <div className="flex shrink-0 gap-2">
             {isRunning ? (
               <>
                 <Button
-                  className="size-10 rounded-full"
+                  className="size-11 rounded-full sm:size-10"
                   onClick={handlePause}
                   size="icon"
                   variant="secondary"
@@ -260,7 +260,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
                   <span className="sr-only">Pause timer</span>
                 </Button>
                 <Button
-                  className="size-10 rounded-full"
+                  className="size-11 rounded-full sm:size-10"
                   onClick={handleStop}
                   size="icon"
                   variant="destructive"

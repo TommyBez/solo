@@ -24,12 +24,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,18 +83,18 @@ export function AreaCard({ area }: AreaCardProps) {
     <>
       <Card className="relative overflow-hidden transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
         <ColorBar color={area.color} />
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{area.name}</CardTitle>
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="truncate text-base sm:text-lg">{area.name}</CardTitle>
             {area.description ? (
-              <p className="line-clamp-1 text-muted-foreground text-sm">
+              <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm">
                 {area.description}
               </p>
             ) : null}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="size-8" size="icon" variant="ghost">
+              <Button className="size-9 shrink-0 sm:size-8" size="icon" variant="ghost">
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -119,16 +119,16 @@ export function AreaCard({ area }: AreaCardProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4 text-muted-foreground text-sm">
+        <CardContent className="space-y-3 p-4 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
+          <div className="flex items-center gap-4 text-muted-foreground text-xs sm:text-sm">
             <div className="flex items-center gap-1">
-              <FolderKanban className="size-4" />
+              <FolderKanban className="size-3.5 sm:size-4" />
               <span>{area.projectCount} projects</span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
               <span>Weekly Progress</span>
               <span className="font-medium">
                 {area.hoursThisWeek}h / {area.expectedHoursPerWeek}h
@@ -147,26 +147,28 @@ export function AreaCard({ area }: AreaCardProps) {
         </CardContent>
       </Card>
 
-      <Dialog onOpenChange={setIsEditOpen} open={isEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Area</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog onOpenChange={setIsEditOpen} open={isEditOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Edit Area</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Update the area details below.
-            </DialogDescription>
-          </DialogHeader>
-          <AreaForm
-            area={{
-              id: area.id,
-              name: area.name,
-              description: area.description,
-              color: area.color,
-              expectedHoursPerWeek: area.expectedHoursPerWeek,
-            }}
-            onSuccess={() => setIsEditOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="px-4 pb-4 md:px-0 md:pb-0">
+            <AreaForm
+              area={{
+                id: area.id,
+                name: area.name,
+                description: area.description,
+                color: area.color,
+                expectedHoursPerWeek: area.expectedHoursPerWeek,
+              }}
+              onSuccess={() => setIsEditOpen(false)}
+            />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
         <AlertDialogContent>

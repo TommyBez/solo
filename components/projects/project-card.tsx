@@ -26,12 +26,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -110,22 +110,22 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
     <>
       <Card className="relative overflow-hidden transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
         <ColorBar color={project.area.color} />
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{project.name}</CardTitle>
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <CardTitle className="truncate text-base sm:text-lg">{project.name}</CardTitle>
               <Badge
-                className={statusClassNames[project.status] || ''}
+                className={`text-[10px] sm:text-xs ${statusClassNames[project.status] || ''}`}
                 variant={statusVariants[project.status]}
               >
                 {project.status}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-sm">{project.area.name}</p>
+            <p className="text-muted-foreground text-xs sm:text-sm">{project.area.name}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="size-8" size="icon" variant="ghost">
+              <Button className="size-9 shrink-0 sm:size-8" size="icon" variant="ghost">
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -150,21 +150,21 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 p-4 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
           {project.description ? (
-            <p className="line-clamp-2 text-muted-foreground text-sm">
+            <p className="line-clamp-2 text-muted-foreground text-xs sm:text-sm">
               {project.description}
             </p>
           ) : null}
 
-          <div className="flex items-center gap-4 text-muted-foreground text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs sm:gap-4 sm:text-sm">
             <div className="flex items-center gap-1">
-              <Clock className="size-4" />
+              <Clock className="size-3.5 sm:size-4" />
               <span>{project.hoursThisWeek}h this week</span>
             </div>
             {project.deadline ? (
               <div className="flex items-center gap-1">
-                <Calendar className="size-4" />
+                <Calendar className="size-3.5 sm:size-4" />
                 <span>{formatDate(project.deadline)}</span>
               </div>
             ) : null}
@@ -172,7 +172,7 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
 
           {project.expectedHours > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <span>{progressLabel}</span>
                 <span className="font-medium">
                   {project.progressHours}h / {project.expectedHours}h
@@ -188,36 +188,38 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
         </CardContent>
       </Card>
 
-      <Dialog onOpenChange={setIsEditOpen} open={isEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog onOpenChange={setIsEditOpen} open={isEditOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Edit Project</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Update the project details below.
-            </DialogDescription>
-          </DialogHeader>
-          <ProjectForm
-            areas={areas}
-            clients={clients}
-            onSuccess={() => setIsEditOpen(false)}
-            project={{
-              id: project.id,
-              areaId: project.area.id,
-              clientId: project.clientId,
-              name: project.name,
-              description: project.description,
-              status: project.status,
-              expectedHours: project.expectedHours,
-              recurring: project.recurring,
-              deadline: project.deadline,
-              hourlyRate: project.hourlyRate,
-              archived: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="px-4 pb-4 md:px-0 md:pb-0">
+            <ProjectForm
+              areas={areas}
+              clients={clients}
+              onSuccess={() => setIsEditOpen(false)}
+              project={{
+                id: project.id,
+                areaId: project.area.id,
+                clientId: project.clientId,
+                name: project.name,
+                description: project.description,
+                status: project.status,
+                expectedHours: project.expectedHours,
+                recurring: project.recurring,
+                deadline: project.deadline,
+                hourlyRate: project.hourlyRate,
+                archived: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }}
+            />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
         <AlertDialogContent>

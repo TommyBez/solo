@@ -9,13 +9,13 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@/components/ui/responsive-dialog'
 import {
   Form,
   FormControl,
@@ -82,7 +82,7 @@ export function InviteMemberDialog({
   })
 
   return (
-    <Dialog
+    <ResponsiveDialog
       onOpenChange={(value) => {
         setOpen(value)
         if (!value) {
@@ -92,21 +92,21 @@ export function InviteMemberDialog({
       }}
       open={open}
     >
-      <DialogTrigger asChild>
+      <ResponsiveDialogTrigger asChild>
         <Button size="sm">
           <UserPlus className="mr-2 size-4" />
           Invite Member
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Invite Member</DialogTitle>
-          <DialogDescription>
+      </ResponsiveDialogTrigger>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Invite Member</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Send an invitation to join this workspace.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <Form {...form}>
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4 px-4 pb-4 md:px-0 md:pb-0" onSubmit={handleSubmit}>
             {error ? (
               <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
                 {error}
@@ -174,7 +174,7 @@ export function InviteMemberDialog({
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }

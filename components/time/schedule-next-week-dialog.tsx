@@ -18,14 +18,14 @@ import { z } from 'zod'
 import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@/components/ui/responsive-dialog'
 import {
   Form,
   FormControl,
@@ -214,20 +214,20 @@ export function ScheduleNextWeekDialog({
   const isBusy = isCopying || isCreating
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
-      <DialogTrigger asChild>
+    <ResponsiveDialog onOpenChange={setOpen} open={open}>
+      <ResponsiveDialogTrigger asChild>
         <Button variant="outline">
           <CalendarClock className="mr-2 size-4" />
           Schedule Next Week
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[460px]">
-        <DialogHeader>
-          <DialogTitle>Schedule Tasks for Following Week</DialogTitle>
-          <DialogDescription>
+      </ResponsiveDialogTrigger>
+      <ResponsiveDialogContent className="md:max-w-[460px]">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Schedule Tasks for Following Week</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Copy current tasks or create new ones directly in next week.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <div className="space-y-5">
           <div className="space-y-3 rounded-lg border bg-muted/20 p-4 text-sm">
@@ -393,7 +393,7 @@ export function ScheduleNextWeekDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <ResponsiveDialogFooter>
           <Button
             disabled={isBusy}
             onClick={() => setOpen(false)}
@@ -401,8 +401,8 @@ export function ScheduleNextWeekDialog({
           >
             Cancel
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }

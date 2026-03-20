@@ -4,13 +4,13 @@ import { Plus } from 'lucide-react'
 import { type ReactNode, useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@/components/ui/responsive-dialog'
 import type { Area, Project } from '@/lib/db/schema'
 import {
   SHORTCUT_EVENTS,
@@ -60,28 +60,30 @@ export function AddTimeEntryDialog({
   }
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
-      <DialogTrigger asChild>
+    <ResponsiveDialog onOpenChange={setOpen} open={open}>
+      <ResponsiveDialogTrigger asChild>
         {trigger ?? (
           <Button>
             <Plus className="mr-2 size-4" />
             {buttonLabel ?? 'Add Entry'}
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title ?? 'Add Time Entry'}</DialogTitle>
-          <DialogDescription>
+      </ResponsiveDialogTrigger>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{title ?? 'Add Time Entry'}</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             {description ?? 'Log time spent on a project.'}
-          </DialogDescription>
-        </DialogHeader>
-        <TimeEntryForm
-          initialValues={initialValues}
-          onSuccess={() => setOpen(false)}
-          projects={projects}
-        />
-      </DialogContent>
-    </Dialog>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
+        <div className="px-4 pb-4 md:px-0 md:pb-0">
+          <TimeEntryForm
+            initialValues={initialValues}
+            onSuccess={() => setOpen(false)}
+            projects={projects}
+          />
+        </div>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }

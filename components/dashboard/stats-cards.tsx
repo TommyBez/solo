@@ -65,20 +65,20 @@ export function StatsCards({
   const isOnTrack = goalProgress >= 70 // Consider "on track" if at least 70% of goal
 
   return (
-    <div className="stagger-children grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="stagger-children grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <Card className="bg-primary/5 ring-primary/20 dark:bg-primary/10">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">This Week</CardTitle>
-          <div className="flex size-8 items-center justify-center rounded-md bg-primary/10">
-            <Clock className="size-4 text-primary" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
+          <CardTitle className="font-medium text-xs sm:text-sm">This Week</CardTitle>
+          <div className="flex size-6 items-center justify-center rounded-md bg-primary/10 sm:size-8">
+            <Clock className="size-3 text-primary sm:size-4" />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="font-bold font-mono text-lg tabular-nums sm:text-2xl">
             {weeklyHours}h
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs">
+            <p className="hidden text-muted-foreground text-xs sm:block">
               ~{avgDailyHours}h daily average
             </p>
             <TrendIndicator change={weeklyChange} label="vs last week" />
@@ -86,31 +86,31 @@ export function StatsCards({
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">This Month</CardTitle>
-          <div className="flex size-8 items-center justify-center rounded-md bg-muted">
-            <Target className="size-4 text-muted-foreground" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
+          <CardTitle className="font-medium text-xs sm:text-sm">This Month</CardTitle>
+          <div className="flex size-6 items-center justify-center rounded-md bg-muted sm:size-8">
+            <Target className="size-3 text-muted-foreground sm:size-4" />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="font-bold font-mono text-lg tabular-nums sm:text-2xl">
             {monthlyHours}h
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs">Total tracked time</p>
+            <p className="hidden text-muted-foreground text-xs sm:block">Total tracked time</p>
             <TrendIndicator change={monthlyChange} label="vs last month" />
           </div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">Weekly Goal</CardTitle>
-          <div className="flex size-8 items-center justify-center rounded-md bg-muted">
-            <Layers className="size-4 text-muted-foreground" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
+          <CardTitle className="font-medium text-xs sm:text-sm">Weekly Goal</CardTitle>
+          <div className="flex size-6 items-center justify-center rounded-md bg-muted sm:size-8">
+            <Layers className="size-3 text-muted-foreground sm:size-4" />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="font-bold font-mono text-lg tabular-nums sm:text-2xl">
             {totalExpectedWeeklyHours > 0 ? `${goalProgress}%` : '—'}
           </div>
           <div className="flex flex-col gap-1">
@@ -120,7 +120,7 @@ export function StatsCards({
                   className="my-1 h-2"
                   value={Math.min(goalProgress, 100)}
                 />
-                <p className="text-muted-foreground text-xs">
+                <p className="hidden text-muted-foreground text-xs sm:block">
                   {weeklyHours}h / {totalExpectedWeeklyHours}h target
                 </p>
                 <span
@@ -129,7 +129,7 @@ export function StatsCards({
                     isOnTrack ? 'text-success' : 'text-destructive',
                   )}
                 >
-                  {isOnTrack ? 'On track' : 'Behind schedule'}
+                  {isOnTrack ? 'On track' : 'Behind'}
                 </span>
               </>
             ) : (
@@ -141,19 +141,19 @@ export function StatsCards({
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">Active Work</CardTitle>
-          <div className="flex size-8 items-center justify-center rounded-md bg-muted">
-            <FolderKanban className="size-4 text-muted-foreground" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
+          <CardTitle className="font-medium text-xs sm:text-sm">Active Work</CardTitle>
+          <div className="flex size-6 items-center justify-center rounded-md bg-muted sm:size-8">
+            <FolderKanban className="size-3 text-muted-foreground sm:size-4" />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="font-bold font-mono text-2xl tabular-nums">
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="font-bold font-mono text-lg tabular-nums sm:text-2xl">
             {activeProjectsCount}
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-muted-foreground text-xs">
-              projects across {activeAreasCount} areas
+              <span className="hidden sm:inline">projects across </span>{activeAreasCount} areas
             </p>
           </div>
         </CardContent>
