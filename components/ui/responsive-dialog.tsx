@@ -1,6 +1,7 @@
 'use client'
 
 import type * as React from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogClose,
@@ -21,7 +22,25 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
-import { useIsMobile } from '@/hooks/use-mobile'
+
+const MOBILE_BREAKPOINT = 768
+
+// Internal hook that returns undefined until mounted, ensuring consistent SSR behavior
+function useIsMobileInternal() {
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined)
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    mql.addEventListener('change', onChange)
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+
+  return isMobile
+}
 
 interface ResponsiveDialogProps {
   children: React.ReactNode
@@ -34,7 +53,13 @@ function ResponsiveDialog({
   open,
   onOpenChange,
 }: ResponsiveDialogProps) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Don't render anything until we know if we're on mobile or not
+  // This prevents the Dialog/Drawer mismatch that causes the error
+  if (isMobile === undefined) {
+    return null
+  }
 
   if (isMobile) {
     return (
@@ -55,7 +80,10 @@ function ResponsiveDialogTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof DialogTrigger>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return <DrawerTrigger {...props}>{children}</DrawerTrigger>
@@ -69,7 +97,10 @@ function ResponsiveDialogContent({
   className,
   ...props
 }: React.ComponentProps<typeof DialogContent>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return (
@@ -91,7 +122,10 @@ function ResponsiveDialogHeader({
   className,
   ...props
 }: React.ComponentProps<typeof DialogHeader>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return (
@@ -113,7 +147,10 @@ function ResponsiveDialogFooter({
   className,
   ...props
 }: React.ComponentProps<typeof DialogFooter>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return (
@@ -135,7 +172,10 @@ function ResponsiveDialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof DialogTitle>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return (
@@ -157,7 +197,10 @@ function ResponsiveDialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof DialogDescription>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return (
@@ -178,7 +221,10 @@ function ResponsiveDialogClose({
   children,
   ...props
 }: React.ComponentProps<typeof DialogClose>) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobileInternal()
+
+  // Return null until hydrated to prevent context mismatch
+  if (isMobile === undefined) return null
 
   if (isMobile) {
     return <DrawerClose {...props}>{children}</DrawerClose>
