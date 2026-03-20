@@ -36,12 +36,12 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
   if (data.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Time by Area</CardTitle>
-          <CardDescription>Weekly distribution across areas</CardDescription>
+        <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg">Time by Area</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Weekly distribution across areas</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[300px] items-center justify-center">
-          <p className="text-muted-foreground">No time tracked this week</p>
+        <CardContent className="flex h-[240px] items-center justify-center p-4 pt-0 sm:h-[300px] sm:p-6 sm:pt-0">
+          <p className="text-muted-foreground text-sm">No time tracked this week</p>
         </CardContent>
       </Card>
     )
@@ -49,11 +49,11 @@ export function TimeDistributionChart({ data }: TimeDistributionChartProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Time by Area</CardTitle>
-        <CardDescription>Weekly distribution across areas</CardDescription>
+      <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
+        <CardTitle className="text-base sm:text-lg">Time by Area</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Weekly distribution across areas</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
         <TimeDistributionChartContent data={data} />
       </CardContent>
     </Card>

@@ -101,7 +101,7 @@ async function ProjectsContent() {
                     ({areaProjects.length} projects)
                   </span>
                 </div>
-                <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="stagger-children grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {areaProjects.map((project) => (
                     <ProjectCard
                       areas={areas}
@@ -122,22 +122,21 @@ async function ProjectsContent() {
 
 function ProjectsSkeleton() {
   const skeletonGroups = [
-    { id: 'group-1', cards: ['card-1', 'card-2', 'card-3'] },
-    { id: 'group-2', cards: ['card-4', 'card-5', 'card-6'] },
+    { id: 'group-1', cards: ['card-1', 'card-2'] },
   ]
 
   return (
     <>
       <div className="flex items-center justify-end">
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-9 w-28 sm:h-10 sm:w-32" />
       </div>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {skeletonGroups.map((group) => (
-          <div className="space-y-4" key={group.id}>
-            <Skeleton className="h-7 w-48" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-3 sm:space-y-4" key={group.id}>
+            <Skeleton className="h-6 w-40 sm:h-7 sm:w-48" />
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {group.cards.map((cardId) => (
-                <Skeleton className="h-52" key={cardId} />
+                <Skeleton className="h-44 sm:h-52" key={cardId} />
               ))}
             </div>
           </div>

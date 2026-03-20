@@ -41,44 +41,44 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>Latest time entries</CardDescription>
+      <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
+        <CardTitle className="text-base sm:text-lg">Recent Activity</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Latest time entries</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-2 sm:p-6 sm:pt-2">
         {entries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex flex-col items-center justify-center py-6 text-center sm:py-8">
             <div className="mb-3 flex size-10 items-center justify-center rounded-md bg-muted">
               <Clock className="size-5 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground text-sm">No recent entries</p>
           </div>
         ) : (
-          <div className="stagger-children space-y-4">
+          <div className="stagger-children space-y-3 sm:space-y-4">
             {entries.map((entry) => (
               <div
-                className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                className="flex items-start justify-between gap-2 rounded-lg border p-2 sm:gap-4 sm:p-3"
                 key={entry.id}
               >
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <ColorDot color={entry.project.area.color} />
-                    <span className="font-medium text-sm">
+                    <span className="truncate font-medium text-xs sm:text-sm">
                       {entry.project.name}
                     </span>
                   </div>
                   {entry.description ? (
-                    <p className="line-clamp-1 text-muted-foreground text-sm">
+                    <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm">
                       {entry.description}
                     </p>
                   ) : null}
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">
                     {formatDistanceToNow(new Date(entry.startTime), {
                       addSuffix: true,
                     })}
                   </p>
                 </div>
-                <Badge className="font-mono tabular-nums" variant="secondary">
+                <Badge className="shrink-0 font-mono text-[10px] tabular-nums sm:text-xs" variant="secondary">
                   {formatDuration(entry.durationMinutes)}
                 </Badge>
               </div>

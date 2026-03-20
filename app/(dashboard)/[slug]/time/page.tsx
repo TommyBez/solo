@@ -97,7 +97,7 @@ async function TimeTrackingContent({
     <>
       {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {viewParam === 'week' ? (
           <ScheduleNextWeekDialog
             projects={activeProjects}
@@ -128,8 +128,8 @@ async function TimeTrackingContent({
           title="Create a project first"
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="order-first lg:order-none lg:col-span-1">
             <TimerWidget projects={activeProjects} />
           </div>
           <div className="lg:col-span-2">
@@ -145,12 +145,12 @@ function TimeTrackingSkeleton() {
   return (
     <>
       <div className="flex items-center justify-end">
-        <Skeleton className="h-10 w-28" />
+        <Skeleton className="h-9 w-24 sm:h-10 sm:w-28" />
       </div>
-      <Skeleton className="h-64" />
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Skeleton className="h-64 lg:col-span-1" />
-        <Skeleton className="h-96 lg:col-span-2" />
+      <Skeleton className="h-48 sm:h-64" />
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <Skeleton className="h-48 sm:h-64 lg:col-span-1" />
+        <Skeleton className="h-64 sm:h-96 lg:col-span-2" />
       </div>
     </>
   )

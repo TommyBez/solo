@@ -11,14 +11,14 @@ import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@/components/ui/responsive-dialog'
 import {
   Form,
   FormControl,
@@ -135,7 +135,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
   })
 
   return (
-    <Dialog
+    <ResponsiveDialog
       onOpenChange={(value) => {
         setOpen(value)
         if (!value) {
@@ -144,23 +144,23 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
       }}
       open={open}
     >
-      <DialogTrigger asChild>
+      <ResponsiveDialogTrigger asChild>
         <Button variant="outline">
           <Download className="mr-2 size-4" />
           Export Tasks
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>Export Tasks</DialogTitle>
-          <DialogDescription>
+      </ResponsiveDialogTrigger>
+      <ResponsiveDialogContent className="md:max-w-[480px]">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Export Tasks</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Export time entries for a project within a specific date range.
             Choose between CSV or PDF format.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit}>
+          <form className="px-4 pb-4 md:px-0 md:pb-0" onSubmit={handleSubmit}>
             <div className="grid gap-5 py-4">
               {/* Project Selection */}
               <FormField
@@ -347,7 +347,7 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
               />
             </div>
 
-            <DialogFooter>
+            <ResponsiveDialogFooter>
               <Button
                 onClick={() => setOpen(false)}
                 type="button"
@@ -365,10 +365,10 @@ export function ExportTasksDialog({ projects }: ExportTasksDialogProps) {
                   </>
                 )}
               </Button>
-            </DialogFooter>
+            </ResponsiveDialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }

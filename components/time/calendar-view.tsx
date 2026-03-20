@@ -135,34 +135,36 @@ export function CalendarView({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-bold font-mono text-4xl tabular-nums">
+          <h2 className="font-bold font-mono text-2xl tabular-nums sm:text-4xl">
             {totalHours}h
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm sm:text-base">
             Total time this {view === 'week' ? 'week' : 'month'}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <Tabs onValueChange={handleViewChange} value={view}>
-            <TabsList>
-              <TabsTrigger value="month">Month</TabsTrigger>
-              <TabsTrigger value="week">Week</TabsTrigger>
+            <TabsList className="h-9">
+              <TabsTrigger className="text-xs sm:text-sm" value="month">Month</TabsTrigger>
+              <TabsTrigger className="text-xs sm:text-sm" value="week">Week</TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
+              className="size-8 sm:size-9"
               onClick={() => navigateDate('prev')}
               size="icon"
               variant="outline"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-[160px] text-center font-medium">
+            <span className="min-w-[100px] text-center text-sm font-medium sm:min-w-[160px] sm:text-base">
               {headerTitle}
             </span>
             <Button
+              className="size-8 sm:size-9"
               onClick={() => navigateDate('next')}
               size="icon"
               variant="outline"
@@ -174,130 +176,143 @@ export function CalendarView({
       </div>
 
       {/* Calendar Grid */}
-      <div className="overflow-hidden rounded-lg border bg-background">
-        {/* Weekday Headers */}
-        <div className="grid grid-cols-7 border-b bg-muted/50">
-          {weekDays.map((day) => (
-            <div
-              className="border-r p-2 text-center font-medium text-muted-foreground text-xs uppercase last:border-r-0"
-              key={day}
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Days */}
-        <div className="grid auto-rows-fr grid-cols-7">
-          {days.map((day, dayIdx) => {
-            const dayEntries = entries.filter((entry) =>
-              isSameDay(new Date(entry.startTime), day),
-            )
-            const dayGoogleEvents = googleEvents.filter((event) =>
-              isSameDay(new Date(event.startTime), day),
-            )
-            const isToday = isSameDay(day, new Date())
-
-            // For month view, we dim outside days. For week view, all days are "current".
-            const isCurrentMonth =
-              view === 'week' || isSameMonth(day, startOfMonth(currentDate))
-
-            // Determine border classes
-            const isLastRow = dayIdx >= days.length - 7
-            const isLastCol = (dayIdx + 1) % 7 === 0
-
-            return (
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div className="min-w-[600px] overflow-hidden rounded-lg border bg-background sm:min-w-0">
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 border-b bg-muted/50">
+            {weekDays.map((day) => (
               <div
-                className={cn(
-                  'min-h-[140px] border-r border-b p-2 transition-colors hover:bg-muted/50',
-                  isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
-                  isToday && isCurrentMonth
-                    ? 'bg-primary/5 dark:bg-primary/10'
-                    : '',
-                  isLastRow ? 'border-b-0' : '',
-                  isLastCol ? 'border-r-0' : '',
-                )}
-                key={day.toString()}
+                className="border-r p-1.5 text-center font-medium text-muted-foreground text-[10px] uppercase last:border-r-0 sm:p-2 sm:text-xs"
+                key={day}
               >
-                <div className="mb-2 flex items-start justify-between">
-                  <span
-                    className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-full font-medium text-sm',
-                      isToday ? 'bg-primary text-primary-foreground' : '',
-                    )}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  {dayGoogleEvents.map((event) => {
-                    const eventStart = new Date(event.startTime)
-                    const eventEnd = new Date(event.endTime)
-
-                    return (
-                      <div
-                        className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-1 text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
-                        key={`google-event-${event.id}`}
-                        title={event.title}
-                      >
-                        <CalendarClock className="mt-0.5 size-3 shrink-0 text-blue-700 dark:text-blue-300" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{event.title}</p>
-                          <p className="truncate text-blue-700/80 dark:text-blue-300/80">
-                            {event.allDay
-                              ? 'All day'
-                              : `${formatTime(eventStart)} - ${formatTime(eventEnd)}`}
-                          </p>
-                        </div>
-                        {projects.length > 0 ? (
-                          <AddTimeEntryDialog
-                            buttonLabel="Create Entry"
-                            description="Prefilled from your Google Calendar event."
-                            initialValues={{
-                              date: event.startTime,
-                              description: getEventDescription(event),
-                              durationMinutes: getEventDurationMinutes(event),
-                            }}
-                            projects={projects}
-                            title="Create entry from event"
-                            trigger={
-                              <Button
-                                className="h-5 w-5 p-0 text-blue-700/80 hover:text-blue-900 dark:text-blue-300/80 dark:hover:text-blue-100"
-                                size="icon"
-                                type="button"
-                                variant="ghost"
-                              >
-                                <Plus className="size-3" />
-                              </Button>
-                            }
-                          />
-                        ) : null}
-                      </div>
-                    )
-                  })}
-                  {dayEntries.map((entry) => (
-                    <div
-                      className="flex items-center gap-1 truncate rounded bg-muted p-1 text-xs"
-                      key={entry.id}
-                      title={`${entry.project.name}: ${entry.description}`}
-                    >
-                      <ColorDot
-                        className="size-1.5"
-                        color={entry.project.area.color}
-                      />
-                      <span className="truncate font-medium">
-                        {entry.project.name}
-                      </span>
-                      <span className="shrink-0 font-mono tabular-nums opacity-70">
-                        ({Math.round((entry.durationMinutes / 60) * 10) / 10}h)
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <span className="sm:hidden">{day.charAt(0)}</span>
+                <span className="hidden sm:inline">{day}</span>
               </div>
-            )
-          })}
+            ))}
+          </div>
+
+          {/* Days */}
+          <div className="grid auto-rows-fr grid-cols-7">
+            {days.map((day, dayIdx) => {
+              const dayEntries = entries.filter((entry) =>
+                isSameDay(new Date(entry.startTime), day),
+              )
+              const dayGoogleEvents = googleEvents.filter((event) =>
+                isSameDay(new Date(event.startTime), day),
+              )
+              const isToday = isSameDay(day, new Date())
+
+              // For month view, we dim outside days. For week view, all days are "current".
+              const isCurrentMonth =
+                view === 'week' || isSameMonth(day, startOfMonth(currentDate))
+
+              // Determine border classes
+              const isLastRow = dayIdx >= days.length - 7
+              const isLastCol = (dayIdx + 1) % 7 === 0
+
+              return (
+                <div
+                  className={cn(
+                    'min-h-[80px] border-r border-b p-1 transition-colors hover:bg-muted/50 sm:min-h-[140px] sm:p-2',
+                    isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
+                    isToday && isCurrentMonth
+                      ? 'bg-primary/5 dark:bg-primary/10'
+                      : '',
+                    isLastRow ? 'border-b-0' : '',
+                    isLastCol ? 'border-r-0' : '',
+                  )}
+                  key={day.toString()}
+                >
+                  <div className="mb-1 flex items-start justify-between sm:mb-2">
+                    <span
+                      className={cn(
+                        'flex size-5 items-center justify-center rounded-full text-xs font-medium sm:size-7 sm:text-sm',
+                        isToday ? 'bg-primary text-primary-foreground' : '',
+                      )}
+                    >
+                      {format(day, 'd')}
+                    </span>
+                  </div>
+
+                  <div className="space-y-0.5 sm:space-y-1">
+                    {dayGoogleEvents.slice(0, view === 'week' ? 5 : 2).map((event) => {
+                      const eventStart = new Date(event.startTime)
+                      const eventEnd = new Date(event.endTime)
+
+                      return (
+                        <div
+                          className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] dark:border-blue-500/40 dark:bg-blue-500/10 sm:p-1 sm:text-[11px]"
+                          key={`google-event-${event.id}`}
+                          title={event.title}
+                        >
+                          <CalendarClock className="mt-0.5 hidden size-3 shrink-0 text-blue-700 dark:text-blue-300 sm:block" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium">{event.title}</p>
+                            <p className="hidden truncate text-blue-700/80 dark:text-blue-300/80 sm:block">
+                              {event.allDay
+                                ? 'All day'
+                                : `${formatTime(eventStart)} - ${formatTime(eventEnd)}`}
+                            </p>
+                          </div>
+                          {projects.length > 0 ? (
+                            <AddTimeEntryDialog
+                              buttonLabel="Create Entry"
+                              description="Prefilled from your Google Calendar event."
+                              initialValues={{
+                                date: event.startTime,
+                                description: getEventDescription(event),
+                                durationMinutes: getEventDurationMinutes(event),
+                              }}
+                              projects={projects}
+                              title="Create entry from event"
+                              trigger={
+                                <Button
+                                  className="hidden h-5 w-5 p-0 text-blue-700/80 hover:text-blue-900 dark:text-blue-300/80 dark:hover:text-blue-100 sm:flex"
+                                  size="icon"
+                                  type="button"
+                                  variant="ghost"
+                                >
+                                  <Plus className="size-3" />
+                                </Button>
+                              }
+                            />
+                          ) : null}
+                        </div>
+                      )
+                    })}
+                    {dayGoogleEvents.length > (view === 'week' ? 5 : 2) && (
+                      <p className="text-[9px] text-muted-foreground sm:text-[10px]">
+                        +{dayGoogleEvents.length - (view === 'week' ? 5 : 2)} more
+                      </p>
+                    )}
+                    {dayEntries.slice(0, view === 'week' ? 5 : 2).map((entry) => (
+                      <div
+                        className="flex items-center gap-0.5 truncate rounded bg-muted p-0.5 text-[9px] sm:gap-1 sm:p-1 sm:text-xs"
+                        key={entry.id}
+                        title={`${entry.project.name}: ${entry.description}`}
+                      >
+                        <ColorDot
+                          className="size-1.5"
+                          color={entry.project.area.color}
+                        />
+                        <span className="truncate font-medium">
+                          {entry.project.name}
+                        </span>
+                        <span className="hidden shrink-0 font-mono tabular-nums opacity-70 sm:inline">
+                          ({Math.round((entry.durationMinutes / 60) * 10) / 10}h)
+                        </span>
+                      </div>
+                    ))}
+                    {dayEntries.length > (view === 'week' ? 5 : 2) && (
+                      <p className="text-[9px] text-muted-foreground sm:text-[10px]">
+                        +{dayEntries.length - (view === 'week' ? 5 : 2)} more
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

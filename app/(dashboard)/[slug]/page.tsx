@@ -41,12 +41,12 @@ async function DashboardContent() {
         weeklyHours={stats.weeklyHours}
       />
 
-      <div className="stagger-children grid gap-6 md:grid-cols-2">
+      <div className="stagger-children grid gap-4 sm:gap-6 md:grid-cols-2">
         <TimeDistributionChart data={stats.timeByArea} />
         <DailyBreakdownChart data={stats.dailyBreakdown} />
       </div>
 
-      <div className="stagger-children grid gap-6 lg:grid-cols-3">
+      <div className="stagger-children grid gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AreasComparisonChart data={stats.areasComparison} />
         </div>
@@ -59,19 +59,19 @@ async function DashboardContent() {
 function DashboardSkeleton() {
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[
           'skeleton-stats-1',
           'skeleton-stats-2',
           'skeleton-stats-3',
           'skeleton-stats-4',
         ].map((id) => (
-          <Skeleton className="h-32" key={id} />
+          <Skeleton className="h-24 sm:h-32" key={id} />
         ))}
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Skeleton className="h-[380px]" />
-        <Skeleton className="h-[380px]" />
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+        <Skeleton className="h-[300px] sm:h-[380px]" />
+        <Skeleton className="h-[300px] sm:h-[380px]" />
       </div>
     </>
   )

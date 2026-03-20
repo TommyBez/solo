@@ -26,12 +26,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,17 +112,17 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Time Entries</CardTitle>
-          <CardDescription>Your recent time tracking records</CardDescription>
+        <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg">Time Entries</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Your recent time tracking records</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-2 sm:p-6 sm:pt-2">
           {entries.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">
+            <p className="py-6 text-center text-muted-foreground text-sm sm:py-8">
               No time entries yet. Start tracking!
             </p>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {sortedDates.map((dateKey) => {
                 const dayEntries = entriesByDate[dateKey]
                 const totalMinutes = dayEntries.reduce(
@@ -131,13 +131,14 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                 )
 
                 return (
-                  <div className="space-y-3" key={dateKey}>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-sm">
-                        {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
+                  <div className="space-y-2 sm:space-y-3" key={dateKey}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-medium text-xs sm:text-sm">
+                        <span className="sm:hidden">{formatDate(dateKey, 'EEE, MMM d')}</span>
+                        <span className="hidden sm:inline">{formatDate(dateKey, 'EEEE, MMMM d, yyyy')}</span>
                       </h3>
                       <Badge
-                        className="font-mono tabular-nums"
+                        className="font-mono text-[10px] tabular-nums sm:text-xs"
                         variant="secondary"
                       >
                         {formatDuration(totalMinutes)}
@@ -146,39 +147,42 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                     <div className="space-y-2">
                       {dayEntries.map((entry) => (
                         <div
-                          className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                          className="flex items-start justify-between gap-2 rounded-lg border p-2 sm:gap-4 sm:p-3"
                           key={entry.id}
                         >
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
                               <ColorDot color={entry.project.area.color} />
-                              <span className="font-medium text-sm">
+                              <span className="truncate font-medium text-xs sm:text-sm">
                                 {entry.project.name}
                               </span>
                             </div>
                             {entry.description ? (
-                              <p className="text-muted-foreground text-sm">
+                              <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm">
                                 {entry.description}
                               </p>
                             ) : null}
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-muted-foreground text-[10px] sm:text-xs">
                               {formatTime(entry.startTime)}
                               {entry.endTime
                                 ? ` - ${formatTime(entry.endTime)}`
                                 : null}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                             <Badge
-                              className="font-mono tabular-nums"
+                              className="hidden font-mono tabular-nums sm:inline-flex"
                               variant="outline"
                             >
                               {formatDuration(entry.durationMinutes)}
                             </Badge>
+                            <span className="font-mono text-[10px] tabular-nums text-muted-foreground sm:hidden">
+                              {formatDuration(entry.durationMinutes)}
+                            </span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
-                                  className="size-8"
+                                  className="size-8 sm:size-8"
                                   size="icon"
                                   variant="ghost"
                                 >
@@ -214,35 +218,37 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
         </CardContent>
       </Card>
 
-      <Dialog
+      <ResponsiveDialog
         onOpenChange={(open) => !open && setEditEntry(null)}
         open={!!editEntry}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Time Entry</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Edit Time Entry</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Update the time entry details.
-            </DialogDescription>
-          </DialogHeader>
-          {editEntry ? (
-            <TimeEntryForm
-              entry={{
-                id: editEntry.id,
-                projectId: editEntry.projectId,
-                description: editEntry.description,
-                startTime: editEntry.startTime,
-                endTime: editEntry.endTime,
-                durationMinutes: editEntry.durationMinutes,
-                billable: editEntry.billable,
-                createdAt: editEntry.createdAt,
-              }}
-              onSuccess={() => setEditEntry(null)}
-              projects={projects}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="px-4 pb-4 md:px-0 md:pb-0">
+            {editEntry ? (
+              <TimeEntryForm
+                entry={{
+                  id: editEntry.id,
+                  projectId: editEntry.projectId,
+                  description: editEntry.description,
+                  startTime: editEntry.startTime,
+                  endTime: editEntry.endTime,
+                  durationMinutes: editEntry.durationMinutes,
+                  billable: editEntry.billable,
+                  createdAt: editEntry.createdAt,
+                }}
+                onSuccess={() => setEditEntry(null)}
+                projects={projects}
+              />
+            ) : null}
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <AlertDialog
         onOpenChange={(open) => !open && setDeleteEntryId(null)}
