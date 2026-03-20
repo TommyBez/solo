@@ -1,6 +1,7 @@
 'use client'
 
 import type * as React from 'react'
+import { createContext, useContext } from 'react'
 import {
   Dialog,
   DialogClose,
@@ -21,7 +22,15 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
-import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
+
+type ResponsiveMode = 'dialog' | 'drawer'
+
+const ResponsiveDialogContext = createContext<ResponsiveMode>('dialog')
+
+function useResponsiveMode() {
+  return useContext(ResponsiveDialogContext)
+}
 
 interface ResponsiveDialogProps {
   children: React.ReactNode
@@ -34,21 +43,24 @@ function ResponsiveDialog({
   open,
   onOpenChange,
 }: ResponsiveDialogProps) {
-  return (
-    <>
-      {/* Desktop: Dialog */}
-      <div className="hidden md:contents">
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          {children}
-        </Dialog>
-      </div>
-      {/* Mobile: Drawer */}
-      <div className="contents md:hidden">
+  const isMobile = useIsMobile()
+
+  if (isMobile) {
+    return (
+      <ResponsiveDialogContext.Provider value="drawer">
         <Drawer open={open} onOpenChange={onOpenChange}>
           {children}
         </Drawer>
-      </div>
-    </>
+      </ResponsiveDialogContext.Provider>
+    )
+  }
+
+  return (
+    <ResponsiveDialogContext.Provider value="dialog">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {children}
+      </Dialog>
+    </ResponsiveDialogContext.Provider>
   )
 }
 
@@ -57,15 +69,20 @@ function ResponsiveDialogTrigger({
   className,
   ...props
 }: React.ComponentProps<typeof DialogTrigger>) {
-  return (
-    <>
-      <DialogTrigger className={cn('hidden md:inline-flex', className)} {...props}>
-        {children}
-      </DialogTrigger>
-      <DrawerTrigger className={cn('md:hidden', className)} {...props}>
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return (
+      <DrawerTrigger className={className} {...props}>
         {children}
       </DrawerTrigger>
-    </>
+    )
+  }
+
+  return (
+    <DialogTrigger className={className} {...props}>
+      {children}
+    </DialogTrigger>
   )
 }
 
@@ -74,15 +91,16 @@ function ResponsiveDialogContent({
   className,
   ...props
 }: React.ComponentProps<typeof DialogContent>) {
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return <DrawerContent className={className}>{children}</DrawerContent>
+  }
+
   return (
-    <>
-      <DialogContent className={cn('hidden md:block', className)} {...props}>
-        {children}
-      </DialogContent>
-      <DrawerContent className={cn('md:hidden', className)}>
-        {children}
-      </DrawerContent>
-    </>
+    <DialogContent className={className} {...props}>
+      {children}
+    </DialogContent>
   )
 }
 
@@ -91,15 +109,20 @@ function ResponsiveDialogHeader({
   className,
   ...props
 }: React.ComponentProps<typeof DialogHeader>) {
-  return (
-    <>
-      <DialogHeader className={cn('hidden md:block', className)} {...props}>
-        {children}
-      </DialogHeader>
-      <DrawerHeader className={cn('md:hidden', className)} {...props}>
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return (
+      <DrawerHeader className={className} {...props}>
         {children}
       </DrawerHeader>
-    </>
+    )
+  }
+
+  return (
+    <DialogHeader className={className} {...props}>
+      {children}
+    </DialogHeader>
   )
 }
 
@@ -108,15 +131,20 @@ function ResponsiveDialogFooter({
   className,
   ...props
 }: React.ComponentProps<typeof DialogFooter>) {
-  return (
-    <>
-      <DialogFooter className={cn('hidden md:flex', className)} {...props}>
-        {children}
-      </DialogFooter>
-      <DrawerFooter className={cn('md:hidden', className)} {...props}>
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return (
+      <DrawerFooter className={className} {...props}>
         {children}
       </DrawerFooter>
-    </>
+    )
+  }
+
+  return (
+    <DialogFooter className={className} {...props}>
+      {children}
+    </DialogFooter>
   )
 }
 
@@ -125,15 +153,20 @@ function ResponsiveDialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof DialogTitle>) {
-  return (
-    <>
-      <DialogTitle className={cn('hidden md:block', className)} {...props}>
-        {children}
-      </DialogTitle>
-      <DrawerTitle className={cn('md:hidden', className)} {...props}>
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return (
+      <DrawerTitle className={className} {...props}>
         {children}
       </DrawerTitle>
-    </>
+    )
+  }
+
+  return (
+    <DialogTitle className={className} {...props}>
+      {children}
+    </DialogTitle>
   )
 }
 
@@ -142,15 +175,20 @@ function ResponsiveDialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof DialogDescription>) {
-  return (
-    <>
-      <DialogDescription className={cn('hidden md:block', className)} {...props}>
-        {children}
-      </DialogDescription>
-      <DrawerDescription className={cn('md:hidden', className)} {...props}>
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return (
+      <DrawerDescription className={className} {...props}>
         {children}
       </DrawerDescription>
-    </>
+    )
+  }
+
+  return (
+    <DialogDescription className={className} {...props}>
+      {children}
+    </DialogDescription>
   )
 }
 
@@ -159,15 +197,20 @@ function ResponsiveDialogClose({
   className,
   ...props
 }: React.ComponentProps<typeof DialogClose>) {
-  return (
-    <>
-      <DialogClose className={cn('hidden md:inline-flex', className)} {...props}>
-        {children}
-      </DialogClose>
-      <DrawerClose className={cn('md:hidden', className)} {...props}>
+  const mode = useResponsiveMode()
+
+  if (mode === 'drawer') {
+    return (
+      <DrawerClose className={className} {...props}>
         {children}
       </DrawerClose>
-    </>
+    )
+  }
+
+  return (
+    <DialogClose className={className} {...props}>
+      {children}
+    </DialogClose>
   )
 }
 
