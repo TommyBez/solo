@@ -239,12 +239,8 @@ export function CalendarView({
                       const eventStart = new Date(event.startTime)
                       const eventEnd = new Date(event.endTime)
 
-                      return (
-                        <div
-                          className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] dark:border-blue-500/40 dark:bg-blue-500/10 sm:p-1 sm:text-[11px]"
-                          key={`google-event-${event.id}`}
-                          title={event.title}
-                        >
+                      const eventContent = (
+                        <>
                           <CalendarClock className="mt-0.5 hidden size-3 shrink-0 text-blue-700 dark:text-blue-300 sm:block" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{event.title}</p>
@@ -254,29 +250,49 @@ export function CalendarView({
                                 : `${formatTime(eventStart)} - ${formatTime(eventEnd)}`}
                             </p>
                           </div>
+                          <Plus className="size-3 shrink-0 text-blue-700/80 opacity-0 transition-opacity group-hover:opacity-100 dark:text-blue-300/80 sm:hidden" />
                           {projects.length > 0 ? (
-                            <AddTimeEntryDialog
-                              buttonLabel="Create Entry"
-                              description="Prefilled from your Google Calendar event."
-                              initialValues={{
-                                date: event.startTime,
-                                description: getEventDescription(event),
-                                durationMinutes: getEventDurationMinutes(event),
-                              }}
-                              projects={projects}
-                              title="Create entry from event"
-                              trigger={
-                                <Button
-                                  className="hidden h-5 w-5 p-0 text-blue-700/80 hover:text-blue-900 dark:text-blue-300/80 dark:hover:text-blue-100 sm:flex"
-                                  size="icon"
-                                  type="button"
-                                  variant="ghost"
-                                >
-                                  <Plus className="size-3" />
-                                </Button>
-                              }
-                            />
+                            <Button
+                              className="hidden h-5 w-5 p-0 text-blue-700/80 hover:text-blue-900 dark:text-blue-300/80 dark:hover:text-blue-100 sm:flex"
+                              size="icon"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <Plus className="size-3" />
+                            </Button>
                           ) : null}
+                        </>
+                      )
+
+                      return projects.length > 0 ? (
+                        <AddTimeEntryDialog
+                          buttonLabel="Create Entry"
+                          description="Prefilled from your Google Calendar event."
+                          initialValues={{
+                            date: event.startTime,
+                            description: getEventDescription(event),
+                            durationMinutes: getEventDurationMinutes(event),
+                          }}
+                          key={`google-event-${event.id}`}
+                          projects={projects}
+                          title="Create entry from event"
+                          trigger={
+                            <div
+                              className="group flex cursor-pointer items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] active:opacity-70 dark:border-blue-500/40 dark:bg-blue-500/10 sm:cursor-default sm:p-1 sm:text-[11px]"
+                              role="button"
+                              title={event.title}
+                            >
+                              {eventContent}
+                            </div>
+                          }
+                        />
+                      ) : (
+                        <div
+                          className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] dark:border-blue-500/40 dark:bg-blue-500/10 sm:p-1 sm:text-[11px]"
+                          key={`google-event-${event.id}`}
+                          title={event.title}
+                        >
+                          {eventContent}
                         </div>
                       )
                     })}
