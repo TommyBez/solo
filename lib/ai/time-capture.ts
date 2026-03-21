@@ -142,7 +142,7 @@ export async function dismissSuggestion(params: {
       sourceEventId: params.sourceEventId,
     })
 
-    revalidateTag('ai-suggestions')
+    revalidateTag('ai-suggestions', 'max')
 
     return { success: true }
   } catch (error) {
@@ -151,11 +151,4 @@ export async function dismissSuggestion(params: {
   }
 }
 
-// Generate a suggestion hash for deduplication
-export function generateSuggestionHash(params: {
-  type: SuggestionType
-  sourceId: string
-  date: string
-}): string {
-  return `${params.type}:${params.sourceId}:${params.date}`
-}
+

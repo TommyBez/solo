@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
-import { generateSuggestionHash } from '@/lib/ai/time-capture'
+import { generateSuggestionHash } from '@/lib/ai/utils'
 import { EntrySuggestionCard } from './entry-suggestion-card'
 
 interface SuggestionsStripProps {

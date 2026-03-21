@@ -4,11 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createTimeEntry } from '@/lib/actions/time-entries'
-import {
-  suggestEntryFromEvent,
-  dismissSuggestion,
-  generateSuggestionHash,
-} from '@/lib/ai/time-capture'
+import { suggestEntryFromEvent, dismissSuggestion } from '@/lib/ai/time-capture'
+import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { EntrySuggestion, SuggestionStatus } from '@/lib/ai/schemas'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import type { Area, Project } from '@/lib/db/schema'

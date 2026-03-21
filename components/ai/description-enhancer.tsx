@@ -3,11 +3,8 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { updateTimeEntry } from '@/lib/actions/time-entries'
-import {
-  enhanceDescription,
-  dismissSuggestion,
-  generateSuggestionHash,
-} from '@/lib/ai/time-capture'
+import { enhanceDescription, dismissSuggestion } from '@/lib/ai/time-capture'
+import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { DescriptionEnhancement, SuggestionStatus } from '@/lib/ai/schemas'
 import { SuggestionCard } from './suggestion-card'
 
