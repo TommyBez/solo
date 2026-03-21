@@ -14,6 +14,7 @@ import {
   type SuggestionType,
 } from './schemas'
 import { buildDescriptionPrompt, buildEntrySuggestionPrompt } from './prompts'
+import { AI_MODELS } from './models'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 
 // Enhance a vague or empty description
@@ -47,7 +48,7 @@ export async function enhanceDescription(params: {
     })
 
     const { output } = await generateText({
-      model: 'anthropic/claude-sonnet-4',
+      model: AI_MODELS.descriptionEnhancement,
       output: Output.object({ schema: descriptionEnhancementSchema }),
       prompt,
       maxOutputTokens: 200,
@@ -111,7 +112,7 @@ export async function suggestEntryFromEvent(params: {
     })
 
     const { output } = await generateText({
-      model: 'anthropic/claude-sonnet-4',
+      model: AI_MODELS.entrySuggestion,
       output: Output.object({ schema: entrySuggestionSchema }),
       prompt,
       maxOutputTokens: 300,
