@@ -175,6 +175,38 @@ export const organizationSettingsRelations = relations(
   }),
 )
 
+// AI Suggestion Dismissals - tracks dismissed AI suggestions to avoid re-surfacing
+export const aiSuggestionDismissals = pgTable('ai_suggestion_dismissals', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  suggestionType: varchar('suggestion_type', { length: 50 }).notNull(),
+  // Values: 'missing_entry' | 'description_enhancement' | 'gap_audit'
+  suggestionHash: varchar('suggestion_hash', { length: 255 }).notNull(),
+  // Format: 'type:sourceId:date' for deduplication
+  sourceEventId: varchar('source_event_id', { length: 255 }),
+  // Google Calendar event ID if applicable
+  dismissedAt: timestamp('dismissed_at').notNull().defaultNow(),
+})
+
+export const aiSuggestionDismissalsRelations = relations(
+  aiSuggestionDismissals,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [aiSuggestionDismissals.userId],
+      references: [user.id],
+    }),
+    organization: one(organization, {
+      fields: [aiSuggestionDismissals.organizationId],
+      references: [organization.id],
+    }),
+  })
+)
+
 // Types
 export type Client = typeof clients.$inferSelect
 export type NewClient = typeof clients.$inferInsert
@@ -188,3 +220,5 @@ export type UserSettings = typeof userSettings.$inferSelect
 export type NewUserSettings = typeof userSettings.$inferInsert
 export type OrganizationSettings = typeof organizationSettings.$inferSelect
 export type NewOrganizationSettings = typeof organizationSettings.$inferInsert
+export type AiSuggestionDismissal = typeof aiSuggestionDismissals.$inferSelect
+export type NewAiSuggestionDismissal = typeof aiSuggestionDismissals.$inferInsert

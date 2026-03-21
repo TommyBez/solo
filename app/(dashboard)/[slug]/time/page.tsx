@@ -16,6 +16,9 @@ import { GoogleCalendarBanner } from '@/components/time/google-calendar-banner'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
+import { SuggestionsStrip } from '@/components/ai/suggestions-strip'
+import { DailyCatchupModule } from '@/components/ai/daily-catchup-module'
+import { WeeklyAuditBanner } from '@/components/ai/weekly-audit-banner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
@@ -24,8 +27,10 @@ import {
   getGoogleCalendarStatus,
 } from '@/lib/queries/google-calendar'
 import { getProjects } from '@/lib/queries/projects'
+import { getAreas } from '@/lib/queries/areas'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
+import { getDismissedSuggestions } from '@/lib/queries/ai-suggestions'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -82,20 +87,57 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
-  const [entries, projects, googleCalendarStatus, googleCalendarEvents, slug] =
-    await Promise.all([
-      getTimeEntriesForDateRange(startDate, endDate),
-      getProjects(),
-      getGoogleCalendarStatus(),
-      getGoogleCalendarEventsForDateRange(startDate, endDate),
-      getActiveOrganizationSlug(),
-    ])
+  const [
+    entries,
+    projects,
+    googleCalendarStatus,
+    googleCalendarEvents,
+    slug,
+    dismissedSuggestions,
+    areas,
+  ] = await Promise.all([
+    getTimeEntriesForDateRange(startDate, endDate),
+    getProjects(),
+    getGoogleCalendarStatus(),
+    getGoogleCalendarEventsForDateRange(startDate, endDate),
+    getActiveOrganizationSlug(),
+    getDismissedSuggestions(),
+    getAreas(),
+  ])
+
+  const dismissedHashes = dismissedSuggestions.map((d) => d.suggestionHash)
 
   const activeProjects = projects.filter((p) => p.status === 'active')
+
+  // Prepare areas data for weekly audit
+  const areasWithExpectedHours = areas.map((area) => ({
+    id: area.id,
+    name: area.name,
+    expectedHoursPerWeek: area.expectedHoursPerWeek,
+    color: area.color,
+  }))
 
   return (
     <>
       {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
+
+      {/* Weekly Audit Banner - shows on Friday/Sunday */}
+      <WeeklyAuditBanner
+        weekEntries={entries}
+        weekCalendarEvents={googleCalendarEvents}
+        areasWithExpectedHours={areasWithExpectedHours}
+        weekStartsOn={weekStartsOn as 0 | 1}
+      />
+
+      {/* AI Suggestions Strip - shows untracked calendar events */}
+      {googleCalendarStatus.connected && googleCalendarEvents.length > 0 && (
+        <SuggestionsStrip
+          entries={entries}
+          calendarEvents={googleCalendarEvents}
+          projects={activeProjects}
+          dismissedHashes={dismissedHashes}
+        />
+      )}
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         {viewParam === 'week' ? (
@@ -133,6 +175,15 @@ async function TimeTrackingContent({
             <TimerWidget projects={activeProjects} />
           </div>
           <div className="lg:col-span-2">
+            {/* Daily Catch-Up Module - shows at end of day */}
+            {googleCalendarStatus.connected && (
+              <DailyCatchupModule
+                todayEntries={entries}
+                todayCalendarEvents={googleCalendarEvents}
+                projects={activeProjects}
+                dismissedHashes={dismissedHashes}
+              />
+            )}
             <TimeEntriesList entries={entries} projects={activeProjects} />
           </div>
         </div>
