@@ -184,8 +184,6 @@ export function DailyCatchupModule({
     }
   }
 
-  const totalSuggestions = untrackedEvents.length + vagueEntries.length
-
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">

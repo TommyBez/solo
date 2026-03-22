@@ -4,7 +4,7 @@ import { generateText, Output } from 'ai'
 import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { aiSuggestionDismissals, timeEntries, projects, areas } from '@/lib/db/schema'
-import { eq, and, desc, gte, lte } from 'drizzle-orm'
+import { eq, and, desc, gte, inArray } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
 import {
   descriptionEnhancementSchema,
@@ -101,25 +101,22 @@ export async function suggestEntryFromEvent(params: {
     weekAgo.setDate(weekAgo.getDate() - 7)
 
     const orgProjectIds = orgProjects.map((p) => p.id)
-    const recentEntries = await db.query.timeEntries.findMany({
-      where: and(
-        gte(timeEntries.startTime, weekAgo),
-        // Filter to only entries from org's projects
-        orgProjectIds.length > 0
-          ? eq(timeEntries.projectId, orgProjectIds[0]) // Simplified; ideally use inArray
-          : undefined
-      ),
-      orderBy: [desc(timeEntries.startTime)],
-      limit: 10,
-      with: {
-        project: true,
-      },
-    })
 
-    // Additional filter to ensure only org entries
-    const filteredRecentEntries = recentEntries.filter((e) =>
-      orgProjectIds.includes(e.projectId)
-    )
+    // Only query if we have org projects
+    const recentEntries =
+      orgProjectIds.length > 0
+        ? await db.query.timeEntries.findMany({
+            where: and(
+              gte(timeEntries.startTime, weekAgo),
+              inArray(timeEntries.projectId, orgProjectIds)
+            ),
+            orderBy: [desc(timeEntries.startTime)],
+            limit: 10,
+            with: {
+              project: true,
+            },
+          })
+        : []
 
     const prompt = buildEntrySuggestionPrompt({
       calendarEvent: params.calendarEvent,
@@ -128,7 +125,7 @@ export async function suggestEntryFromEvent(params: {
         name: p.name,
         areaName: p.area.name,
       })),
-      recentEntries: filteredRecentEntries.map((e) => ({
+      recentEntries: recentEntries.map((e) => ({
         projectName: e.project.name,
         description: e.description,
       })),
