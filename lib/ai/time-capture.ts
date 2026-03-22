@@ -26,7 +26,18 @@ export async function enhanceDescription(params: {
   durationMinutes: number
 }): Promise<DescriptionEnhancement | null> {
   try {
-    await requireOrganization()
+    const { organizationId } = await requireOrganization()
+
+    // Verify project belongs to current organization
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, params.projectId),
+      with: { area: true },
+    })
+
+    if (!project || project.area.organizationId !== organizationId) {
+      console.error('Project not found or does not belong to organization')
+      return null
+    }
 
     // Get recent entries for this project for context
     const recentEntries = await db.query.timeEntries.findMany({

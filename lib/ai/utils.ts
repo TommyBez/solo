@@ -12,12 +12,13 @@ export function generateSuggestionHash(params: {
 // Check if a calendar event overlaps with a time entry
 export function eventsOverlap(
   event: { startTime: Date; endTime: Date },
-  entry: { startTime: Date; endTime: Date | null }
+  entry: { startTime: Date; endTime: Date | null; durationMinutes: number }
 ): boolean {
   const eventStart = event.startTime.getTime()
   const eventEnd = event.endTime.getTime()
   const entryStart = entry.startTime.getTime()
-  const entryEnd = entry.endTime?.getTime() ?? entryStart + 60 * 60 * 1000 // Default 1 hour
+  const entryEnd =
+    entry.endTime?.getTime() ?? entryStart + entry.durationMinutes * 60 * 1000
 
   return eventStart < entryEnd && eventEnd > entryStart
 }

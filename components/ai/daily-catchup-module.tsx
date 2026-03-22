@@ -152,12 +152,18 @@ export function DailyCatchupModule({
         try {
           const suggestion = await suggestEntryFromEvent({ calendarEvent: event })
           if (suggestion) {
+            // Use calendar event times as source of truth and derive duration
+            const eventStart = new Date(event.startTime)
+            const eventEnd = new Date(event.endTime)
+            const derivedDurationMinutes = Math.round(
+              (eventEnd.getTime() - eventStart.getTime()) / 60000
+            )
             await createTimeEntry({
               projectId: suggestion.projectId,
               description: suggestion.description,
-              startTime: new Date(event.startTime),
-              endTime: new Date(event.endTime),
-              durationMinutes: suggestion.durationMinutes,
+              startTime: eventStart,
+              endTime: eventEnd,
+              durationMinutes: derivedDurationMinutes,
             })
             return true
           }
