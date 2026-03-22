@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
-import { generateSuggestionHash } from '@/lib/ai/utils'
+import { generateSuggestionHash, timeRangesOverlap } from '@/lib/ai/utils'
 import { EntrySuggestionCard } from './entry-suggestion-card'
 
 interface SuggestionsStripProps {
@@ -11,16 +11,6 @@ interface SuggestionsStripProps {
   calendarEvents: GoogleCalendarEvent[]
   projects: (Project & { area: Area })[]
   dismissedHashes: string[]
-}
-
-// Check if two time ranges overlap
-function timeRangesOverlap(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date
-): boolean {
-  return start1 < end2 && end1 > start2
 }
 
 // Find calendar events that don't have matching time entries
@@ -83,13 +73,23 @@ export function SuggestionsStrip({
     return null
   }
 
-  function handleDismiss(eventId: string) {
-    setLocalDismissed((prev) => new Set([...prev, eventId]))
+  function handleDismiss(event: GoogleCalendarEvent) {
+    const hash = generateSuggestionHash({
+      type: 'missing_entry',
+      sourceId: event.id,
+      date: event.startTime.split('T')[0],
+    })
+    setLocalDismissed((prev) => new Set([...prev, hash]))
   }
 
-  function handleAccept(eventId: string) {
-    // Remove from local list after accept
-    setLocalDismissed((prev) => new Set([...prev, eventId]))
+  function handleAccept(event: GoogleCalendarEvent) {
+    // Remove from local list after accept using same hash format
+    const hash = generateSuggestionHash({
+      type: 'missing_entry',
+      sourceId: event.id,
+      date: event.startTime.split('T')[0],
+    })
+    setLocalDismissed((prev) => new Set([...prev, hash]))
   }
 
   return (
@@ -108,8 +108,8 @@ export function SuggestionsStrip({
             key={event.id}
             calendarEvent={event}
             projects={projects}
-            onAccept={() => handleAccept(event.id)}
-            onDismiss={() => handleDismiss(event.id)}
+            onAccept={() => handleAccept(event)}
+            onDismiss={() => handleDismiss(event)}
           />
         ))}
       </div>

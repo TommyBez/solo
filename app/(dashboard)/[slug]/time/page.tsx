@@ -1,7 +1,9 @@
 import {
+  endOfDay,
   endOfMonth,
   endOfWeek,
   parseISO,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
@@ -87,6 +89,10 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
+  // Calculate today's date range for DailyCatchupModule
+  const todayStart = startOfDay(new Date())
+  const todayEnd = endOfDay(new Date())
+
   const [
     entries,
     projects,
@@ -95,6 +101,8 @@ async function TimeTrackingContent({
     slug,
     dismissedSuggestions,
     areas,
+    todayEntries,
+    todayCalendarEvents,
   ] = await Promise.all([
     getTimeEntriesForDateRange(startDate, endDate),
     getProjects(),
@@ -103,6 +111,8 @@ async function TimeTrackingContent({
     getActiveOrganizationSlug(),
     getDismissedSuggestions(),
     getAreas(),
+    getTimeEntriesForDateRange(todayStart, todayEnd),
+    getGoogleCalendarEventsForDateRange(todayStart, todayEnd),
   ])
 
   const dismissedHashes = dismissedSuggestions.map((d) => d.suggestionHash)
@@ -178,8 +188,8 @@ async function TimeTrackingContent({
             {/* Daily Catch-Up Module - shows at end of day */}
             {googleCalendarStatus.connected && (
               <DailyCatchupModule
-                todayEntries={entries}
-                todayCalendarEvents={googleCalendarEvents}
+                todayEntries={todayEntries}
+                todayCalendarEvents={todayCalendarEvents}
                 projects={activeProjects}
                 dismissedHashes={dismissedHashes}
               />

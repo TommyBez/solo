@@ -34,7 +34,7 @@ export const gapAuditSchema = z.object({
       date: z.string().describe('ISO date string'),
       description: z.string().describe('Description of the likely missing work'),
       likelyProjectId: z.number().nullable().describe('Suggested project ID if known'),
-      likelyDurationMinutes: z.number().describe('Estimated duration in minutes'),
+      likelyDurationMinutes: z.number().positive().describe('Estimated duration in minutes'),
     })
   ),
   vagueDescriptions: z.array(

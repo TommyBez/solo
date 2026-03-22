@@ -29,9 +29,13 @@ export function EntrySuggestionCard({
   const [suggestion, setSuggestion] = useState<EntrySuggestion | null>(null)
 
   useEffect(() => {
+    let isMounted = true
+
     async function fetchSuggestion() {
       setStatus('loading')
       const result = await suggestEntryFromEvent({ calendarEvent })
+
+      if (!isMounted) return
 
       if (result) {
         setSuggestion(result)
@@ -42,6 +46,10 @@ export function EntrySuggestionCard({
     }
 
     fetchSuggestion()
+
+    return () => {
+      isMounted = false
+    }
   }, [calendarEvent])
 
   const selectedProject = suggestion
@@ -96,16 +104,19 @@ export function EntrySuggestionCard({
     onDismiss()
   }
 
-  function handleRetry() {
+  async function handleRetry() {
     setStatus('loading')
-    suggestEntryFromEvent({ calendarEvent }).then((result) => {
+    try {
+      const result = await suggestEntryFromEvent({ calendarEvent })
       if (result) {
         setSuggestion(result)
         setStatus('default')
       } else {
         setStatus('error')
       }
-    })
+    } catch {
+      setStatus('error')
+    }
   }
 
   // Determine evidence based on confidence and reasoning

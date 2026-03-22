@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { aiSuggestionDismissals } from '@/lib/db/schema'
 import { requireOrganization } from '@/lib/auth/session'
 
-async function getDismissedSuggestionsCached(
+async function getDismissedSuggestionsCachedWithDate(
   userId: string,
   organizationId: string,
   since: Date
@@ -22,16 +22,31 @@ async function getDismissedSuggestionsCached(
   })
 }
 
-export async function getDismissedSuggestions(
-  since: Date = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+async function getDismissedSuggestionsCachedAll(
+  userId: string,
+  organizationId: string
 ) {
-  const { session, organizationId } = await requireOrganization()
-  return getDismissedSuggestionsCached(session.user.id, organizationId, since)
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('ai-suggestions')
+
+  return db.query.aiSuggestionDismissals.findMany({
+    where: and(
+      eq(aiSuggestionDismissals.userId, userId),
+      eq(aiSuggestionDismissals.organizationId, organizationId)
+    ),
+  })
 }
 
-export async function getDismissedHashes(
-  since: Date = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-): Promise<Set<string>> {
+export async function getDismissedSuggestions(since?: Date) {
+  const { session, organizationId } = await requireOrganization()
+  if (since) {
+    return getDismissedSuggestionsCachedWithDate(session.user.id, organizationId, since)
+  }
+  return getDismissedSuggestionsCachedAll(session.user.id, organizationId)
+}
+
+export async function getDismissedHashes(since?: Date): Promise<Set<string>> {
   const dismissals = await getDismissedSuggestions(since)
   return new Set(dismissals.map((d) => d.suggestionHash))
 }

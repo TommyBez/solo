@@ -1,10 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { startOfWeek, endOfWeek, getDay, isWithinInterval, format } from 'date-fns'
+import { getDay } from 'date-fns'
 import { ChevronRight, ClipboardCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { isDescriptionVague } from '@/lib/ai/prompts'
+import { timeRangesOverlap } from '@/lib/ai/utils'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import type { Area, TimeEntry } from '@/lib/db/schema'
 
@@ -13,16 +14,6 @@ interface WeeklyAuditBannerProps {
   weekCalendarEvents: GoogleCalendarEvent[]
   areasWithExpectedHours: Array<{ id: number; name: string; expectedHoursPerWeek: number; color: string }>
   weekStartsOn?: 0 | 1
-}
-
-// Check if two time ranges overlap
-function timeRangesOverlap(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date
-): boolean {
-  return start1 < end2 && end1 > start2
 }
 
 // Count untracked calendar events
@@ -55,24 +46,6 @@ function countUntrackedEvents(
 // Count entries with vague descriptions
 function countVagueDescriptions(entries: TimeEntry[]): number {
   return entries.filter((entry) => isDescriptionVague(entry.description)).length
-}
-
-// Calculate tracked hours by area
-function calculateTrackedHoursByArea(
-  entries: TimeEntry[],
-  areasMap: Map<number, number>
-): Map<number, number> {
-  const hoursByArea = new Map<number, number>()
-
-  for (const entry of entries) {
-    const areaId = areasMap.get(entry.projectId)
-    if (areaId !== undefined) {
-      const current = hoursByArea.get(areaId) || 0
-      hoursByArea.set(areaId, current + entry.durationMinutes / 60)
-    }
-  }
-
-  return hoursByArea
 }
 
 // Check if it's a weekly review time (Friday 2PM+ or all day Sunday)
@@ -113,23 +86,8 @@ export function WeeklyAuditBanner({
     const untrackedEvents = countUntrackedEvents(weekCalendarEvents, weekEntries)
     const vagueDescriptions = countVagueDescriptions(weekEntries)
 
-    // Build project to area mapping (would need actual project data)
-    // For now, we'll skip area tracking since we don't have project->area in entries
+    // TODO: Implement area tracking when project->area mapping is available in entries
     const underTrackedAreas: GapInfo['underTrackedAreas'] = []
-
-    // If we had project data with area info, we could calculate:
-    // const trackedByArea = calculateTrackedHoursByArea(weekEntries, projectToAreaMap)
-    // areasWithExpectedHours.forEach(area => {
-    //   const tracked = trackedByArea.get(area.id) || 0
-    //   if (tracked < area.expectedHoursPerWeek * 0.8) {
-    //     underTrackedAreas.push({
-    //       name: area.name,
-    //       color: area.color,
-    //       expected: area.expectedHoursPerWeek,
-    //       actual: Math.round(tracked * 10) / 10,
-    //     })
-    //   }
-    // })
 
     return { untrackedEvents, vagueDescriptions, underTrackedAreas }
   }, [weekCalendarEvents, weekEntries, areasWithExpectedHours])

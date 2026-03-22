@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createTimeEntry } from '@/lib/actions/time-entries'
 import { suggestEntryFromEvent } from '@/lib/ai/time-capture'
-import { generateSuggestionHash } from '@/lib/ai/utils'
+import { generateSuggestionHash, timeRangesOverlap } from '@/lib/ai/utils'
 import { isDescriptionVague } from '@/lib/ai/prompts'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
@@ -21,16 +21,6 @@ interface DailyCatchupModuleProps {
   todayCalendarEvents: GoogleCalendarEvent[]
   projects: (Project & { area: Area })[]
   dismissedHashes: string[]
-}
-
-// Check if two time ranges overlap
-function timeRangesOverlap(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date
-): boolean {
-  return start1 < end2 && end1 > start2
 }
 
 // Find untracked events for today
@@ -137,12 +127,22 @@ export function DailyCatchupModule({
     return null
   }
 
-  function handleDismiss(eventId: string) {
-    setLocalDismissed((prev) => new Set([...prev, eventId]))
+  function handleDismiss(event: GoogleCalendarEvent) {
+    const hash = generateSuggestionHash({
+      type: 'missing_entry',
+      sourceId: event.id,
+      date: event.startTime.split('T')[0],
+    })
+    setLocalDismissed((prev) => new Set([...prev, hash]))
   }
 
-  function handleAccept(eventId: string) {
-    setLocalDismissed((prev) => new Set([...prev, eventId]))
+  function handleAccept(event: GoogleCalendarEvent) {
+    const hash = generateSuggestionHash({
+      type: 'missing_entry',
+      sourceId: event.id,
+      date: event.startTime.split('T')[0],
+    })
+    setLocalDismissed((prev) => new Set([...prev, hash]))
   }
 
   async function handleAcceptAll() {
@@ -172,9 +172,10 @@ export function DailyCatchupModule({
     if (successCount > 0) {
       toast.success(`Created ${successCount} time ${successCount === 1 ? 'entry' : 'entries'}`)
       router.refresh()
+      setIsHidden(true)
+    } else {
+      toast.error('Failed to create time entries. Please try adding them manually.')
     }
-
-    setIsHidden(true)
   }
 
   const totalSuggestions = untrackedEvents.length + vagueEntries.length
@@ -206,8 +207,8 @@ export function DailyCatchupModule({
                   key={event.id}
                   calendarEvent={event}
                   projects={projects}
-                  onAccept={() => handleAccept(event.id)}
-                  onDismiss={() => handleDismiss(event.id)}
+                  onAccept={() => handleAccept(event)}
+                  onDismiss={() => handleDismiss(event)}
                 />
               ))}
             </div>

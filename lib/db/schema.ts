@@ -7,6 +7,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
 } from 'drizzle-orm/pg-core'
 import { organization, user } from '@/lib/auth/schema'
@@ -191,7 +192,9 @@ export const aiSuggestionDismissals = pgTable('ai_suggestion_dismissals', {
   sourceEventId: varchar('source_event_id', { length: 255 }),
   // Google Calendar event ID if applicable
   dismissedAt: timestamp('dismissed_at').notNull().defaultNow(),
-})
+}, (table) => [
+  unique('ai_suggestion_dismissals_user_hash_unique').on(table.userId, table.suggestionHash),
+])
 
 export const aiSuggestionDismissalsRelations = relations(
   aiSuggestionDismissals,

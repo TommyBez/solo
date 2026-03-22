@@ -35,6 +35,8 @@ export function DescriptionEnhancer({
   const [enhancement, setEnhancement] = useState<DescriptionEnhancement | null>(null)
 
   useEffect(() => {
+    let isMounted = true
+
     async function fetchEnhancement() {
       setStatus('loading')
       const result = await enhanceDescription({
@@ -45,6 +47,8 @@ export function DescriptionEnhancer({
         durationMinutes,
       })
 
+      if (!isMounted) return
+
       if (result) {
         setEnhancement(result)
         setStatus('default')
@@ -54,6 +58,10 @@ export function DescriptionEnhancer({
     }
 
     fetchEnhancement()
+
+    return () => {
+      isMounted = false
+    }
   }, [currentDescription, projectId, projectName, areaName, durationMinutes])
 
   async function handleAccept() {
@@ -85,30 +93,41 @@ export function DescriptionEnhancer({
       date: new Date().toISOString().split('T')[0],
     })
 
-    await dismissSuggestion({
-      suggestionType: 'description_enhancement',
-      suggestionHash: hash,
-    })
+    try {
+      const result = await dismissSuggestion({
+        suggestionType: 'description_enhancement',
+        suggestionHash: hash,
+      })
 
-    onDismiss()
+      if (result.success) {
+        onDismiss()
+      } else {
+        console.error('Failed to dismiss suggestion')
+      }
+    } catch (error) {
+      console.error('Error dismissing suggestion:', error)
+    }
   }
 
-  function handleRetry() {
+  async function handleRetry() {
     setStatus('loading')
-    enhanceDescription({
-      currentDescription,
-      projectId,
-      projectName,
-      areaName,
-      durationMinutes,
-    }).then((result) => {
+    try {
+      const result = await enhanceDescription({
+        currentDescription,
+        projectId,
+        projectName,
+        areaName,
+        durationMinutes,
+      })
       if (result) {
         setEnhancement(result)
         setStatus('default')
       } else {
         setStatus('error')
       }
-    })
+    } catch {
+      setStatus('error')
+    }
   }
 
   // Determine evidence based on reasoning
