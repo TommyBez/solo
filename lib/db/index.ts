@@ -28,6 +28,8 @@ import {
   projectsRelations,
   timeEntries,
   timeEntriesRelations,
+  aiSuggestionDismissals,
+  aiSuggestionDismissalsRelations,
 } from './schema'
 
 if (!process.env.DATABASE_URL) {
@@ -61,6 +63,8 @@ const schema = {
   timeEntriesRelations,
   organizationSettings,
   organizationSettingsRelations,
+  aiSuggestionDismissals,
+  aiSuggestionDismissalsRelations,
 }
 
 function createDb() {

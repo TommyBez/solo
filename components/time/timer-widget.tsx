@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { createTimeEntry } from '@/lib/actions/time-entries'
+import { isDescriptionVague } from '@/lib/ai/prompts'
+import { DescriptionEnhancer } from '@/components/ai/description-enhancer'
 import type { Area, Project } from '@/lib/db/schema'
 import {
   SHORTCUT_EVENTS,
@@ -55,6 +57,17 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
     getRecentProjects(),
   )
 
+  // Description enhancer state
+  const [showEnhancer, setShowEnhancer] = useState(false)
+  const [enhancerData, setEnhancerData] = useState<{
+    entryId: number
+    projectId: number
+    projectName: string
+    areaName: string
+    description: string
+    durationMinutes: number
+  } | null>(null)
+
   const formatTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600)
     const mins = Math.floor((totalSeconds % 3600) / 60)
@@ -81,24 +94,40 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
 
     const timerData = stop()
     const durationMinutes = Math.max(1, Math.round(timerData.seconds / 60))
+    const parsedProjectId = Number.parseInt(timerData.projectId, 10)
+    const currentProject = projects.find((p) => p.id === parsedProjectId)
 
     try {
-      await createTimeEntry({
-        projectId: Number.parseInt(timerData.projectId, 10),
+      const result = await createTimeEntry({
+        projectId: parsedProjectId,
         description: timerData.description.trim() || undefined,
         startTime: timerData.startTime as Date,
         endTime: new Date(),
         durationMinutes,
       })
+
       // Add to recent projects
       addRecentProject(timerData.projectId)
       setRecentProjectIds(getRecentProjects())
       toast.success(`Logged ${durationMinutes} minutes`)
       router.refresh()
+
+      // Check if description needs enhancement
+      if (currentProject && isDescriptionVague(timerData.description) && result?.id) {
+        setEnhancerData({
+          entryId: result.id,
+          projectId: parsedProjectId,
+          projectName: currentProject.name,
+          areaName: currentProject.area.name,
+          description: timerData.description,
+          durationMinutes,
+        })
+        setShowEnhancer(true)
+      }
     } catch {
       toast.error('Failed to save time entry')
     }
-  }, [projectId, startTime, stop, router])
+  }, [projectId, startTime, stop, router, projects])
 
   const handleProjectChange = (value: string) => {
     setProjectId(value)
@@ -169,14 +198,34 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
     )
   }
 
+  // Handle enhancer callbacks
+  const handleEnhancerAccept = () => {
+    setShowEnhancer(false)
+    setEnhancerData(null)
+    router.refresh()
+  }
+
+  const handleEnhancerDismiss = () => {
+    setShowEnhancer(false)
+    setEnhancerData(null)
+  }
+
+  const handleEnhancerEdit = (suggestedDescription: string) => {
+    // For now, just close the enhancer - in future could open edit dialog
+    setShowEnhancer(false)
+    setEnhancerData(null)
+    toast.info('You can edit the entry in the list below')
+  }
+
   return (
-    <Card
-      className={cn(
-        'transition-all duration-300',
-        isRunning &&
-          'timer-running border-primary border-l-2 bg-primary/5 dark:bg-primary/10',
-      )}
-    >
+    <div className="space-y-4">
+      <Card
+        className={cn(
+          'transition-all duration-300',
+          isRunning &&
+            'timer-running border-primary border-l-2 bg-primary/5 dark:bg-primary/10',
+        )}
+      >
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Quick Timer</CardTitle>
       </CardHeader>
@@ -283,5 +332,21 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
         </div>
       </CardContent>
     </Card>
+
+      {/* Description enhancer - shows after timer stops with vague description */}
+      {showEnhancer && enhancerData && (
+        <DescriptionEnhancer
+          entryId={enhancerData.entryId}
+          projectId={enhancerData.projectId}
+          projectName={enhancerData.projectName}
+          areaName={enhancerData.areaName}
+          currentDescription={enhancerData.description}
+          durationMinutes={enhancerData.durationMinutes}
+          onAccept={handleEnhancerAccept}
+          onDismiss={handleEnhancerDismiss}
+          onEdit={handleEnhancerEdit}
+        />
+      )}
+    </div>
   )
 }

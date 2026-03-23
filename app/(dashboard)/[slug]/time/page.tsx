@@ -16,6 +16,8 @@ import { GoogleCalendarBanner } from '@/components/time/google-calendar-banner'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
+import { GitHubSuggestionsStrip } from '@/components/ai/github-suggestions-strip'
+import { WeeklyAuditBanner } from '@/components/ai/weekly-audit-banner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
@@ -24,8 +26,11 @@ import {
   getGoogleCalendarStatus,
 } from '@/lib/queries/google-calendar'
 import { getProjects } from '@/lib/queries/projects'
+import { getAreas } from '@/lib/queries/areas'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
+import { getGitHubStatus } from '@/lib/queries/github'
+import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -82,20 +87,58 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
-  const [entries, projects, googleCalendarStatus, googleCalendarEvents, slug] =
-    await Promise.all([
-      getTimeEntriesForDateRange(startDate, endDate),
-      getProjects(),
-      getGoogleCalendarStatus(),
-      getGoogleCalendarEventsForDateRange(startDate, endDate),
-      getActiveOrganizationSlug(),
-    ])
+  const [
+    entries,
+    projects,
+    googleCalendarStatus,
+    googleCalendarEvents,
+    slug,
+    areas,
+    githubStatus,
+  ] = await Promise.all([
+    getTimeEntriesForDateRange(startDate, endDate),
+    getProjects(),
+    getGoogleCalendarStatus(),
+    getGoogleCalendarEventsForDateRange(startDate, endDate),
+    getActiveOrganizationSlug(),
+    getAreas(),
+    getGitHubStatus(),
+  ])
+
+  // Fetch GitHub suggestions if connected
+  const githubSuggestionsResult = githubStatus.connected
+    ? await generateGitHubSuggestions({ forceRefresh: false })
+    : { suggestions: [], generatedAt: null }
 
   const activeProjects = projects.filter((p) => p.status === 'active')
+
+  // Prepare areas data for weekly audit
+  const areasWithExpectedHours = areas.map((area) => ({
+    id: area.id,
+    name: area.name,
+    expectedHoursPerWeek: area.expectedHoursPerWeek,
+    color: area.color,
+  }))
 
   return (
     <>
       {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
+
+      {/* Weekly Audit Banner - shows on Friday/Sunday */}
+      <WeeklyAuditBanner
+        weekEntries={entries}
+        weekCalendarEvents={googleCalendarEvents}
+        areasWithExpectedHours={areasWithExpectedHours}
+        weekStartsOn={weekStartsOn as 0 | 1}
+      />
+
+      {/* GitHub AI Suggestions Strip */}
+      <GitHubSuggestionsStrip
+        initialSuggestions={githubSuggestionsResult.suggestions}
+        generatedAt={githubSuggestionsResult.generatedAt}
+        projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
+        githubConnected={githubStatus.connected}
+      />
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         {viewParam === 'week' ? (
