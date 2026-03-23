@@ -435,18 +435,18 @@ export async function generateGitHubSuggestions(params: {
       durationMinutes: entry.durationMinutes,
       projectId: entry.project.id,
     }))
-    const mappedSuggestions: CachedSuggestion[] = (output?.suggestions || [])
+    const mappedSuggestions = (output?.suggestions || [])
       .filter((suggestion) => suggestion.confidence === 'high')
-      .map((suggestion) => {
+      .flatMap((suggestion) => {
         const cluster = activityClusters.find(
           (activityCluster) => activityCluster.id === suggestion.clusterId,
         )
         if (!cluster) {
-          return null
+          return []
         }
 
         if (!projectNameById.has(suggestion.projectId)) {
-          return null
+          return []
         }
 
         const duplicateCheck = buildDuplicateCheck(
@@ -465,44 +465,45 @@ export async function generateGitHubSuggestions(params: {
             projectName: entry.project.name,
           }))
 
-        return {
-          confidence: suggestion.confidence,
-          date: suggestion.date,
-          description: suggestion.description,
-          durationMinutes: suggestion.durationMinutes,
-          generatedAt,
-          id: `github-missing-${suggestion.clusterId}`,
-          metadata: {
-            activityCount: cluster.activities.length,
-            activityIds: cluster.activities.map((activity) => activity.id),
-            activityTypes: [
-              ...new Set(cluster.activities.map((activity) => activity.type)),
-            ],
-            duplicateCheck,
-            existingEntryEvidence,
-            primaryUrl: cluster.activities[0]?.url || '',
-            repoFullName: cluster.repoFullName,
-            repoName: cluster.repoName,
-            timeWindowEnd: cluster.timeWindowEnd,
-            timeWindowStart: cluster.timeWindowStart,
-            titles: cluster.activities.map((activity) => activity.description),
-            urls: cluster.activities
-              .map((activity) => activity.url)
-              .filter(
-                (url, index, allUrls) =>
-                  Boolean(url) && allUrls.indexOf(url) === index,
+        return [
+          {
+            confidence: suggestion.confidence,
+            date: suggestion.date,
+            description: suggestion.description,
+            durationMinutes: suggestion.durationMinutes,
+            generatedAt,
+            id: `github-missing-${suggestion.clusterId}`,
+            metadata: {
+              activityCount: cluster.activities.length,
+              activityIds: cluster.activities.map((activity) => activity.id),
+              activityTypes: [
+                ...new Set(cluster.activities.map((activity) => activity.type)),
+              ],
+              duplicateCheck,
+              existingEntryEvidence,
+              primaryUrl: cluster.activities[0]?.url || '',
+              repoFullName: cluster.repoFullName,
+              repoName: cluster.repoName,
+              timeWindowEnd: cluster.timeWindowEnd,
+              timeWindowStart: cluster.timeWindowStart,
+              titles: cluster.activities.map(
+                (activity) => activity.description,
               ),
+              urls: cluster.activities
+                .map((activity) => activity.url)
+                .filter(
+                  (url, index, allUrls) =>
+                    Boolean(url) && allUrls.indexOf(url) === index,
+                ),
+            },
+            projectId: suggestion.projectId,
+            reasoning: suggestion.reasoning,
+            sourceId: suggestion.clusterId,
+            status: 'pending' as const,
+            type: 'missing_entry' as const,
           },
-          projectId: suggestion.projectId,
-          reasoning: suggestion.reasoning,
-          sourceId: suggestion.clusterId,
-          status: 'pending' as const,
-          type: 'missing_entry' as const,
-        }
+        ]
       })
-      .filter(
-        (suggestion): suggestion is CachedSuggestion => suggestion !== null,
-      )
       .slice(0, MAX_GITHUB_SUGGESTIONS)
 
     // Cache the suggestions
