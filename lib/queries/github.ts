@@ -3,14 +3,14 @@ import { getSession } from '@/lib/auth/session'
 import { getGitHubStatusForUser } from '@/lib/github/service'
 import type { GitHubConnectionStatus } from '@/lib/github/types'
 
-function getGitHubStatusCached(
+async function getGitHubStatusCached(
   userId: string,
 ): Promise<GitHubConnectionStatus> {
   'use cache'
   cacheLife('minutes')
   cacheTag('github-status')
 
-  return getGitHubStatusForUser(userId)
+  return await getGitHubStatusForUser(userId)
 }
 
 export async function getGitHubStatus(): Promise<GitHubConnectionStatus> {
