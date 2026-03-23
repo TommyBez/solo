@@ -1,4 +1,4 @@
-import { CalendarClock, Clock, Repeat, Timer } from 'lucide-react'
+import { CalendarClock, Clock, Github, Repeat, Timer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { EvidenceIcon } from '@/lib/ai/schemas'
 
@@ -8,11 +8,12 @@ interface EvidenceChipProps {
   className?: string
 }
 
-const iconMap = {
+const iconMap: Record<EvidenceIcon, typeof CalendarClock> = {
   calendar: CalendarClock,
   history: Clock,
   timer: Timer,
   pattern: Repeat,
+  github: Github,
 }
 
 export function EvidenceChip({ icon, text, className }: EvidenceChipProps) {
