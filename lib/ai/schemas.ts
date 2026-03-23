@@ -52,7 +52,34 @@ export type GapAudit = z.infer<typeof gapAuditSchema>
 export type SuggestionStatus = 'default' | 'loading' | 'error' | 'accepting'
 
 // Type for suggestion types
-export type SuggestionType = 'missing_entry' | 'description_enhancement' | 'gap_audit'
+export type SuggestionType =
+  | 'missing_entry'
+  | 'description_enhancement'
+  | 'gap_audit'
+  | 'github_commit'
+  | 'github_pr'
+  | 'github_review'
 
 // Type for evidence icons
-export type EvidenceIcon = 'calendar' | 'history' | 'timer' | 'pattern'
+export type EvidenceIcon = 'calendar' | 'history' | 'timer' | 'pattern' | 'github'
+
+// Schema for GitHub activity suggestion response
+export const githubSuggestionSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      activityId: z.string().describe('ID of the GitHub activity'),
+      projectId: z.number().describe('ID of the matched project'),
+      description: z
+        .string()
+        .describe('Professional description for client reporting (5-15 words)'),
+      durationMinutes: z.number().positive().describe('Estimated duration in minutes'),
+      confidence: z
+        .enum(['high', 'medium', 'low'])
+        .describe('Confidence level of the match'),
+      reasoning: z.string().describe('Evidence-based explanation for the user'),
+      date: z.string().describe('ISO date of the activity'),
+    })
+  ),
+})
+
+export type GitHubSuggestionResult = z.infer<typeof githubSuggestionSchema>

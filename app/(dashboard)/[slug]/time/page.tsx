@@ -1,9 +1,7 @@
 import {
-  endOfDay,
   endOfMonth,
   endOfWeek,
   parseISO,
-  startOfDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
@@ -18,8 +16,7 @@ import { GoogleCalendarBanner } from '@/components/time/google-calendar-banner'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
-import { SuggestionsStrip } from '@/components/ai/suggestions-strip'
-import { DailyCatchupModule } from '@/components/ai/daily-catchup-module'
+import { GitHubSuggestionsStrip } from '@/components/ai/github-suggestions-strip'
 import { WeeklyAuditBanner } from '@/components/ai/weekly-audit-banner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -32,7 +29,8 @@ import { getProjects } from '@/lib/queries/projects'
 import { getAreas } from '@/lib/queries/areas'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
-import { getDismissedSuggestions } from '@/lib/queries/ai-suggestions'
+import { getGitHubStatus } from '@/lib/queries/github'
+import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -89,33 +87,28 @@ async function TimeTrackingContent({
     endDate = endOfWeek(monthEnd, { weekStartsOn })
   }
 
-  // Calculate today's date range for DailyCatchupModule
-  const todayStart = startOfDay(new Date())
-  const todayEnd = endOfDay(new Date())
-
   const [
     entries,
     projects,
     googleCalendarStatus,
     googleCalendarEvents,
     slug,
-    dismissedSuggestions,
     areas,
-    todayEntries,
-    todayCalendarEvents,
+    githubStatus,
   ] = await Promise.all([
     getTimeEntriesForDateRange(startDate, endDate),
     getProjects(),
     getGoogleCalendarStatus(),
     getGoogleCalendarEventsForDateRange(startDate, endDate),
     getActiveOrganizationSlug(),
-    getDismissedSuggestions(),
     getAreas(),
-    getTimeEntriesForDateRange(todayStart, todayEnd),
-    getGoogleCalendarEventsForDateRange(todayStart, todayEnd),
+    getGitHubStatus(),
   ])
 
-  const dismissedHashes = dismissedSuggestions.map((d) => d.suggestionHash)
+  // Fetch GitHub suggestions if connected
+  const githubSuggestionsResult = githubStatus.connected
+    ? await generateGitHubSuggestions({ forceRefresh: false })
+    : { suggestions: [], generatedAt: null }
 
   const activeProjects = projects.filter((p) => p.status === 'active')
 
@@ -139,15 +132,13 @@ async function TimeTrackingContent({
         weekStartsOn={weekStartsOn as 0 | 1}
       />
 
-      {/* AI Suggestions Strip - shows untracked calendar events */}
-      {googleCalendarStatus.connected && googleCalendarEvents.length > 0 && (
-        <SuggestionsStrip
-          entries={entries}
-          calendarEvents={googleCalendarEvents}
-          projects={activeProjects}
-          dismissedHashes={dismissedHashes}
-        />
-      )}
+      {/* GitHub AI Suggestions Strip */}
+      <GitHubSuggestionsStrip
+        initialSuggestions={githubSuggestionsResult.suggestions}
+        generatedAt={githubSuggestionsResult.generatedAt}
+        projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
+        githubConnected={githubStatus.connected}
+      />
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         {viewParam === 'week' ? (
@@ -185,15 +176,6 @@ async function TimeTrackingContent({
             <TimerWidget projects={activeProjects} />
           </div>
           <div className="lg:col-span-2">
-            {/* Daily Catch-Up Module - shows at end of day */}
-            {googleCalendarStatus.connected && (
-              <DailyCatchupModule
-                todayEntries={todayEntries}
-                todayCalendarEvents={todayCalendarEvents}
-                projects={activeProjects}
-                dismissedHashes={dismissedHashes}
-              />
-            )}
             <TimeEntriesList entries={entries} projects={activeProjects} />
           </div>
         </div>

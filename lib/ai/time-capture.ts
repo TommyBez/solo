@@ -9,13 +9,25 @@ import { revalidateTag } from 'next/cache'
 import {
   descriptionEnhancementSchema,
   entrySuggestionSchema,
+  githubSuggestionSchema,
   type DescriptionEnhancement,
   type EntrySuggestion,
   type SuggestionType,
 } from './schemas'
-import { buildDescriptionPrompt, buildEntrySuggestionPrompt } from './prompts'
+import {
+  buildDescriptionPrompt,
+  buildEntrySuggestionPrompt,
+  buildGitHubSuggestionPrompt,
+} from './prompts'
 import { AI_MODELS } from './models'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
+import { getGitHubActivityForUser } from '@/lib/github/service'
+import {
+  getCachedSuggestions,
+  setCachedSuggestions,
+  updateSuggestionStatus,
+  type CachedSuggestion,
+} from '@/lib/redis/suggestions-cache'
 
 // Enhance a vague or empty description
 export async function enhanceDescription(params: {
@@ -167,6 +179,177 @@ export async function dismissSuggestion(params: {
     return { success: true }
   } catch (error) {
     console.error('Failed to dismiss suggestion:', error)
+    return { success: false }
+  }
+}
+
+// Generate AI suggestions from GitHub activity
+export async function generateGitHubSuggestions(params: {
+  forceRefresh?: boolean
+}): Promise<{
+  suggestions: CachedSuggestion[]
+  generatedAt: string | null
+  fromCache: boolean
+}> {
+  try {
+    const { session, organizationId } = await requireOrganization()
+
+    // Check cache first (unless force refresh)
+    if (!params.forceRefresh) {
+      const cached = await getCachedSuggestions(organizationId, session.user.id)
+      if (cached) {
+        const pendingSuggestions = cached.suggestions.filter(
+          (s) => s.status === 'pending'
+        )
+        return {
+          suggestions: pendingSuggestions,
+          generatedAt: cached.generatedAt,
+          fromCache: true,
+        }
+      }
+    }
+
+    // Get active projects with areas
+    const activeProjects = await db.query.projects.findMany({
+      where: eq(projects.archived, false),
+      with: {
+        area: true,
+      },
+    })
+
+    // Filter to only projects in this organization
+    const orgProjects = activeProjects.filter(
+      (p) => p.area.organizationId === organizationId
+    )
+
+    if (orgProjects.length === 0) {
+      return { suggestions: [], generatedAt: null, fromCache: false }
+    }
+
+    // Fetch GitHub activity from the past 7 days
+    const weekAgo = new Date()
+    weekAgo.setDate(weekAgo.getDate() - 7)
+
+    const githubActivity = await getGitHubActivityForUser({
+      userId: session.user.id,
+      since: weekAgo,
+    })
+
+    if (githubActivity.length === 0) {
+      // Cache empty result to avoid re-fetching
+      await setCachedSuggestions(organizationId, session.user.id, [])
+      return {
+        suggestions: [],
+        generatedAt: new Date().toISOString(),
+        fromCache: false,
+      }
+    }
+
+    // Get recent time entries to avoid duplicates
+    const orgProjectIds = orgProjects.map((p) => p.id)
+    const recentEntries =
+      orgProjectIds.length > 0
+        ? await db.query.timeEntries.findMany({
+            where: and(
+              gte(timeEntries.startTime, weekAgo),
+              inArray(timeEntries.projectId, orgProjectIds)
+            ),
+            orderBy: [desc(timeEntries.startTime)],
+            limit: 50,
+          })
+        : []
+
+    // Build prompt and call AI
+    const prompt = buildGitHubSuggestionPrompt({
+      activities: githubActivity,
+      projects: orgProjects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        areaName: p.area.name,
+      })),
+      existingEntries: recentEntries.map((e) => ({
+        date: e.startTime.toISOString().split('T')[0],
+        description: e.description,
+        durationMinutes: e.durationMinutes,
+      })),
+    })
+
+    const { output } = await generateText({
+      model: AI_MODELS.entrySuggestion,
+      output: Output.object({ schema: githubSuggestionSchema }),
+      prompt,
+      maxOutputTokens: 1000,
+    })
+
+    // Transform AI response to cached suggestions
+    const suggestions: CachedSuggestion[] = (output?.suggestions || []).map(
+      (s) => {
+        const activity = githubActivity.find((a) => a.id === s.activityId)
+        const activityType = activity?.type || 'commit'
+
+        return {
+          id: `github-${s.activityId}`,
+          type:
+            activityType === 'commit'
+              ? 'github_commit'
+              : activityType === 'pr_merged' || activityType === 'pr_opened'
+                ? 'github_pr'
+                : 'github_review',
+          sourceId: s.activityId,
+          projectId: s.projectId,
+          description: s.description,
+          durationMinutes: s.durationMinutes,
+          date: s.date,
+          status: 'pending' as const,
+          metadata: {
+            repoName: activity?.repoName || '',
+            repoFullName: activity?.repoFullName || '',
+            commitSha: activity?.metadata.commitSha,
+            commitMessage: activity?.metadata.commitMessage,
+            prNumber: activity?.metadata.prNumber,
+            prTitle: activity?.metadata.prTitle,
+            additions: activity?.metadata.additions,
+            deletions: activity?.metadata.deletions,
+            reviewState: activity?.metadata.reviewState,
+            url: activity?.url || '',
+          },
+          generatedAt: new Date().toISOString(),
+        }
+      }
+    )
+
+    // Cache the suggestions
+    await setCachedSuggestions(organizationId, session.user.id, suggestions)
+
+    return {
+      suggestions,
+      generatedAt: new Date().toISOString(),
+      fromCache: false,
+    }
+  } catch (error) {
+    console.error('Failed to generate GitHub suggestions:', error)
+    return { suggestions: [], generatedAt: null, fromCache: false }
+  }
+}
+
+// Accept or dismiss a cached suggestion
+export async function updateCachedSuggestionStatus(params: {
+  suggestionId: string
+  status: 'accepted' | 'dismissed'
+}): Promise<{ success: boolean }> {
+  try {
+    const { session, organizationId } = await requireOrganization()
+
+    await updateSuggestionStatus(
+      organizationId,
+      session.user.id,
+      params.suggestionId,
+      params.status
+    )
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to update suggestion status:', error)
     return { success: false }
   }
 }

@@ -1,3 +1,4 @@
+import type { GitHubActivity } from '@/lib/github/types'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 
 interface DescriptionPromptParams {
@@ -167,3 +168,84 @@ export function isDescriptionVague(description: string | null | undefined): bool
 
   return false
 }
+
+interface GitHubSuggestionPromptParams {
+  activities: GitHubActivity[]
+  projects: Array<{ id: number; name: string; areaName: string }>
+  existingEntries: Array<{
+    date: string
+    description: string | null
+    durationMinutes: number
+  }>
+}
+
+export function buildGitHubSuggestionPrompt(
+  params: GitHubSuggestionPromptParams
+): string {
+  const activitiesText = params.activities
+    .map((a) => {
+      const typeLabel =
+        a.type === 'commit'
+          ? 'Commit'
+          : a.type === 'pr_merged'
+            ? 'Merged PR'
+            : a.type === 'pr_opened'
+              ? 'Opened PR'
+              : 'Code Review'
+      return `- [${typeLabel}] ${a.description} in ${a.repoName} at ${a.timestamp}`
+    })
+    .join('\n')
+
+  const projectsText = params.projects
+    .map((p) => `- ID ${p.id}: ${p.name} (${p.areaName})`)
+    .join('\n')
+
+  const existingEntriesText =
+    params.existingEntries.length > 0
+      ? params.existingEntries
+          .slice(0, 10)
+          .map(
+            (e) =>
+              `- ${e.date}: ${e.description || '(no description)'} (${e.durationMinutes}min)`
+          )
+          .join('\n')
+      : '(no recent entries)'
+
+  return `You are helping a freelancer log time based on their GitHub activity.
+
+GitHub Activity (commits, PRs, reviews from the past 7 days):
+${activitiesText}
+
+Available projects to match:
+${projectsText}
+
+Already logged time entries (to avoid duplicates):
+${existingEntriesText}
+
+For each GitHub activity that appears to NOT be logged yet:
+1. Match it to the most likely project based on repository name similarity to project names
+2. Generate a professional description (5-15 words) suitable for client reporting
+3. Estimate duration based on activity type:
+   - Commits: 30-60 minutes (adjust based on commit message complexity)
+   - Merged PRs: 60-120 minutes (larger if many additions/deletions mentioned)
+   - Opened PRs: 30-60 minutes
+   - Code reviews: 15-30 minutes
+4. Set confidence: "high" if repo name clearly matches a project, "medium" if reasonable match, "low" if guessing
+5. Provide brief reasoning explaining why this activity appears untracked
+
+Group related commits from the same repo on the same day into a single suggestion.
+Skip activities that clearly match existing time entries.
+Return an empty array if all activities appear to already be logged.`
+}
+
+interface GitHubSuggestionResponseItem {
+  activityId: string
+  projectId: number
+  description: string
+  durationMinutes: number
+  confidence: 'high' | 'medium' | 'low'
+  reasoning: string
+  date: string
+}
+
+export type GitHubSuggestionResponse = GitHubSuggestionResponseItem[]
