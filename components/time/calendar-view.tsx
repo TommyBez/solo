@@ -58,7 +58,7 @@ function getEventDescription(event: GoogleCalendarEvent) {
 }
 
 const googleEventTriggerClassName =
-  'group flex cursor-pointer items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-left text-[9px] active:opacity-70 sm:cursor-default sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10'
+  'group flex cursor-pointer items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-left text-[9px] active:opacity-70 sm:cursor-default sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10 overflow-hidden'
 
 function GoogleCalendarEventRow({
   event,
@@ -124,7 +124,7 @@ function GoogleCalendarEventRow({
 
   return (
     <div
-      className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
+      className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10 overflow-hidden"
       title={event.title}
     >
       {eventContent}
@@ -187,7 +187,7 @@ function CalendarDayCell({
         </span>
       </div>
 
-      <div className="space-y-0.5 sm:space-y-1">
+      <div className="space-y-0.5 overflow-hidden sm:space-y-1">
         {dayGoogleEvents.slice(0, eventSlice).map((event) => (
           <GoogleCalendarEventRow
             event={event}
@@ -203,11 +203,11 @@ function CalendarDayCell({
         )}
         {dayEntries.slice(0, eventSlice).map((entry) => (
           <div
-            className="flex items-center gap-0.5 truncate rounded bg-muted p-0.5 text-[9px] sm:gap-1 sm:p-1 sm:text-xs"
+            className="flex items-center gap-0.5 truncate rounded bg-muted p-0.5 text-[9px] sm:gap-1 sm:p-1 sm:text-xs overflow-hidden"
             key={entry.id}
             title={`${entry.project.name}: ${entry.description}`}
           >
-            <ColorDot className="size-1.5" color={entry.project.area.color} />
+            <ColorDot className="size-1.5 shrink-0" color={entry.project.area.color} />
             <span className="truncate font-medium">{entry.project.name}</span>
             <span className="hidden shrink-0 font-mono tabular-nums opacity-70 sm:inline">
               ({Math.round((entry.durationMinutes / 60) * 10) / 10}h)
