@@ -4,14 +4,13 @@ import {
   Check,
   Clock,
   ExternalLink,
-  GitCommit,
-  GitMerge,
-  GitPullRequest,
+  Github,
   Loader2,
+  Sparkles,
   X,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { type ReactNode, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -48,18 +47,8 @@ export function GitHubSuggestionCard({
     return null
   }
 
-  let typeIcon: ReactNode
-  let typeLabel: string
-  if (suggestion.type === 'github_commit') {
-    typeIcon = <GitCommit className="size-4" />
-    typeLabel = 'Commit'
-  } else if (suggestion.type === 'github_pr') {
-    typeIcon = <GitMerge className="size-4" />
-    typeLabel = 'Pull Request'
-  } else {
-    typeIcon = <GitPullRequest className="size-4" />
-    typeLabel = 'Code Review'
-  }
+  const confidenceBadgeVariant =
+    suggestion.confidence === 'high' ? 'default' : 'secondary'
 
   function handleAccept() {
     startAcceptTransition(async () => {
@@ -121,6 +110,18 @@ export function GitHubSuggestionCard({
     month: 'short',
     day: 'numeric',
   })
+  const activityWindow = `${new Date(
+    suggestion.metadata.timeWindowStart,
+  ).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })} - ${new Date(suggestion.metadata.timeWindowEnd).toLocaleTimeString(
+    'en-US',
+    {
+      hour: 'numeric',
+      minute: '2-digit',
+    },
+  )}`
 
   const hours = Math.floor(suggestion.durationMinutes / 60)
   const minutes = suggestion.durationMinutes % 60
@@ -132,18 +133,21 @@ export function GitHubSuggestionCard({
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            {typeIcon}
+            <Sparkles className="size-4 text-primary" />
             <Badge className="text-xs" variant="secondary">
-              {typeLabel}
+              Missing entry
+            </Badge>
+            <Badge className="text-xs" variant={confidenceBadgeVariant}>
+              {suggestion.confidence} confidence
             </Badge>
             <Badge className="text-xs" variant="outline">
               {suggestion.metadata.repoName}
             </Badge>
           </div>
-          {suggestion.metadata.url && (
+          {suggestion.metadata.primaryUrl && (
             <a
               className="text-muted-foreground hover:text-foreground"
-              href={suggestion.metadata.url}
+              href={suggestion.metadata.primaryUrl}
               rel="noopener noreferrer"
               target="_blank"
             >
@@ -154,11 +158,15 @@ export function GitHubSuggestionCard({
         <CardTitle className="font-medium text-sm">
           {suggestion.description}
         </CardTitle>
-        <CardDescription className="flex items-center gap-3 text-xs">
+        <CardDescription className="flex flex-wrap items-center gap-3 text-xs">
           <span>{formattedDate}</span>
           <span className="flex items-center gap-1">
             <Clock className="size-3" />
             {durationText}
+          </span>
+          <span className="flex items-center gap-1">
+            <Github className="size-3" />
+            {activityWindow}
           </span>
           <span className="text-muted-foreground">
             Project: {projectName || 'Unknown'}
@@ -166,32 +174,75 @@ export function GitHubSuggestionCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="flex items-center gap-2">
-          <Button
-            disabled={isAccepting || isDismissing}
-            onClick={handleAccept}
-            size="sm"
-          >
-            {isAccepting ? (
-              <Loader2 className="mr-1 size-3 animate-spin" />
-            ) : (
-              <Check className="mr-1 size-3" />
-            )}
-            Accept
-          </Button>
-          <Button
-            disabled={isAccepting || isDismissing}
-            onClick={handleDismiss}
-            size="sm"
-            variant="ghost"
-          >
-            {isDismissing ? (
-              <Loader2 className="mr-1 size-3 animate-spin" />
-            ) : (
-              <X className="mr-1 size-3" />
-            )}
-            Dismiss
-          </Button>
+        <div className="space-y-3">
+          <div className="rounded-md border bg-background/60 p-3">
+            <p className="font-medium text-xs">Why this looks missing</p>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {suggestion.reasoning}
+            </p>
+          </div>
+
+          <div className="rounded-md border border-dashed p-3">
+            <p className="font-medium text-xs">Solo duplicate check</p>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {suggestion.metadata.duplicateCheck.summary}
+            </p>
+          </div>
+
+          {suggestion.metadata.titles.length > 0 ? (
+            <div className="space-y-1">
+              <p className="font-medium text-xs">GitHub evidence</p>
+              <ul className="space-y-1 text-muted-foreground text-sm">
+                {suggestion.metadata.titles.slice(0, 3).map((title) => (
+                  <li className="line-clamp-2" key={title}>
+                    • {title}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {suggestion.metadata.existingEntryEvidence.length > 0 ? (
+            <div className="space-y-1">
+              <p className="font-medium text-xs">Tracked pattern in Solo</p>
+              <ul className="space-y-1 text-muted-foreground text-sm">
+                {suggestion.metadata.existingEntryEvidence.map((entry) => (
+                  <li key={`${entry.date}-${entry.description}`}>
+                    • {entry.date}: {entry.description} ({entry.durationMinutes}
+                    m)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <Button
+              disabled={isAccepting || isDismissing}
+              onClick={handleAccept}
+              size="sm"
+            >
+              {isAccepting ? (
+                <Loader2 className="mr-1 size-3 animate-spin" />
+              ) : (
+                <Check className="mr-1 size-3" />
+              )}
+              Accept
+            </Button>
+            <Button
+              disabled={isAccepting || isDismissing}
+              onClick={handleDismiss}
+              size="sm"
+              variant="ghost"
+            >
+              {isDismissing ? (
+                <Loader2 className="mr-1 size-3 animate-spin" />
+              ) : (
+                <X className="mr-1 size-3" />
+              )}
+              Dismiss
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -73,9 +73,6 @@ export type SuggestionType =
   | 'missing_entry'
   | 'description_enhancement'
   | 'gap_audit'
-  | 'github_commit'
-  | 'github_pr'
-  | 'github_review'
 
 // Type for evidence icons
 export type EvidenceIcon =
@@ -89,7 +86,9 @@ export type EvidenceIcon =
 export const githubSuggestionSchema = z.object({
   suggestions: z.array(
     z.object({
-      activityId: z.string().describe('ID of the GitHub activity'),
+      clusterId: z
+        .string()
+        .describe('ID of the grouped GitHub activity cluster'),
       projectId: z.number().describe('ID of the matched project'),
       description: z
         .string()
@@ -101,8 +100,14 @@ export const githubSuggestionSchema = z.object({
       confidence: z
         .enum(['high', 'medium', 'low'])
         .describe('Confidence level of the match'),
-      reasoning: z.string().describe('Evidence-based explanation for the user'),
-      date: z.string().describe('ISO date of the activity'),
+      reasoning: z
+        .string()
+        .describe(
+          'Why this looks like a missing Solo entry, referencing tracked work patterns when possible',
+        ),
+      date: z
+        .string()
+        .describe('ISO date for the missing time entry suggestion'),
     }),
   ),
 })

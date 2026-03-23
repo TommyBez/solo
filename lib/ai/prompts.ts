@@ -1,4 +1,3 @@
-import type { GitHubActivity } from '@/lib/github/types'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 
 interface DescriptionPromptParams {
@@ -181,9 +180,20 @@ export function isDescriptionVague(
 }
 
 interface GitHubSuggestionPromptParams {
-  activities: GitHubActivity[]
+  clusters: Array<{
+    activityCount: number
+    clusterId: string
+    date: string
+    repoFullName: string
+    repoName: string
+    summaries: string[]
+    timeWindowEnd: string
+    timeWindowStart: string
+  }>
   existingEntries: Array<{
     date: string
+    projectId: number
+    projectName: string
     description: string | null
     durationMinutes: number
   }>
@@ -193,19 +203,18 @@ interface GitHubSuggestionPromptParams {
 export function buildGitHubSuggestionPrompt(
   params: GitHubSuggestionPromptParams,
 ): string {
-  const activitiesText = params.activities
-    .map((a) => {
-      let typeLabel: string
-      if (a.type === 'commit') {
-        typeLabel = 'Commit'
-      } else if (a.type === 'pr_merged') {
-        typeLabel = 'Merged PR'
-      } else if (a.type === 'pr_opened') {
-        typeLabel = 'Opened PR'
-      } else {
-        typeLabel = 'Code Review'
-      }
-      return `- [${typeLabel}] ${a.description} in ${a.repoName} at ${a.timestamp}`
+  const clustersText = params.clusters
+    .map((cluster) => {
+      const summaries = cluster.summaries
+        .map((summary) => `    - ${summary}`)
+        .join('\n')
+      return `- Cluster ${cluster.clusterId}
+  - Repo: ${cluster.repoName} (${cluster.repoFullName})
+  - Date: ${cluster.date}
+  - Time window: ${cluster.timeWindowStart} -> ${cluster.timeWindowEnd}
+  - Activity count: ${cluster.activityCount}
+  - Activity summaries:
+${summaries}`
     })
     .join('\n')
 
@@ -219,40 +228,45 @@ export function buildGitHubSuggestionPrompt(
           .slice(0, 10)
           .map(
             (e) =>
-              `- ${e.date}: ${e.description || '(no description)'} (${e.durationMinutes}min)`,
+              `- ${e.date}: [Project ${e.projectId} - ${e.projectName}] ${e.description || '(no description)'} (${e.durationMinutes}min)`,
           )
           .join('\n')
       : '(no recent entries)'
 
-  return `You are helping a freelancer log time based on their GitHub activity.
+  return `You are helping a freelancer find missing time entries by comparing grouped GitHub work against existing Solo entries.
 
-GitHub Activity (commits, PRs, reviews from the past 7 days):
-${activitiesText}
+GitHub activity clusters from the past 7 days:
+${clustersText}
 
 Available projects to match:
 ${projectsText}
 
-Already logged time entries (to avoid duplicates):
+Existing Solo time entries (use them as the tracked-work source of truth):
 ${existingEntriesText}
 
-For each GitHub activity that appears to NOT be logged yet:
-1. Match it to the most likely project based on repository name similarity to project names
-2. Generate a professional description (5-15 words) suitable for client reporting
-3. Estimate duration based on activity type:
-   - Commits: 30-60 minutes (adjust based on commit message complexity)
-   - Merged PRs: 60-120 minutes (larger if many additions/deletions mentioned)
-   - Opened PRs: 30-60 minutes
-   - Code reviews: 15-30 minutes
-4. Set confidence: "high" if repo name clearly matches a project, "medium" if reasonable match, "low" if guessing
-5. Provide brief reasoning explaining why this activity appears untracked
+Return up to 5 suggestions for genuinely missing time entries.
 
-Group related commits from the same repo on the same day into a single suggestion.
-Skip activities that clearly match existing time entries.
-Return an empty array if all activities appear to already be logged.`
+Rules:
+1. Only return suggestions with HIGH confidence.
+2. If an existing Solo entry plausibly covers the work, skip the cluster.
+3. Match each cluster to the most likely project using repo name, project names, and patterns from existing entries.
+4. Generate a professional description (5-15 words) suitable for client reporting.
+5. Estimate realistic duration based on the total cluster work, not per individual GitHub event.
+6. In the reasoning, explain both:
+   - why the project match is strong
+   - why the work still appears untracked in Solo
+7. Prefer fewer, stronger suggestions over weak guesses.
+8. Return an empty array when there is no clear missing-entry signal.
+
+Important:
+- Do not return medium or low confidence suggestions.
+- Do not output more than one suggestion for the same cluster.
+- Treat existing Solo entries as already tracked tasks/work.
+- Avoid generic wording like "worked on GitHub tasks".`
 }
 
 interface GitHubSuggestionResponseItem {
-  activityId: string
+  clusterId: string
   confidence: 'high' | 'medium' | 'low'
   date: string
   description: string

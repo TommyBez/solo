@@ -2,10 +2,10 @@
 
 import { formatDistanceToNow } from 'date-fns'
 import { Github, RefreshCw, Sparkles } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 import type { CachedSuggestion } from '@/lib/redis/suggestions-cache'
 import { GitHubSuggestionCard } from './github-suggestion-card'
@@ -16,22 +16,18 @@ interface Project {
 }
 
 interface GitHubSuggestionsStripProps {
-  generatedAt: string | null
   githubConnected: boolean
-  initialSuggestions: CachedSuggestion[]
   projects: Project[]
 }
 
 export function GitHubSuggestionsStrip({
-  initialSuggestions,
-  generatedAt,
   projects,
   githubConnected,
 }: GitHubSuggestionsStripProps) {
-  const router = useRouter()
-  const [suggestions, setSuggestions] =
-    useState<CachedSuggestion[]>(initialSuggestions)
-  const [lastGenerated, setLastGenerated] = useState<string | null>(generatedAt)
+  const hasLoadedRef = useRef(false)
+  const [suggestions, setSuggestions] = useState<CachedSuggestion[]>([])
+  const [lastGenerated, setLastGenerated] = useState<string | null>(null)
+  const [isInitialLoading, setIsInitialLoading] = useState(false)
   const [isRefreshing, startRefreshTransition] = useTransition()
   const [localDismissed, setLocalDismissed] = useState<Set<string>>(new Set())
 
@@ -40,22 +36,45 @@ export function GitHubSuggestionsStrip({
     (s) => s.status === 'pending' && !localDismissed.has(s.id),
   )
 
-  function handleRefresh() {
-    startRefreshTransition(async () => {
+  const loadSuggestions = useCallback(
+    async (forceRefresh: boolean, showToast: boolean) => {
       try {
-        const result = await generateGitHubSuggestions({ forceRefresh: true })
+        const result = await generateGitHubSuggestions({ forceRefresh })
         setSuggestions(result.suggestions)
         setLastGenerated(result.generatedAt)
         setLocalDismissed(new Set())
-        router.refresh()
-        toast.success(
-          result.suggestions.length > 0
-            ? `Found ${result.suggestions.length} suggestion${result.suggestions.length === 1 ? '' : 's'}`
-            : 'No new suggestions found',
-        )
+
+        if (showToast) {
+          toast.success(
+            result.suggestions.length > 0
+              ? `Found ${result.suggestions.length} suggestion${result.suggestions.length === 1 ? '' : 's'}`
+              : 'No high-confidence missing time found',
+          )
+        }
       } catch {
-        toast.error('Failed to refresh suggestions')
+        if (showToast) {
+          toast.error('Failed to refresh suggestions')
+        }
+      } finally {
+        setIsInitialLoading(false)
       }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (!githubConnected || hasLoadedRef.current) {
+      return
+    }
+
+    hasLoadedRef.current = true
+    setIsInitialLoading(true)
+    loadSuggestions(false, false)
+  }, [githubConnected, loadSuggestions])
+
+  function handleRefresh() {
+    startRefreshTransition(async () => {
+      await loadSuggestions(true, true)
     })
   }
 
@@ -78,6 +97,44 @@ export function GitHubSuggestionsStrip({
   const generatedTimeAgo = lastGenerated
     ? formatDistanceToNow(new Date(lastGenerated), { addSuffix: true })
     : null
+  let content = (
+    <div className="rounded-lg border border-dashed p-4 text-center">
+      <p className="text-muted-foreground text-sm">
+        No high-confidence missing time entries found from recent GitHub work.
+      </p>
+    </div>
+  )
+
+  if (isInitialLoading) {
+    content = (
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {['skeleton-1', 'skeleton-2'].map((itemId) => (
+          <div className="min-w-[320px] max-w-[360px] space-y-3" key={itemId}>
+            <Skeleton className="h-36 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    )
+  } else if (visibleSuggestions.length > 0) {
+    content = (
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {visibleSuggestions.map((suggestion) => (
+          <div className="min-w-[300px] max-w-[350px]" key={suggestion.id}>
+            <GitHubSuggestionCard
+              onAccept={() => handleAccept(suggestion.id)}
+              onDismiss={() => handleDismiss(suggestion.id)}
+              projectName={
+                suggestion.projectId
+                  ? projectMap.get(suggestion.projectId) || 'Unknown'
+                  : 'No project'
+              }
+              suggestion={suggestion}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">
@@ -85,7 +142,7 @@ export function GitHubSuggestionsStrip({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 font-medium text-sm">
             <Sparkles className="size-4 text-primary" />
-            <span>AI Suggestions</span>
+            <span>Missing Time Suggestions</span>
             <Github className="ml-1 size-3.5 text-muted-foreground" />
           </div>
           {generatedTimeAgo && (
@@ -108,31 +165,7 @@ export function GitHubSuggestionsStrip({
         </Button>
       </div>
 
-      {visibleSuggestions.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-4 text-center">
-          <p className="text-muted-foreground text-sm">
-            No pending suggestions. Click refresh to check for new GitHub
-            activity.
-          </p>
-        </div>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {visibleSuggestions.map((suggestion) => (
-            <div className="min-w-[300px] max-w-[350px]" key={suggestion.id}>
-              <GitHubSuggestionCard
-                onAccept={() => handleAccept(suggestion.id)}
-                onDismiss={() => handleDismiss(suggestion.id)}
-                projectName={
-                  suggestion.projectId
-                    ? projectMap.get(suggestion.projectId) || 'Unknown'
-                    : 'No project'
-                }
-                suggestion={suggestion}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      {content}
     </div>
   )
 }

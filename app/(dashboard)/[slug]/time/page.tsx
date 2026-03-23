@@ -20,7 +20,6 @@ import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
 import { getAreas } from '@/lib/queries/areas'
 import { getGitHubStatus } from '@/lib/queries/github'
@@ -105,11 +104,6 @@ async function TimeTrackingContent({
     getGitHubStatus(),
   ])
 
-  // Fetch GitHub suggestions if connected
-  const githubSuggestionsResult = githubStatus.connected
-    ? await generateGitHubSuggestions({ forceRefresh: false })
-    : { suggestions: [], generatedAt: null }
-
   const activeProjects = projects.filter((p) => p.status === 'active')
 
   // Prepare areas data for weekly audit
@@ -134,9 +128,7 @@ async function TimeTrackingContent({
 
       {/* GitHub AI Suggestions Strip */}
       <GitHubSuggestionsStrip
-        generatedAt={githubSuggestionsResult.generatedAt}
         githubConnected={githubStatus.connected}
-        initialSuggestions={githubSuggestionsResult.suggestions}
         projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
       />
 

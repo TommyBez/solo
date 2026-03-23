@@ -7,6 +7,7 @@ import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { aiSuggestionDismissals, projects, timeEntries } from '@/lib/db/schema'
 import { getGitHubActivityForUser } from '@/lib/github/service'
+import type { GitHubActivity } from '@/lib/github/types'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import {
   type CachedSuggestion,
@@ -28,6 +29,125 @@ import {
   githubSuggestionSchema,
   type SuggestionType,
 } from './schemas'
+
+const GITHUB_CLUSTER_WINDOW_MINUTES = 180
+const MAX_GITHUB_SUGGESTIONS = 5
+
+interface GitHubActivityCluster {
+  activities: GitHubActivity[]
+  date: string
+  id: string
+  repoFullName: string
+  repoName: string
+  timeWindowEnd: string
+  timeWindowStart: string
+}
+
+function getIsoDate(value: string): string {
+  return value.split('T')[0]
+}
+
+function getMinutesBetween(first: string, second: string): number {
+  return Math.round(
+    Math.abs(new Date(second).getTime() - new Date(first).getTime()) / 60_000,
+  )
+}
+
+function clusterGitHubActivities(
+  activities: GitHubActivity[],
+): GitHubActivityCluster[] {
+  const sortedActivities = [...activities].sort(
+    (left, right) =>
+      new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
+  )
+
+  const clusters: GitHubActivityCluster[] = []
+
+  for (const activity of sortedActivities) {
+    const activityDate = getIsoDate(activity.timestamp)
+    const previousCluster = clusters.at(-1)
+    const previousActivity = previousCluster?.activities.at(-1)
+    const isSameCluster =
+      previousCluster &&
+      previousActivity &&
+      previousCluster.repoFullName === activity.repoFullName &&
+      previousCluster.date === activityDate &&
+      getMinutesBetween(previousActivity.timestamp, activity.timestamp) <=
+        GITHUB_CLUSTER_WINDOW_MINUTES
+
+    if (isSameCluster && previousCluster) {
+      previousCluster.activities.push(activity)
+      previousCluster.timeWindowEnd = activity.timestamp
+      continue
+    }
+
+    clusters.push({
+      activities: [activity],
+      date: activityDate,
+      id: `cluster-${activity.id}`,
+      repoFullName: activity.repoFullName,
+      repoName: activity.repoName,
+      timeWindowEnd: activity.timestamp,
+      timeWindowStart: activity.timestamp,
+    })
+  }
+
+  return clusters
+}
+
+function summarizeClusterActivities(cluster: GitHubActivityCluster): string[] {
+  return cluster.activities.slice(0, 4).map((activity) => {
+    let typeLabel = 'Review'
+    if (activity.type === 'commit') {
+      typeLabel = 'Commit'
+    } else if (activity.type === 'pr_merged') {
+      typeLabel = 'Merged PR'
+    } else if (activity.type === 'pr_opened') {
+      typeLabel = 'Opened PR'
+    }
+
+    return `[${typeLabel}] ${activity.description}`
+  })
+}
+
+function buildDuplicateCheck(
+  date: string,
+  projectId: number,
+  recentEntries: Array<{
+    date: string
+    durationMinutes: number
+    projectId: number
+  }>,
+): CachedSuggestion['metadata']['duplicateCheck'] {
+  const entriesOnDate = recentEntries.filter((entry) => entry.date === date)
+  const projectEntriesOnDate = entriesOnDate.filter(
+    (entry) => entry.projectId === projectId,
+  )
+
+  const minutesLoggedOnDate = entriesOnDate.reduce(
+    (sum, entry) => sum + entry.durationMinutes,
+    0,
+  )
+  const projectMinutesOnDate = projectEntriesOnDate.reduce(
+    (sum, entry) => sum + entry.durationMinutes,
+    0,
+  )
+
+  let summary = `No Solo entries are logged on ${date}.`
+  if (projectEntriesOnDate.length > 0) {
+    summary = `Solo already has ${projectEntriesOnDate.length} tracked entr${projectEntriesOnDate.length === 1 ? 'y' : 'ies'} for this project on ${date}, totaling ${projectMinutesOnDate} minutes.`
+  } else if (entriesOnDate.length > 0) {
+    summary = `Solo already has ${entriesOnDate.length} entr${entriesOnDate.length === 1 ? 'y' : 'ies'} on ${date}, totaling ${minutesLoggedOnDate} minutes, but none for this project.`
+  }
+
+  return {
+    existingEntryCountOnDate: entriesOnDate.length,
+    hasProjectEntryOnDate: projectEntriesOnDate.length > 0,
+    minutesLoggedOnDate,
+    projectMinutesOnDate,
+    summary,
+  }
+}
 
 // Enhance a vague or empty description
 export async function enhanceDescription(params: {
@@ -245,7 +365,17 @@ export async function generateGitHubSuggestions(params: {
       }
     }
 
-    // Get recent time entries to avoid duplicates
+    const activityClusters = clusterGitHubActivities(githubActivity)
+    if (activityClusters.length === 0) {
+      await setCachedSuggestions(organizationId, session.user.id, [])
+      return {
+        suggestions: [],
+        generatedAt: new Date().toISOString(),
+        fromCache: false,
+      }
+    }
+
+    // Get recent time entries to avoid duplicates and provide project evidence
     const orgProjectIds = orgProjects.map((p) => p.id)
     const recentEntries =
       orgProjectIds.length > 0
@@ -256,18 +386,32 @@ export async function generateGitHubSuggestions(params: {
             ),
             orderBy: [desc(timeEntries.startTime)],
             limit: 50,
+            with: {
+              project: true,
+            },
           })
         : []
 
     // Build prompt and call AI
     const prompt = buildGitHubSuggestionPrompt({
-      activities: githubActivity,
+      clusters: activityClusters.map((cluster) => ({
+        activityCount: cluster.activities.length,
+        clusterId: cluster.id,
+        date: cluster.date,
+        repoFullName: cluster.repoFullName,
+        repoName: cluster.repoName,
+        summaries: summarizeClusterActivities(cluster),
+        timeWindowEnd: cluster.timeWindowEnd,
+        timeWindowStart: cluster.timeWindowStart,
+      })),
       projects: orgProjects.map((p) => ({
         id: p.id,
         name: p.name,
         areaName: p.area.name,
       })),
       existingEntries: recentEntries.map((e) => ({
+        projectId: e.project.id,
+        projectName: e.project.name,
         date: e.startTime.toISOString().split('T')[0],
         description: e.description,
         durationMinutes: e.durationMinutes,
@@ -282,55 +426,95 @@ export async function generateGitHubSuggestions(params: {
     })
 
     // Transform AI response to cached suggestions
-    const suggestions: CachedSuggestion[] = (output?.suggestions || []).map(
-      (s) => {
-        const activity = githubActivity.find((a) => a.id === s.activityId)
-        const activityType = activity?.type || 'commit'
-
-        let suggestionType: CachedSuggestion['type']
-        if (activityType === 'commit') {
-          suggestionType = 'github_commit'
-        } else if (
-          activityType === 'pr_merged' ||
-          activityType === 'pr_opened'
-        ) {
-          suggestionType = 'github_pr'
-        } else {
-          suggestionType = 'github_review'
+    const generatedAt = new Date().toISOString()
+    const projectNameById = new Map(
+      orgProjects.map((project) => [project.id, project.name]),
+    )
+    const recentEntrySnapshots = recentEntries.map((entry) => ({
+      date: entry.startTime.toISOString().split('T')[0],
+      durationMinutes: entry.durationMinutes,
+      projectId: entry.project.id,
+    }))
+    const mappedSuggestions: CachedSuggestion[] = (output?.suggestions || [])
+      .filter((suggestion) => suggestion.confidence === 'high')
+      .map((suggestion) => {
+        const cluster = activityClusters.find(
+          (activityCluster) => activityCluster.id === suggestion.clusterId,
+        )
+        if (!cluster) {
+          return null
         }
+
+        if (!projectNameById.has(suggestion.projectId)) {
+          return null
+        }
+
+        const duplicateCheck = buildDuplicateCheck(
+          suggestion.date,
+          suggestion.projectId,
+          recentEntrySnapshots,
+        )
+
+        const existingEntryEvidence = recentEntries
+          .filter((entry) => entry.project.id === suggestion.projectId)
+          .slice(0, 2)
+          .map((entry) => ({
+            date: entry.startTime.toISOString().split('T')[0],
+            description: entry.description || '(no description)',
+            durationMinutes: entry.durationMinutes,
+            projectName: entry.project.name,
+          }))
 
         return {
-          id: `github-${s.activityId}`,
-          type: suggestionType,
-          sourceId: s.activityId,
-          projectId: s.projectId,
-          description: s.description,
-          durationMinutes: s.durationMinutes,
-          date: s.date,
-          status: 'pending' as const,
+          confidence: suggestion.confidence,
+          date: suggestion.date,
+          description: suggestion.description,
+          durationMinutes: suggestion.durationMinutes,
+          generatedAt,
+          id: `github-missing-${suggestion.clusterId}`,
           metadata: {
-            repoName: activity?.repoName || '',
-            repoFullName: activity?.repoFullName || '',
-            commitSha: activity?.metadata.commitSha,
-            commitMessage: activity?.metadata.commitMessage,
-            prNumber: activity?.metadata.prNumber,
-            prTitle: activity?.metadata.prTitle,
-            additions: activity?.metadata.additions,
-            deletions: activity?.metadata.deletions,
-            reviewState: activity?.metadata.reviewState,
-            url: activity?.url || '',
+            activityCount: cluster.activities.length,
+            activityIds: cluster.activities.map((activity) => activity.id),
+            activityTypes: [
+              ...new Set(cluster.activities.map((activity) => activity.type)),
+            ],
+            duplicateCheck,
+            existingEntryEvidence,
+            primaryUrl: cluster.activities[0]?.url || '',
+            repoFullName: cluster.repoFullName,
+            repoName: cluster.repoName,
+            timeWindowEnd: cluster.timeWindowEnd,
+            timeWindowStart: cluster.timeWindowStart,
+            titles: cluster.activities.map((activity) => activity.description),
+            urls: cluster.activities
+              .map((activity) => activity.url)
+              .filter(
+                (url, index, allUrls) =>
+                  Boolean(url) && allUrls.indexOf(url) === index,
+              ),
           },
-          generatedAt: new Date().toISOString(),
+          projectId: suggestion.projectId,
+          reasoning: suggestion.reasoning,
+          sourceId: suggestion.clusterId,
+          status: 'pending' as const,
+          type: 'missing_entry' as const,
         }
-      },
-    )
+      })
+      .filter(
+        (suggestion): suggestion is CachedSuggestion => suggestion !== null,
+      )
+      .slice(0, MAX_GITHUB_SUGGESTIONS)
 
     // Cache the suggestions
-    await setCachedSuggestions(organizationId, session.user.id, suggestions)
+    await setCachedSuggestions(
+      organizationId,
+      session.user.id,
+      mappedSuggestions,
+    )
 
     return {
-      suggestions,
-      generatedAt: new Date().toISOString(),
+      suggestions: mappedSuggestions,
+      generatedAt,
       fromCache: false,
     }
   } catch (error) {
