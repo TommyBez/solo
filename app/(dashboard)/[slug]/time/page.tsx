@@ -119,18 +119,22 @@ async function TimeTrackingContent({
       {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
 
       {/* Weekly Audit Banner - shows on Friday/Sunday */}
-      <WeeklyAuditBanner
-        areasWithExpectedHours={areasWithExpectedHours}
-        weekCalendarEvents={googleCalendarEvents}
-        weekEntries={entries}
-        weekStartsOn={weekStartsOn as 0 | 1}
-      />
+      {settings.aiEnabled && (
+        <WeeklyAuditBanner
+          areasWithExpectedHours={areasWithExpectedHours}
+          weekCalendarEvents={googleCalendarEvents}
+          weekEntries={entries}
+          weekStartsOn={weekStartsOn as 0 | 1}
+        />
+      )}
 
       {/* GitHub AI Suggestions Strip */}
-      <GitHubSuggestionsStrip
-        githubConnected={githubStatus.connected}
-        projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
-      />
+      {settings.aiEnabled && (
+        <GitHubSuggestionsStrip
+          githubConnected={githubStatus.connected}
+          projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
+        />
+      )}
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         {viewParam === 'week' ? (
@@ -165,7 +169,7 @@ async function TimeTrackingContent({
       ) : (
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="order-first lg:order-none lg:col-span-1">
-            <TimerWidget projects={activeProjects} />
+            <TimerWidget aiEnabled={settings.aiEnabled} projects={activeProjects} />
           </div>
           <div className="lg:col-span-2">
             <TimeEntriesList entries={entries} projects={activeProjects} />

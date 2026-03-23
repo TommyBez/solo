@@ -100,6 +100,7 @@ export const userSettings = pgTable('user_settings', {
     .default('MMM d, yyyy'),
   timeFormat: varchar('time_format', { length: 2 }).notNull().default('12'),
   weekStartsOn: varchar('week_starts_on', { length: 1 }).notNull().default('1'),
+  aiEnabled: boolean('ai_enabled').notNull().default(true),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
