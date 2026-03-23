@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface BatchActionBarProps {
@@ -10,7 +10,11 @@ interface BatchActionBarProps {
   onHide: () => void
 }
 
-export function BatchActionBar({ count, onAcceptAll, onHide }: BatchActionBarProps) {
+export function BatchActionBar({
+  count,
+  onAcceptAll,
+  onHide,
+}: BatchActionBarProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleAcceptAll() {
@@ -25,14 +29,16 @@ export function BatchActionBar({ count, onAcceptAll, onHide }: BatchActionBarPro
   return (
     <div className="flex items-center gap-2">
       <Button
-        onClick={handleAcceptAll}
         disabled={isLoading || count === 0}
+        onClick={handleAcceptAll}
         size="sm"
       >
-        {isLoading && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
+        {isLoading && (
+          <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+        )}
         Accept all ({count})
       </Button>
-      <Button variant="ghost" onClick={onHide} disabled={isLoading} size="sm">
+      <Button disabled={isLoading} onClick={onHide} size="sm" variant="ghost">
         Hide
       </Button>
     </div>

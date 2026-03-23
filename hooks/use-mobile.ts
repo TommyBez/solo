@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 
 const MOBILE_BREAKPOINT = 768
 

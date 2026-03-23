@@ -1,21 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { createTimeEntry } from '@/lib/actions/time-entries'
-import { suggestEntryFromEvent, dismissSuggestion } from '@/lib/ai/time-capture'
-import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { EntrySuggestion, SuggestionStatus } from '@/lib/ai/schemas'
-import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
+import { dismissSuggestion, suggestEntryFromEvent } from '@/lib/ai/time-capture'
+import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { Area, Project } from '@/lib/db/schema'
+import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import { SuggestionCard } from './suggestion-card'
 
 interface EntrySuggestionCardProps {
   calendarEvent: GoogleCalendarEvent
-  projects: (Project & { area: Area })[]
   onAccept: () => void
   onDismiss: () => void
+  projects: (Project & { area: Area })[]
 }
 
 export function EntrySuggestionCard({
@@ -35,7 +35,9 @@ export function EntrySuggestionCard({
       setStatus('loading')
       const result = await suggestEntryFromEvent({ calendarEvent })
 
-      if (!isMounted) return
+      if (!isMounted) {
+        return
+      }
 
       if (result) {
         setSuggestion(result)
@@ -63,7 +65,9 @@ export function EntrySuggestionCard({
   }
 
   async function handleAccept() {
-    if (!suggestion || !selectedProject) return
+    if (!(suggestion && selectedProject)) {
+      return
+    }
 
     setStatus('accepting')
     try {
@@ -139,19 +143,19 @@ export function EntrySuggestionCard({
 
   return (
     <SuggestionCard
-      type="entry"
-      status={status}
-      projectName={selectedProject?.name || calendarEvent.title}
-      projectColor={selectedProject?.area.color}
       areaName={selectedProject?.area.name}
-      duration={suggestion?.durationMinutes}
       description={suggestion?.description || calendarEvent.title}
-      timeWindow={timeWindow}
+      duration={suggestion?.durationMinutes}
       evidenceLines={evidenceLines}
       onAccept={handleAccept}
-      onEdit={handleEdit}
       onDismiss={handleDismiss}
+      onEdit={handleEdit}
       onRetry={handleRetry}
+      projectColor={selectedProject?.area.color}
+      projectName={selectedProject?.name || calendarEvent.title}
+      status={status}
+      timeWindow={timeWindow}
+      type="entry"
     />
   )
 }

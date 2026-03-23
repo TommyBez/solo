@@ -39,7 +39,7 @@ async function AreasContent() {
   }
 
   return (
-    <div className="stagger-children grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="stagger-children grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
       {areas.map((area) => (
         <AreaCard area={area} key={area.id} />
       ))}
@@ -49,7 +49,7 @@ async function AreasContent() {
 
 function AreasSkeleton() {
   return (
-    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
       {['skeleton-area-1', 'skeleton-area-2'].map((id) => (
         <Skeleton className="h-40 sm:h-48" key={id} />
       ))}

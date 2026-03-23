@@ -1,37 +1,41 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
-import type { Area, Project, TimeEntry } from '@/lib/db/schema'
+import { useMemo, useState } from 'react'
 import { generateSuggestionHash, timeRangesOverlap } from '@/lib/ai/utils'
+import type { Area, Project, TimeEntry } from '@/lib/db/schema'
+import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import { EntrySuggestionCard } from './entry-suggestion-card'
 
 interface SuggestionsStripProps {
-  entries: TimeEntry[]
   calendarEvents: GoogleCalendarEvent[]
-  projects: (Project & { area: Area })[]
   dismissedHashes: string[]
+  entries: TimeEntry[]
+  projects: (Project & { area: Area })[]
 }
 
 // Find calendar events that don't have matching time entries
 function findUntrackedEvents(
   calendarEvents: GoogleCalendarEvent[],
   entries: TimeEntry[],
-  dismissedHashes: string[]
+  dismissedHashes: string[],
 ): GoogleCalendarEvent[] {
   const dismissedSet = new Set(dismissedHashes)
 
   return calendarEvents.filter((event) => {
     // Skip all-day events
-    if (event.allDay) return false
+    if (event.allDay) {
+      return false
+    }
 
     // Calculate event duration
     const eventStart = new Date(event.startTime)
     const eventEnd = new Date(event.endTime)
-    const durationMinutes = (eventEnd.getTime() - eventStart.getTime()) / 60000
+    const durationMinutes = (eventEnd.getTime() - eventStart.getTime()) / 60_000
 
     // Skip very short events (< 15 minutes)
-    if (durationMinutes < 15) return false
+    if (durationMinutes < 15) {
+      return false
+    }
 
     // Check if dismissed
     const hash = generateSuggestionHash({
@@ -39,14 +43,16 @@ function findUntrackedEvents(
       sourceId: event.id,
       date: event.startTime.split('T')[0],
     })
-    if (dismissedSet.has(hash)) return false
+    if (dismissedSet.has(hash)) {
+      return false
+    }
 
     // Check if any time entry overlaps with this event
     const hasOverlap = entries.some((entry) => {
       const entryStart = new Date(entry.startTime)
       const entryEnd = entry.endTime
         ? new Date(entry.endTime)
-        : new Date(entryStart.getTime() + entry.durationMinutes * 60000)
+        : new Date(entryStart.getTime() + entry.durationMinutes * 60_000)
 
       return timeRangesOverlap(eventStart, eventEnd, entryStart, entryEnd)
     })
@@ -65,7 +71,10 @@ export function SuggestionsStrip({
 
   const untrackedEvents = useMemo(() => {
     const allDismissed = [...dismissedHashes, ...localDismissed]
-    return findUntrackedEvents(calendarEvents, entries, allDismissed).slice(0, 5)
+    return findUntrackedEvents(calendarEvents, entries, allDismissed).slice(
+      0,
+      5,
+    )
   }, [calendarEvents, entries, dismissedHashes, localDismissed])
 
   // Don't render if no suggestions
@@ -95,21 +104,22 @@ export function SuggestionsStrip({
   return (
     <div className="relative mb-6">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">
+        <h3 className="font-medium text-muted-foreground text-sm">
           Suggested time entries
         </h3>
-        <span className="text-xs text-muted-foreground">
-          {untrackedEvents.length} untracked event{untrackedEvents.length !== 1 ? 's' : ''}
+        <span className="text-muted-foreground text-xs">
+          {untrackedEvents.length} untracked event
+          {untrackedEvents.length !== 1 ? 's' : ''}
         </span>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
+      <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted flex gap-3 overflow-x-auto pb-2">
         {untrackedEvents.map((event) => (
           <EntrySuggestionCard
-            key={event.id}
             calendarEvent={event}
-            projects={projects}
+            key={event.id}
             onAccept={() => handleAccept(event)}
             onDismiss={() => handleDismiss(event)}
+            projects={projects}
           />
         ))}
       </div>

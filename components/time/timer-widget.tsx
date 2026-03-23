@@ -4,6 +4,7 @@ import { Clock, Pause, Play, Square } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { DescriptionEnhancer } from '@/components/ai/description-enhancer'
 import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,7 +21,6 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { createTimeEntry } from '@/lib/actions/time-entries'
 import { isDescriptionVague } from '@/lib/ai/prompts'
-import { DescriptionEnhancer } from '@/components/ai/description-enhancer'
 import type { Area, Project } from '@/lib/db/schema'
 import {
   SHORTCUT_EVENTS,
@@ -113,7 +113,11 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
       router.refresh()
 
       // Check if description needs enhancement
-      if (currentProject && isDescriptionVague(timerData.description) && result?.id) {
+      if (
+        currentProject &&
+        isDescriptionVague(timerData.description) &&
+        result?.id
+      ) {
         setEnhancerData({
           entryId: result.id,
           projectId: parsedProjectId,
@@ -210,7 +214,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
     setEnhancerData(null)
   }
 
-  const handleEnhancerEdit = (suggestedDescription: string) => {
+  const handleEnhancerEdit = (_suggestedDescription: string) => {
     // For now, just close the enhancer - in future could open edit dialog
     setShowEnhancer(false)
     setEnhancerData(null)
@@ -226,125 +230,128 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
             'timer-running border-primary border-l-2 bg-primary/5 dark:bg-primary/10',
         )}
       >
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Quick Timer</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Select
-          disabled={isRunning}
-          onValueChange={handleProjectChange}
-          value={projectId}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select project" />
-          </SelectTrigger>
-          <SelectContent>
-            {recentProjects.length > 0 && (
-              <>
-                <SelectGroup>
-                  <SelectLabel className="flex items-center gap-2">
-                    <Clock className="size-3" />
-                    Recent
-                  </SelectLabel>
-                  {recentProjects.map((project) => (
-                    <SelectItem
-                      key={`recent-${project.id}`}
-                      value={project.id.toString()}
-                    >
-                      <div className="flex items-center gap-2">
-                        <ColorDot color={project.area.color} />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Quick Timer</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Select
+            disabled={isRunning}
+            onValueChange={handleProjectChange}
+            value={projectId}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select project" />
+            </SelectTrigger>
+            <SelectContent>
+              {recentProjects.length > 0 && (
+                <>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2">
+                      <Clock className="size-3" />
+                      Recent
+                    </SelectLabel>
+                    {recentProjects.map((project) => (
+                      <SelectItem
+                        key={`recent-${project.id}`}
+                        value={project.id.toString()}
+                      >
+                        <div className="flex items-center gap-2">
+                          <ColorDot color={project.area.color} />
+                          {project.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <Separator className="my-1" />
+                </>
+              )}
+              {Object.entries(projectsByArea).map(
+                ([areaName, { area, projects: areaProjects }]) => (
+                  <SelectGroup key={areaName}>
+                    <SelectLabel className="flex items-center gap-2">
+                      <ColorDot color={area.color} />
+                      {areaName}
+                    </SelectLabel>
+                    {areaProjects.map((project) => (
+                      <SelectItem
+                        key={project.id}
+                        value={project.id.toString()}
+                      >
                         {project.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-                <Separator className="my-1" />
-              </>
-            )}
-            {Object.entries(projectsByArea).map(
-              ([areaName, { area, projects: areaProjects }]) => (
-                <SelectGroup key={areaName}>
-                  <SelectLabel className="flex items-center gap-2">
-                    <ColorDot color={area.color} />
-                    {areaName}
-                  </SelectLabel>
-                  {areaProjects.map((project) => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              ),
-            )}
-          </SelectContent>
-        </Select>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ),
+              )}
+            </SelectContent>
+          </Select>
 
-        <Input
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="What are you working on?"
-          value={description}
-        />
+          <Input
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What are you working on?"
+            value={description}
+          />
 
-        {selectedProject ? (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <ColorDot color={selectedProject.area.color} />
-            <span>{selectedProject.area.name}</span>
-          </div>
-        ) : null}
+          {selectedProject ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <ColorDot color={selectedProject.area.color} />
+              <span>{selectedProject.area.name}</span>
+            </div>
+          ) : null}
 
-        <div className="flex items-center justify-between gap-4">
-          <span className="font-bold font-mono text-2xl tabular-nums tracking-wider sm:text-4xl">
-            {formatTime(seconds)}
-          </span>
-          <div className="flex shrink-0 gap-2">
-            {isRunning ? (
-              <>
+          <div className="flex items-center justify-between gap-4">
+            <span className="font-bold font-mono text-2xl tabular-nums tracking-wider sm:text-4xl">
+              {formatTime(seconds)}
+            </span>
+            <div className="flex shrink-0 gap-2">
+              {isRunning ? (
+                <>
+                  <Button
+                    className="size-11 rounded-full sm:size-10"
+                    onClick={handlePause}
+                    size="icon"
+                    variant="secondary"
+                  >
+                    <Pause className="size-5" />
+                    <span className="sr-only">Pause timer</span>
+                  </Button>
+                  <Button
+                    className="size-11 rounded-full sm:size-10"
+                    onClick={handleStop}
+                    size="icon"
+                    variant="destructive"
+                  >
+                    <Square className="size-5" />
+                    <span className="sr-only">Stop and save</span>
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  className="size-11 rounded-full sm:size-10"
-                  onClick={handlePause}
+                  className="size-12 rounded-full shadow-md"
+                  onClick={handleStart}
                   size="icon"
-                  variant="secondary"
                 >
-                  <Pause className="size-5" />
-                  <span className="sr-only">Pause timer</span>
+                  <Play className="size-6" />
+                  <span className="sr-only">Start timer</span>
                 </Button>
-                <Button
-                  className="size-11 rounded-full sm:size-10"
-                  onClick={handleStop}
-                  size="icon"
-                  variant="destructive"
-                >
-                  <Square className="size-5" />
-                  <span className="sr-only">Stop and save</span>
-                </Button>
-              </>
-            ) : (
-              <Button
-                className="size-12 rounded-full shadow-md"
-                onClick={handleStart}
-                size="icon"
-              >
-                <Play className="size-6" />
-                <span className="sr-only">Start timer</span>
-              </Button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
 
       {/* Description enhancer - shows after timer stops with vague description */}
       {showEnhancer && enhancerData && (
         <DescriptionEnhancer
-          entryId={enhancerData.entryId}
-          projectId={enhancerData.projectId}
-          projectName={enhancerData.projectName}
           areaName={enhancerData.areaName}
           currentDescription={enhancerData.description}
           durationMinutes={enhancerData.durationMinutes}
+          entryId={enhancerData.entryId}
           onAccept={handleEnhancerAccept}
           onDismiss={handleEnhancerDismiss}
           onEdit={handleEnhancerEdit}
+          projectId={enhancerData.projectId}
+          projectName={enhancerData.projectName}
         />
       )}
     </div>

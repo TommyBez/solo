@@ -43,7 +43,9 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
     <Card>
       <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
         <CardTitle className="text-base sm:text-lg">Recent Activity</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">Latest time entries</CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
+          Latest time entries
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-4 pt-2 sm:p-6 sm:pt-2">
         {entries.length === 0 ? (
@@ -72,13 +74,16 @@ export function RecentEntries({ entries }: RecentEntriesProps) {
                       {entry.description}
                     </p>
                   ) : null}
-                  <p className="text-muted-foreground text-[10px] sm:text-xs">
+                  <p className="text-[10px] text-muted-foreground sm:text-xs">
                     {formatDistanceToNow(new Date(entry.startTime), {
                       addSuffix: true,
                     })}
                   </p>
                 </div>
-                <Badge className="shrink-0 font-mono text-[10px] tabular-nums sm:text-xs" variant="secondary">
+                <Badge
+                  className="shrink-0 font-mono text-[10px] tabular-nums sm:text-xs"
+                  variant="secondary"
+                >
                   {formatDuration(entry.durationMinutes)}
                 </Badge>
               </div>

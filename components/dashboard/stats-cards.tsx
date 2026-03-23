@@ -68,7 +68,9 @@ export function StatsCards({
     <div className="stagger-children grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <Card className="bg-primary/5 ring-primary/20 dark:bg-primary/10">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
-          <CardTitle className="font-medium text-xs sm:text-sm">This Week</CardTitle>
+          <CardTitle className="font-medium text-xs sm:text-sm">
+            This Week
+          </CardTitle>
           <div className="flex size-6 items-center justify-center rounded-md bg-primary/10 sm:size-8">
             <Clock className="size-3 text-primary sm:size-4" />
           </div>
@@ -87,7 +89,9 @@ export function StatsCards({
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
-          <CardTitle className="font-medium text-xs sm:text-sm">This Month</CardTitle>
+          <CardTitle className="font-medium text-xs sm:text-sm">
+            This Month
+          </CardTitle>
           <div className="flex size-6 items-center justify-center rounded-md bg-muted sm:size-8">
             <Target className="size-3 text-muted-foreground sm:size-4" />
           </div>
@@ -97,14 +101,18 @@ export function StatsCards({
             {monthlyHours}h
           </div>
           <div className="flex flex-col gap-1">
-            <p className="hidden text-muted-foreground text-xs sm:block">Total tracked time</p>
+            <p className="hidden text-muted-foreground text-xs sm:block">
+              Total tracked time
+            </p>
             <TrendIndicator change={monthlyChange} label="vs last month" />
           </div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
-          <CardTitle className="font-medium text-xs sm:text-sm">Weekly Goal</CardTitle>
+          <CardTitle className="font-medium text-xs sm:text-sm">
+            Weekly Goal
+          </CardTitle>
           <div className="flex size-6 items-center justify-center rounded-md bg-muted sm:size-8">
             <Layers className="size-3 text-muted-foreground sm:size-4" />
           </div>
@@ -142,7 +150,9 @@ export function StatsCards({
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
-          <CardTitle className="font-medium text-xs sm:text-sm">Active Work</CardTitle>
+          <CardTitle className="font-medium text-xs sm:text-sm">
+            Active Work
+          </CardTitle>
           <div className="flex size-6 items-center justify-center rounded-md bg-muted sm:size-8">
             <FolderKanban className="size-3 text-muted-foreground sm:size-4" />
           </div>
@@ -153,7 +163,8 @@ export function StatsCards({
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-muted-foreground text-xs">
-              <span className="hidden sm:inline">projects across </span>{activeAreasCount} areas
+              <span className="hidden sm:inline">projects across </span>
+              {activeAreasCount} areas
             </p>
           </div>
         </CardContent>

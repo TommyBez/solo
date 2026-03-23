@@ -39,7 +39,7 @@ async function ClientsContent() {
   }
 
   return (
-    <div className="stagger-children grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="stagger-children grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
       {clients.map((client) => (
         <ClientCard client={client} key={client.id} />
       ))}
@@ -49,12 +49,8 @@ async function ClientsContent() {
 
 function ClientsSkeleton() {
   return (
-    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {[
-        'client-1',
-        'client-2',
-        'client-3',
-      ].map((key) => (
+    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+      {['client-1', 'client-2', 'client-3'].map((key) => (
         <div className="space-y-4 rounded-lg border p-4 sm:p-6" key={key}>
           <div className="flex items-start justify-between">
             <div className="space-y-2">

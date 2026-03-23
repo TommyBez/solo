@@ -8,26 +8,21 @@ export interface GitHubConnectionStatus {
 
 export interface GitHubTokenPayload {
   accessToken: string
-  tokenType: string
   scope: string
+  tokenType: string
 }
 
 export interface GitHubUser {
+  avatar_url: string
+  email: string | null
   id: number
   login: string
   name: string | null
-  email: string | null
-  avatar_url: string
 }
 
 export interface GitHubActivity {
-  id: string
-  type: 'commit' | 'pr_merged' | 'pr_opened' | 'review'
   description: string
-  repoName: string
-  repoFullName: string
-  timestamp: string
-  url: string
+  id: string
   metadata: {
     commitSha?: string
     commitMessage?: string
@@ -37,10 +32,14 @@ export interface GitHubActivity {
     deletions?: number
     reviewState?: string
   }
+  repoFullName: string
+  repoName: string
+  timestamp: string
+  type: 'commit' | 'pr_merged' | 'pr_opened' | 'review'
+  url: string
 }
 
 export interface GitHubCommit {
-  sha: string
   commit: {
     author: {
       name: string
@@ -50,32 +49,28 @@ export interface GitHubCommit {
     message: string
   }
   html_url: string
+  sha: string
 }
 
 export interface GitHubPullRequest {
-  id: number
-  number: number
-  title: string
-  state: string
-  merged_at: string | null
-  created_at: string
-  updated_at: string
-  html_url: string
   additions: number
+  created_at: string
   deletions: number
+  html_url: string
+  id: number
+  merged_at: string | null
+  number: number
+  state: string
+  title: string
+  updated_at: string
   user: {
     login: string
   }
 }
 
 export interface GitHubEvent {
-  id: string
-  type: string
   created_at: string
-  repo: {
-    id: number
-    name: string
-  }
+  id: string
   payload: {
     action?: string
     commits?: Array<{
@@ -99,4 +94,9 @@ export interface GitHubEvent {
     ref?: string
     ref_type?: string
   }
+  repo: {
+    id: number
+    name: string
+  }
+  type: string
 }

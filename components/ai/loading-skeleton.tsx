@@ -2,20 +2,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 interface LoadingSkeletonProps {
-  type: 'suggestion-card' | 'strip' | 'catchup-module'
   className?: string
+  type: 'suggestion-card' | 'strip' | 'catchup-module'
 }
 
 export function LoadingSkeleton({ type, className }: LoadingSkeletonProps) {
   if (type === 'suggestion-card') {
     return (
-      <div
-        className={cn(
-          'w-72 rounded-lg border bg-card p-4',
-          className
-        )}
+      <output
         aria-busy="true"
         aria-label="Loading suggestion"
+        className={cn('block w-72 rounded-lg border bg-card p-4', className)}
       >
         <div className="mb-3 flex items-center justify-between">
           <Skeleton className="h-5 w-16" />
@@ -32,30 +29,30 @@ export function LoadingSkeleton({ type, className }: LoadingSkeletonProps) {
             <Skeleton className="h-8 w-28" />
           </div>
         </div>
-      </div>
+      </output>
     )
   }
 
   if (type === 'strip') {
     return (
-      <div
-        className={cn('flex gap-3 overflow-hidden', className)}
+      <output
         aria-busy="true"
         aria-label="Loading suggestions"
+        className={cn('flex gap-3 overflow-hidden', className)}
       >
         <LoadingSkeleton type="suggestion-card" />
         <LoadingSkeleton type="suggestion-card" />
         <LoadingSkeleton type="suggestion-card" />
-      </div>
+      </output>
     )
   }
 
   if (type === 'catchup-module') {
     return (
-      <div
-        className={cn('rounded-lg border bg-card p-4', className)}
+      <output
         aria-busy="true"
         aria-label="Loading daily review"
+        className={cn('block rounded-lg border bg-card p-4', className)}
       >
         <div className="mb-4 flex items-center justify-between">
           <Skeleton className="h-5 w-32" />
@@ -69,7 +66,7 @@ export function LoadingSkeleton({ type, className }: LoadingSkeletonProps) {
           <LoadingSkeleton type="suggestion-card" />
           <LoadingSkeleton type="suggestion-card" />
         </div>
-      </div>
+      </output>
     )
   }
 

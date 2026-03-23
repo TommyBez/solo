@@ -21,8 +21,14 @@ export async function sendEmail({
     return
   }
 
+  const from = process.env.EMAIL_FROM
+  if (!from) {
+    console.error('[Email Error] EMAIL_FROM is not set')
+    return
+  }
+
   const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM!,
+    from,
     to,
     subject,
     html,

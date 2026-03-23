@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface ActionRowProps {
-  onAccept: () => Promise<void>
-  onEdit: () => void
   acceptLabel?: string
   isLoading?: boolean
+  onAccept: () => Promise<void>
+  onEdit: () => void
 }
 
 export function ActionRow({
@@ -33,20 +33,17 @@ export function ActionRow({
   return (
     <div className="flex items-center gap-2">
       <Button
-        onClick={handleAccept}
-        disabled={loading}
-        size="sm"
         className="min-w-[5rem]"
+        disabled={loading}
+        onClick={handleAccept}
+        size="sm"
       >
-        {loading && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
+        {loading && (
+          <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+        )}
         {acceptLabel}
       </Button>
-      <Button
-        variant="secondary"
-        onClick={onEdit}
-        disabled={loading}
-        size="sm"
-      >
+      <Button disabled={loading} onClick={onEdit} size="sm" variant="secondary">
         Accept and edit
       </Button>
     </div>

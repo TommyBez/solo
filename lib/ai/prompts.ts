@@ -2,17 +2,22 @@ import type { GitHubActivity } from '@/lib/github/types'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 
 interface DescriptionPromptParams {
-  currentDescription: string
-  projectName: string
   areaName: string
+  currentDescription: string
   durationMinutes: number
+  projectName: string
   recentDescriptions: string[]
 }
 
-export function buildDescriptionPrompt(params: DescriptionPromptParams): string {
+export function buildDescriptionPrompt(
+  params: DescriptionPromptParams,
+): string {
   const recentEntriesText =
     params.recentDescriptions.length > 0
-      ? params.recentDescriptions.slice(0, 5).map((d) => `- ${d}`).join('\n')
+      ? params.recentDescriptions
+          .slice(0, 5)
+          .map((d) => `- ${d}`)
+          .join('\n')
       : '(no recent entries)'
 
   return `You are helping a freelancer improve their time entry description.
@@ -40,11 +45,13 @@ interface EntrySuggestionPromptParams {
   recentEntries: Array<{ projectName: string; description: string | null }>
 }
 
-export function buildEntrySuggestionPrompt(params: EntrySuggestionPromptParams): string {
+export function buildEntrySuggestionPrompt(
+  params: EntrySuggestionPromptParams,
+): string {
   const eventDuration = Math.round(
     (new Date(params.calendarEvent.endTime).getTime() -
       new Date(params.calendarEvent.startTime).getTime()) /
-      60000
+      60_000,
   )
 
   const projectsText = params.projects
@@ -55,7 +62,9 @@ export function buildEntrySuggestionPrompt(params: EntrySuggestionPromptParams):
     params.recentEntries.length > 0
       ? params.recentEntries
           .slice(0, 5)
-          .map((e) => `- ${e.projectName}: ${e.description || '(no description)'}`)
+          .map(
+            (e) => `- ${e.projectName}: ${e.description || '(no description)'}`,
+          )
           .join('\n')
       : '(none)'
 
@@ -83,21 +92,21 @@ If you cannot confidently match to a project, use the first project and set conf
 }
 
 interface GapAuditPromptParams {
+  expectedHoursPerWeek: number
+  projects: Array<{ id: number; name: string }>
   weekEntries: Array<{
     date: string
     projectName: string
     description: string | null
     durationMinutes: number
   }>
-  expectedHoursPerWeek: number
-  projects: Array<{ id: number; name: string }>
 }
 
 export function buildGapAuditPrompt(params: GapAuditPromptParams): string {
   const entriesText = params.weekEntries
     .map(
       (e) =>
-        `- ${e.date}: ${e.projectName} (${e.durationMinutes}min) - "${e.description || '(blank)'}"`
+        `- ${e.date}: ${e.projectName} (${e.durationMinutes}min) - "${e.description || '(blank)'}"`,
     )
     .join('\n')
 
@@ -149,7 +158,9 @@ const VAGUE_PATTERNS = [
   /^coding$/i,
 ]
 
-export function isDescriptionVague(description: string | null | undefined): boolean {
+export function isDescriptionVague(
+  description: string | null | undefined,
+): boolean {
   if (!description || description.trim().length === 0) {
     return true
   }
@@ -171,27 +182,29 @@ export function isDescriptionVague(description: string | null | undefined): bool
 
 interface GitHubSuggestionPromptParams {
   activities: GitHubActivity[]
-  projects: Array<{ id: number; name: string; areaName: string }>
   existingEntries: Array<{
     date: string
     description: string | null
     durationMinutes: number
   }>
+  projects: Array<{ id: number; name: string; areaName: string }>
 }
 
 export function buildGitHubSuggestionPrompt(
-  params: GitHubSuggestionPromptParams
+  params: GitHubSuggestionPromptParams,
 ): string {
   const activitiesText = params.activities
     .map((a) => {
-      const typeLabel =
-        a.type === 'commit'
-          ? 'Commit'
-          : a.type === 'pr_merged'
-            ? 'Merged PR'
-            : a.type === 'pr_opened'
-              ? 'Opened PR'
-              : 'Code Review'
+      let typeLabel: string
+      if (a.type === 'commit') {
+        typeLabel = 'Commit'
+      } else if (a.type === 'pr_merged') {
+        typeLabel = 'Merged PR'
+      } else if (a.type === 'pr_opened') {
+        typeLabel = 'Opened PR'
+      } else {
+        typeLabel = 'Code Review'
+      }
       return `- [${typeLabel}] ${a.description} in ${a.repoName} at ${a.timestamp}`
     })
     .join('\n')
@@ -206,7 +219,7 @@ export function buildGitHubSuggestionPrompt(
           .slice(0, 10)
           .map(
             (e) =>
-              `- ${e.date}: ${e.description || '(no description)'} (${e.durationMinutes}min)`
+              `- ${e.date}: ${e.description || '(no description)'} (${e.durationMinutes}min)`,
           )
           .join('\n')
       : '(no recent entries)'
@@ -240,12 +253,12 @@ Return an empty array if all activities appear to already be logged.`
 
 interface GitHubSuggestionResponseItem {
   activityId: string
-  projectId: number
+  confidence: 'high' | 'medium' | 'low'
+  date: string
   description: string
   durationMinutes: number
-  confidence: 'high' | 'medium' | 'low'
+  projectId: number
   reasoning: string
-  date: string
 }
 
 export type GitHubSuggestionResponse = GitHubSuggestionResponseItem[]

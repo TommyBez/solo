@@ -1,27 +1,22 @@
 'use client'
 
-import { useState } from 'react'
 import { X } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import type { EvidenceIcon, SuggestionStatus } from '@/lib/ai/schemas'
 import { cn } from '@/lib/utils'
-import type { SuggestionStatus, EvidenceIcon } from '@/lib/ai/schemas'
-import { AiDraftBadge } from './ai-draft-badge'
-import { EvidenceChip } from './evidence-chip'
 import { ActionRow } from './action-row'
-import { LoadingSkeleton } from './loading-skeleton'
+import { AiDraftBadge } from './ai-draft-badge'
 import { ErrorState } from './error-state'
+import { EvidenceChip } from './evidence-chip'
+import { LoadingSkeleton } from './loading-skeleton'
 
 interface SuggestionCardProps {
-  type: 'entry' | 'description'
-  status: SuggestionStatus
-
-  // For entry suggestions
-  projectName?: string
-  projectColor?: string
   areaName?: string
-  duration?: number
+
+  className?: string
   description?: string
-  timeWindow?: { start: Date; end: Date }
+  duration?: number
 
   // For description suggestions
   enhancedDescription?: string
@@ -34,18 +29,27 @@ interface SuggestionCardProps {
 
   // Actions
   onAccept: () => Promise<void>
-  onEdit: () => void
   onDismiss: () => Promise<void>
+  onEdit: () => void
   onRetry?: () => void
+  projectColor?: string
 
-  className?: string
+  // For entry suggestions
+  projectName?: string
+  status: SuggestionStatus
+  timeWindow?: { start: Date; end: Date }
+  type: 'entry' | 'description'
 }
 
 function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
-  if (mins === 0) return `${hours}h`
+  if (hours === 0) {
+    return `${mins}m`
+  }
+  if (mins === 0) {
+    return `${hours}h`
+  }
   return `${hours}h ${mins}m`
 }
 
@@ -75,14 +79,14 @@ export function SuggestionCard({
   const [isDismissing, setIsDismissing] = useState(false)
 
   if (status === 'loading') {
-    return <LoadingSkeleton type="suggestion-card" className={className} />
+    return <LoadingSkeleton className={className} type="suggestion-card" />
   }
 
   if (status === 'error') {
     return (
       <ErrorState
-        onRetry={onRetry || (() => {})}
         className={className}
+        onRetry={onRetry ?? (() => undefined)}
       />
     )
   }
@@ -96,28 +100,29 @@ export function SuggestionCard({
     }
   }
 
-  const displayDescription = type === 'description' ? enhancedDescription : description
+  const displayDescription =
+    type === 'description' ? enhancedDescription : description
 
   return (
     <div
       className={cn(
         'w-72 shrink-0 rounded-lg border bg-card p-4 transition-opacity',
         isDismissing && 'opacity-50',
-        className
+        className,
       )}
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <AiDraftBadge />
         <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={handleDismiss}
-          disabled={isDismissing || status === 'accepting'}
           aria-label="Dismiss suggestion"
           className="size-6"
+          disabled={isDismissing || status === 'accepting'}
+          onClick={handleDismiss}
+          size="icon-xs"
+          variant="ghost"
         >
-          <X className="size-4" aria-hidden="true" />
+          <X aria-hidden="true" className="size-4" />
         </Button>
       </div>
 
@@ -129,15 +134,15 @@ export function SuggestionCard({
             <div className="flex items-center gap-2">
               {projectColor && (
                 <span
+                  aria-hidden="true"
                   className="size-2.5 rounded-full"
                   style={{ backgroundColor: projectColor }}
-                  aria-hidden="true"
                 />
               )}
               <span className="font-medium text-sm">{projectName}</span>
             </div>
             {duration && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {formatDuration(duration)}
               </span>
             )}
@@ -146,30 +151,30 @@ export function SuggestionCard({
 
         {/* Time window */}
         {timeWindow && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {formatTimeWindow(timeWindow.start, timeWindow.end)}
           </p>
         )}
 
         {/* Description */}
         {displayDescription && (
-          <p className="text-sm text-foreground line-clamp-2">
+          <p className="line-clamp-2 text-foreground text-sm">
             {displayDescription}
           </p>
         )}
 
         {/* Area name for context */}
         {areaName && type === 'entry' && (
-          <p className="text-xs text-muted-foreground">{areaName}</p>
+          <p className="text-muted-foreground text-xs">{areaName}</p>
         )}
 
         {/* Evidence chips */}
         {evidenceLines.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {evidenceLines.map((evidence, i) => (
+            {evidenceLines.map((evidence) => (
               <EvidenceChip
-                key={i}
                 icon={evidence.icon}
+                key={`${evidence.text}-${evidence.icon ?? ''}`}
                 text={evidence.text}
               />
             ))}
@@ -179,9 +184,9 @@ export function SuggestionCard({
         {/* Actions */}
         <div className="pt-2">
           <ActionRow
+            isLoading={status === 'accepting'}
             onAccept={onAccept}
             onEdit={onEdit}
-            isLoading={status === 'accepting'}
           />
         </div>
       </div>

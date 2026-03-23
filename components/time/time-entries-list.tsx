@@ -26,18 +26,18 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogDescription,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { deleteTimeEntry } from '@/lib/actions/time-entries'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project } from '@/lib/db/schema'
@@ -114,7 +114,9 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
       <Card>
         <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="text-base sm:text-lg">Time Entries</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Your recent time tracking records</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
+            Your recent time tracking records
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-2 sm:p-6 sm:pt-2">
           {entries.length === 0 ? (
@@ -134,8 +136,12 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                   <div className="space-y-2 sm:space-y-3" key={dateKey}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="font-medium text-xs sm:text-sm">
-                        <span className="sm:hidden">{formatDate(dateKey, 'EEE, MMM d')}</span>
-                        <span className="hidden sm:inline">{formatDate(dateKey, 'EEEE, MMMM d, yyyy')}</span>
+                        <span className="sm:hidden">
+                          {formatDate(dateKey, 'EEE, MMM d')}
+                        </span>
+                        <span className="hidden sm:inline">
+                          {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
+                        </span>
                       </h3>
                       <Badge
                         className="font-mono text-[10px] tabular-nums sm:text-xs"
@@ -162,7 +168,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                                 {entry.description}
                               </p>
                             ) : null}
-                            <p className="text-muted-foreground text-[10px] sm:text-xs">
+                            <p className="text-[10px] text-muted-foreground sm:text-xs">
                               {formatTime(entry.startTime)}
                               {entry.endTime
                                 ? ` - ${formatTime(entry.endTime)}`
@@ -176,7 +182,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                             >
                               {formatDuration(entry.durationMinutes)}
                             </Badge>
-                            <span className="font-mono text-[10px] tabular-nums text-muted-foreground sm:hidden">
+                            <span className="font-mono text-[10px] text-muted-foreground tabular-nums sm:hidden">
                               {formatDuration(entry.durationMinutes)}
                             </span>
                             <DropdownMenu>

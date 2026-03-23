@@ -1,33 +1,33 @@
 'use server'
 
 import { generateText, Output } from 'ai'
+import { and, desc, eq, gte, inArray } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
 import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { aiSuggestionDismissals, timeEntries, projects, areas } from '@/lib/db/schema'
-import { eq, and, desc, gte, inArray } from 'drizzle-orm'
-import { revalidateTag } from 'next/cache'
+import { aiSuggestionDismissals, projects, timeEntries } from '@/lib/db/schema'
+import { getGitHubActivityForUser } from '@/lib/github/service'
+import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import {
-  descriptionEnhancementSchema,
-  entrySuggestionSchema,
-  githubSuggestionSchema,
-  type DescriptionEnhancement,
-  type EntrySuggestion,
-  type SuggestionType,
-} from './schemas'
+  type CachedSuggestion,
+  getCachedSuggestions,
+  setCachedSuggestions,
+  updateSuggestionStatus,
+} from '@/lib/redis/suggestions-cache'
+import { AI_MODELS } from './models'
 import {
   buildDescriptionPrompt,
   buildEntrySuggestionPrompt,
   buildGitHubSuggestionPrompt,
 } from './prompts'
-import { AI_MODELS } from './models'
-import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
-import { getGitHubActivityForUser } from '@/lib/github/service'
 import {
-  getCachedSuggestions,
-  setCachedSuggestions,
-  updateSuggestionStatus,
-  type CachedSuggestion,
-} from '@/lib/redis/suggestions-cache'
+  type DescriptionEnhancement,
+  descriptionEnhancementSchema,
+  type EntrySuggestion,
+  entrySuggestionSchema,
+  githubSuggestionSchema,
+  type SuggestionType,
+} from './schemas'
 
 // Enhance a vague or empty description
 export async function enhanceDescription(params: {
@@ -101,7 +101,7 @@ export async function suggestEntryFromEvent(params: {
 
     // Filter to only projects in this organization
     const orgProjects = activeProjects.filter(
-      (p) => p.area.organizationId === organizationId
+      (p) => p.area.organizationId === organizationId,
     )
 
     if (orgProjects.length === 0) {
@@ -120,7 +120,7 @@ export async function suggestEntryFromEvent(params: {
         ? await db.query.timeEntries.findMany({
             where: and(
               gte(timeEntries.startTime, weekAgo),
-              inArray(timeEntries.projectId, orgProjectIds)
+              inArray(timeEntries.projectId, orgProjectIds),
             ),
             orderBy: [desc(timeEntries.startTime)],
             limit: 10,
@@ -199,7 +199,7 @@ export async function generateGitHubSuggestions(params: {
       const cached = await getCachedSuggestions(organizationId, session.user.id)
       if (cached) {
         const pendingSuggestions = cached.suggestions.filter(
-          (s) => s.status === 'pending'
+          (s) => s.status === 'pending',
         )
         return {
           suggestions: pendingSuggestions,
@@ -219,7 +219,7 @@ export async function generateGitHubSuggestions(params: {
 
     // Filter to only projects in this organization
     const orgProjects = activeProjects.filter(
-      (p) => p.area.organizationId === organizationId
+      (p) => p.area.organizationId === organizationId,
     )
 
     if (orgProjects.length === 0) {
@@ -252,7 +252,7 @@ export async function generateGitHubSuggestions(params: {
         ? await db.query.timeEntries.findMany({
             where: and(
               gte(timeEntries.startTime, weekAgo),
-              inArray(timeEntries.projectId, orgProjectIds)
+              inArray(timeEntries.projectId, orgProjectIds),
             ),
             orderBy: [desc(timeEntries.startTime)],
             limit: 50,
@@ -287,14 +287,21 @@ export async function generateGitHubSuggestions(params: {
         const activity = githubActivity.find((a) => a.id === s.activityId)
         const activityType = activity?.type || 'commit'
 
+        let suggestionType: CachedSuggestion['type']
+        if (activityType === 'commit') {
+          suggestionType = 'github_commit'
+        } else if (
+          activityType === 'pr_merged' ||
+          activityType === 'pr_opened'
+        ) {
+          suggestionType = 'github_pr'
+        } else {
+          suggestionType = 'github_review'
+        }
+
         return {
           id: `github-${s.activityId}`,
-          type:
-            activityType === 'commit'
-              ? 'github_commit'
-              : activityType === 'pr_merged' || activityType === 'pr_opened'
-                ? 'github_pr'
-                : 'github_review',
+          type: suggestionType,
           sourceId: s.activityId,
           projectId: s.projectId,
           description: s.description,
@@ -315,7 +322,7 @@ export async function generateGitHubSuggestions(params: {
           },
           generatedAt: new Date().toISOString(),
         }
-      }
+      },
     )
 
     // Cache the suggestions
@@ -344,7 +351,7 @@ export async function updateCachedSuggestionStatus(params: {
       organizationId,
       session.user.id,
       params.suggestionId,
-      params.status
+      params.status,
     )
 
     return { success: true }
@@ -353,5 +360,3 @@ export async function updateCachedSuggestionStatus(params: {
     return { success: false }
   }
 }
-
-

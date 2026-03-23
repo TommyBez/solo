@@ -1,7 +1,5 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Check,
   Clock,
@@ -12,7 +10,10 @@ import {
   Loader2,
   X,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { type ReactNode, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -21,16 +22,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { createTimeEntry } from '@/lib/actions/time-entries'
 import { updateCachedSuggestionStatus } from '@/lib/ai/time-capture'
 import type { CachedSuggestion } from '@/lib/redis/suggestions-cache'
 
 interface GitHubSuggestionCardProps {
-  suggestion: CachedSuggestion
-  projectName: string
   onAccept?: () => void
   onDismiss?: () => void
+  projectName: string
+  suggestion: CachedSuggestion
 }
 
 export function GitHubSuggestionCard({
@@ -44,23 +44,22 @@ export function GitHubSuggestionCard({
   const [isDismissing, startDismissTransition] = useTransition()
   const [isHidden, setIsHidden] = useState(false)
 
-  if (isHidden) return null
+  if (isHidden) {
+    return null
+  }
 
-  const typeIcon =
-    suggestion.type === 'github_commit' ? (
-      <GitCommit className="size-4" />
-    ) : suggestion.type === 'github_pr' ? (
-      <GitMerge className="size-4" />
-    ) : (
-      <GitPullRequest className="size-4" />
-    )
-
-  const typeLabel =
-    suggestion.type === 'github_commit'
-      ? 'Commit'
-      : suggestion.type === 'github_pr'
-        ? 'Pull Request'
-        : 'Code Review'
+  let typeIcon: ReactNode
+  let typeLabel: string
+  if (suggestion.type === 'github_commit') {
+    typeIcon = <GitCommit className="size-4" />
+    typeLabel = 'Commit'
+  } else if (suggestion.type === 'github_pr') {
+    typeIcon = <GitMerge className="size-4" />
+    typeLabel = 'Pull Request'
+  } else {
+    typeIcon = <GitPullRequest className="size-4" />
+    typeLabel = 'Code Review'
+  }
 
   function handleAccept() {
     startAcceptTransition(async () => {
@@ -75,7 +74,7 @@ export function GitHubSuggestionCard({
         startTime.setHours(9, 0, 0, 0) // Default to 9 AM
 
         const endTime = new Date(
-          startTime.getTime() + suggestion.durationMinutes * 60 * 1000
+          startTime.getTime() + suggestion.durationMinutes * 60 * 1000,
         )
 
         await createTimeEntry({
@@ -134,25 +133,25 @@ export function GitHubSuggestionCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             {typeIcon}
-            <Badge variant="secondary" className="text-xs">
+            <Badge className="text-xs" variant="secondary">
               {typeLabel}
             </Badge>
-            <Badge variant="outline" className="text-xs">
+            <Badge className="text-xs" variant="outline">
               {suggestion.metadata.repoName}
             </Badge>
           </div>
           {suggestion.metadata.url && (
             <a
-              href={suggestion.metadata.url}
-              target="_blank"
-              rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground"
+              href={suggestion.metadata.url}
+              rel="noopener noreferrer"
+              target="_blank"
             >
               <ExternalLink className="size-4" />
             </a>
           )}
         </div>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="font-medium text-sm">
           {suggestion.description}
         </CardTitle>
         <CardDescription className="flex items-center gap-3 text-xs">
@@ -169,9 +168,9 @@ export function GitHubSuggestionCard({
       <CardContent className="pt-2">
         <div className="flex items-center gap-2">
           <Button
-            size="sm"
-            onClick={handleAccept}
             disabled={isAccepting || isDismissing}
+            onClick={handleAccept}
+            size="sm"
           >
             {isAccepting ? (
               <Loader2 className="mr-1 size-3 animate-spin" />
@@ -181,10 +180,10 @@ export function GitHubSuggestionCard({
             Accept
           </Button>
           <Button
+            disabled={isAccepting || isDismissing}
+            onClick={handleDismiss}
             size="sm"
             variant="ghost"
-            onClick={handleDismiss}
-            disabled={isAccepting || isDismissing}
           >
             {isDismissing ? (
               <Loader2 className="mr-1 size-3 animate-spin" />

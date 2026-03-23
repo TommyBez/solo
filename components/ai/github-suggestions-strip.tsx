@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { Github, RefreshCw, Sparkles } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { GitHubSuggestionCard } from './github-suggestion-card'
 import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 import type { CachedSuggestion } from '@/lib/redis/suggestions-cache'
+import { GitHubSuggestionCard } from './github-suggestion-card'
 
 interface Project {
   id: number
@@ -16,10 +16,10 @@ interface Project {
 }
 
 interface GitHubSuggestionsStripProps {
-  initialSuggestions: CachedSuggestion[]
   generatedAt: string | null
-  projects: Project[]
   githubConnected: boolean
+  initialSuggestions: CachedSuggestion[]
+  projects: Project[]
 }
 
 export function GitHubSuggestionsStrip({
@@ -37,7 +37,7 @@ export function GitHubSuggestionsStrip({
 
   // Filter out locally dismissed suggestions
   const visibleSuggestions = suggestions.filter(
-    (s) => s.status === 'pending' && !localDismissed.has(s.id)
+    (s) => s.status === 'pending' && !localDismissed.has(s.id),
   )
 
   function handleRefresh() {
@@ -51,7 +51,7 @@ export function GitHubSuggestionsStrip({
         toast.success(
           result.suggestions.length > 0
             ? `Found ${result.suggestions.length} suggestion${result.suggestions.length === 1 ? '' : 's'}`
-            : 'No new suggestions found'
+            : 'No new suggestions found',
         )
       } catch {
         toast.error('Failed to refresh suggestions')
@@ -83,23 +83,23 @@ export function GitHubSuggestionsStrip({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-sm font-medium">
+          <div className="flex items-center gap-1.5 font-medium text-sm">
             <Sparkles className="size-4 text-primary" />
             <span>AI Suggestions</span>
             <Github className="ml-1 size-3.5 text-muted-foreground" />
           </div>
           {generatedTimeAgo && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               Updated {generatedTimeAgo}
             </span>
           )}
         </div>
         <Button
+          className="h-7 text-xs"
+          disabled={isRefreshing}
+          onClick={handleRefresh}
           size="sm"
           variant="ghost"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="h-7 text-xs"
         >
           <RefreshCw
             className={`mr-1 size-3 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -110,7 +110,7 @@ export function GitHubSuggestionsStrip({
 
       {visibleSuggestions.length === 0 ? (
         <div className="rounded-lg border border-dashed p-4 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No pending suggestions. Click refresh to check for new GitHub
             activity.
           </p>
@@ -118,16 +118,16 @@ export function GitHubSuggestionsStrip({
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-2">
           {visibleSuggestions.map((suggestion) => (
-            <div key={suggestion.id} className="min-w-[300px] max-w-[350px]">
+            <div className="min-w-[300px] max-w-[350px]" key={suggestion.id}>
               <GitHubSuggestionCard
-                suggestion={suggestion}
+                onAccept={() => handleAccept(suggestion.id)}
+                onDismiss={() => handleDismiss(suggestion.id)}
                 projectName={
                   suggestion.projectId
                     ? projectMap.get(suggestion.projectId) || 'Unknown'
                     : 'No project'
                 }
-                onAccept={() => handleAccept(suggestion.id)}
-                onDismiss={() => handleDismiss(suggestion.id)}
+                suggestion={suggestion}
               />
             </div>
           ))}

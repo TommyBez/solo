@@ -18,6 +18,8 @@ import {
   verification,
 } from '@/lib/auth/schema'
 import {
+  aiSuggestionDismissals,
+  aiSuggestionDismissalsRelations,
   areas,
   areasRelations,
   clients,
@@ -28,8 +30,6 @@ import {
   projectsRelations,
   timeEntries,
   timeEntriesRelations,
-  aiSuggestionDismissals,
-  aiSuggestionDismissalsRelations,
 } from './schema'
 
 if (!process.env.DATABASE_URL) {

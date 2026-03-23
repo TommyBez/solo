@@ -71,7 +71,9 @@ export function AddTimeEntryDialog({
       </ResponsiveDialogTrigger>
       <ResponsiveDialogContent>
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>{title ?? 'Add Time Entry'}</ResponsiveDialogTitle>
+          <ResponsiveDialogTitle>
+            {title ?? 'Add Time Entry'}
+          </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
             {description ?? 'Log time spent on a project.'}
           </ResponsiveDialogDescription>

@@ -24,13 +24,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@/components/ui/responsive-dialog'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,6 +31,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import { deleteArea, updateArea } from '@/lib/actions/areas'
 import { AreaForm } from './area-form'
 
@@ -85,7 +85,9 @@ export function AreaCard({ area }: AreaCardProps) {
         <ColorBar color={area.color} />
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
           <div className="min-w-0 space-y-1">
-            <CardTitle className="truncate text-base sm:text-lg">{area.name}</CardTitle>
+            <CardTitle className="truncate text-base sm:text-lg">
+              {area.name}
+            </CardTitle>
             {area.description ? (
               <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm">
                 {area.description}
@@ -94,7 +96,11 @@ export function AreaCard({ area }: AreaCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="size-9 shrink-0 sm:size-8" size="icon" variant="ghost">
+              <Button
+                className="size-9 shrink-0 sm:size-8"
+                size="icon"
+                variant="ghost"
+              >
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>

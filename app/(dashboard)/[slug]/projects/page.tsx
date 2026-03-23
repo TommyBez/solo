@@ -101,7 +101,7 @@ async function ProjectsContent() {
                     ({areaProjects.length} projects)
                   </span>
                 </div>
-                <div className="stagger-children grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="stagger-children grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                   {areaProjects.map((project) => (
                     <ProjectCard
                       areas={areas}
@@ -121,9 +121,7 @@ async function ProjectsContent() {
 }
 
 function ProjectsSkeleton() {
-  const skeletonGroups = [
-    { id: 'group-1', cards: ['card-1', 'card-2'] },
-  ]
+  const skeletonGroups = [{ id: 'group-1', cards: ['card-1', 'card-2'] }]
 
   return (
     <>
@@ -134,7 +132,7 @@ function ProjectsSkeleton() {
         {skeletonGroups.map((group) => (
           <div className="space-y-3 sm:space-y-4" key={group.id}>
             <Skeleton className="h-6 w-40 sm:h-7 sm:w-48" />
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {group.cards.map((cardId) => (
                 <Skeleton className="h-44 sm:h-52" key={cardId} />
               ))}

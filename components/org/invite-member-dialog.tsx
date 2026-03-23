@@ -9,14 +9,6 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogTrigger,
-} from '@/components/ui/responsive-dialog'
-import {
   Form,
   FormControl,
   FormDescription,
@@ -26,6 +18,14 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@/components/ui/responsive-dialog'
 import {
   Select,
   SelectContent,
@@ -106,7 +106,10 @@ export function InviteMemberDialog({
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
         <Form {...form}>
-          <form className="space-y-4 px-4 pb-4 md:px-0 md:pb-0" onSubmit={handleSubmit}>
+          <form
+            className="space-y-4 px-4 pb-4 md:px-0 md:pb-0"
+            onSubmit={handleSubmit}
+          >
             {error ? (
               <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
                 {error}

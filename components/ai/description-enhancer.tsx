@@ -3,21 +3,21 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { updateTimeEntry } from '@/lib/actions/time-entries'
-import { enhanceDescription, dismissSuggestion } from '@/lib/ai/time-capture'
-import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { DescriptionEnhancement, SuggestionStatus } from '@/lib/ai/schemas'
+import { dismissSuggestion, enhanceDescription } from '@/lib/ai/time-capture'
+import { generateSuggestionHash } from '@/lib/ai/utils'
 import { SuggestionCard } from './suggestion-card'
 
 interface DescriptionEnhancerProps {
-  entryId: number
-  projectId: number
-  projectName: string
   areaName: string
   currentDescription: string
   durationMinutes: number
+  entryId: number
   onAccept: () => void
   onDismiss: () => void
   onEdit: (suggestedDescription: string) => void
+  projectId: number
+  projectName: string
 }
 
 export function DescriptionEnhancer({
@@ -32,7 +32,9 @@ export function DescriptionEnhancer({
   onEdit,
 }: DescriptionEnhancerProps) {
   const [status, setStatus] = useState<SuggestionStatus>('loading')
-  const [enhancement, setEnhancement] = useState<DescriptionEnhancement | null>(null)
+  const [enhancement, setEnhancement] = useState<DescriptionEnhancement | null>(
+    null,
+  )
 
   useEffect(() => {
     let isMounted = true
@@ -47,7 +49,9 @@ export function DescriptionEnhancer({
         durationMinutes,
       })
 
-      if (!isMounted) return
+      if (!isMounted) {
+        return
+      }
 
       if (result) {
         setEnhancement(result)
@@ -65,7 +69,9 @@ export function DescriptionEnhancer({
   }, [currentDescription, projectId, projectName, areaName, durationMinutes])
 
   async function handleAccept() {
-    if (!enhancement) return
+    if (!enhancement) {
+      return
+    }
 
     setStatus('accepting')
     try {
@@ -143,15 +149,15 @@ export function DescriptionEnhancer({
   return (
     <div className="mt-4">
       <SuggestionCard
-        type="description"
-        status={status}
+        className="w-full max-w-none"
         enhancedDescription={enhancement?.enhancedDescription}
         evidenceLines={evidenceLines}
         onAccept={handleAccept}
-        onEdit={handleEdit}
         onDismiss={handleDismiss}
+        onEdit={handleEdit}
         onRetry={handleRetry}
-        className="w-full max-w-none"
+        status={status}
+        type="description"
       />
     </div>
   )

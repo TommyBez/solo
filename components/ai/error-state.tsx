@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface ErrorStateProps {
+  className?: string
   message?: string
   onRetry: () => void
-  className?: string
 }
 
 export function ErrorState({
@@ -18,17 +18,17 @@ export function ErrorState({
     <div
       className={cn(
         'flex items-center justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-4',
-        className
+        className,
       )}
       role="alert"
     >
       <div>
-        <p className="text-sm font-medium">{message}</p>
-        <p className="text-xs text-muted-foreground">
+        <p className="font-medium text-sm">{message}</p>
+        <p className="text-muted-foreground text-xs">
           You can always add entries manually
         </p>
       </div>
-      <Button variant="outline" size="sm" onClick={onRetry}>
+      <Button onClick={onRetry} size="sm" variant="outline">
         Try again
       </Button>
     </div>

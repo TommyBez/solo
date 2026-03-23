@@ -1,6 +1,12 @@
 'use client'
 
-import { CheckCircle2, CircleAlert, Github, Link2, Link2Off } from 'lucide-react'
+import {
+  CheckCircle2,
+  CircleAlert,
+  Github,
+  Link2,
+  Link2Off,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'

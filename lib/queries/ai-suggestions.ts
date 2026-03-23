@@ -1,13 +1,13 @@
-import { cacheLife, cacheTag } from 'next/cache'
 import { and, eq, gte } from 'drizzle-orm'
+import { cacheLife, cacheTag } from 'next/cache'
+import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { aiSuggestionDismissals } from '@/lib/db/schema'
-import { requireOrganization } from '@/lib/auth/session'
 
-async function getDismissedSuggestionsCachedWithDate(
+function getDismissedSuggestionsCachedWithDate(
   userId: string,
   organizationId: string,
-  since: Date
+  since: Date,
 ) {
   'use cache'
   cacheLife('minutes')
@@ -17,14 +17,14 @@ async function getDismissedSuggestionsCachedWithDate(
     where: and(
       eq(aiSuggestionDismissals.userId, userId),
       eq(aiSuggestionDismissals.organizationId, organizationId),
-      gte(aiSuggestionDismissals.dismissedAt, since)
+      gte(aiSuggestionDismissals.dismissedAt, since),
     ),
   })
 }
 
-async function getDismissedSuggestionsCachedAll(
+function getDismissedSuggestionsCachedAll(
   userId: string,
-  organizationId: string
+  organizationId: string,
 ) {
   'use cache'
   cacheLife('minutes')
@@ -33,7 +33,7 @@ async function getDismissedSuggestionsCachedAll(
   return db.query.aiSuggestionDismissals.findMany({
     where: and(
       eq(aiSuggestionDismissals.userId, userId),
-      eq(aiSuggestionDismissals.organizationId, organizationId)
+      eq(aiSuggestionDismissals.organizationId, organizationId),
     ),
   })
 }
@@ -41,7 +41,11 @@ async function getDismissedSuggestionsCachedAll(
 export async function getDismissedSuggestions(since?: Date) {
   const { session, organizationId } = await requireOrganization()
   if (since) {
-    return getDismissedSuggestionsCachedWithDate(session.user.id, organizationId, since)
+    return getDismissedSuggestionsCachedWithDate(
+      session.user.id,
+      organizationId,
+      since,
+    )
   }
   return getDismissedSuggestionsCachedAll(session.user.id, organizationId)
 }

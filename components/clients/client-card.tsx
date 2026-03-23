@@ -18,18 +18,18 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogDescription,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { archiveClient, deleteClient } from '@/lib/actions/clients'
 import type { Client } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
@@ -109,9 +109,14 @@ export function ClientCard({ client }: ClientCardProps) {
               {client.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 space-y-1">
-              <CardTitle className="truncate text-base sm:text-lg">{client.name}</CardTitle>
+              <CardTitle className="truncate text-base sm:text-lg">
+                {client.name}
+              </CardTitle>
               {client.hourlyRate ? (
-                <Badge className="font-mono text-[10px] tabular-nums sm:text-xs" variant="secondary">
+                <Badge
+                  className="font-mono text-[10px] tabular-nums sm:text-xs"
+                  variant="secondary"
+                >
                   {formatCurrency(client.hourlyRate, client.currency)}
                 </Badge>
               ) : null}
@@ -119,7 +124,11 @@ export function ClientCard({ client }: ClientCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="size-9 shrink-0 sm:size-8" size="icon" variant="ghost">
+              <Button
+                className="size-9 shrink-0 sm:size-8"
+                size="icon"
+                variant="ghost"
+              >
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
@@ -145,7 +154,10 @@ export function ClientCard({ client }: ClientCardProps) {
           {client.email ? (
             <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
               <Mail className="size-3.5 shrink-0 sm:size-4" />
-              <a className="truncate hover:underline" href={`mailto:${client.email}`}>
+              <a
+                className="truncate hover:underline"
+                href={`mailto:${client.email}`}
+              >
                 {client.email}
               </a>
             </div>
@@ -170,7 +182,9 @@ export function ClientCard({ client }: ClientCardProps) {
         <ResponsiveDialogContent className="md:max-w-lg">
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>Edit Client</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>Update client information.</ResponsiveDialogDescription>
+            <ResponsiveDialogDescription>
+              Update client information.
+            </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           <div className="px-4 pb-4 md:px-0 md:pb-0">
             <ClientForm client={client} onSuccess={() => setEditOpen(false)} />

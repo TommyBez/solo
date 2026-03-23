@@ -1,19 +1,16 @@
 import { redis } from './client'
 
-const CACHE_TTL = 86400 // 24 hours in seconds
+const CACHE_TTL = 86_400 // 24 hours in seconds
 const CACHE_PREFIX = 'ai-suggestions'
 
 export type SuggestionStatus = 'pending' | 'accepted' | 'dismissed'
 
 export interface CachedSuggestion {
-  id: string
-  type: 'github_commit' | 'github_pr' | 'github_review'
-  sourceId: string
-  projectId: number | null
+  date: string
   description: string
   durationMinutes: number
-  date: string
-  status: SuggestionStatus
+  generatedAt: string
+  id: string
   metadata: {
     repoName: string
     repoFullName: string
@@ -26,13 +23,16 @@ export interface CachedSuggestion {
     reviewState?: string
     url: string
   }
-  generatedAt: string
+  projectId: number | null
+  sourceId: string
+  status: SuggestionStatus
+  type: 'github_commit' | 'github_pr' | 'github_review'
 }
 
 export interface SuggestionsCache {
-  suggestions: CachedSuggestion[]
-  generatedAt: string
   expiresAt: string
+  generatedAt: string
+  suggestions: CachedSuggestion[]
 }
 
 function getCacheKey(orgId: string, userId: string): string {
@@ -41,7 +41,7 @@ function getCacheKey(orgId: string, userId: string): string {
 
 export async function getCachedSuggestions(
   orgId: string,
-  userId: string
+  userId: string,
 ): Promise<SuggestionsCache | null> {
   const key = getCacheKey(orgId, userId)
   const cached = await redis.get<SuggestionsCache>(key)
@@ -51,7 +51,7 @@ export async function getCachedSuggestions(
 export async function setCachedSuggestions(
   orgId: string,
   userId: string,
-  suggestions: CachedSuggestion[]
+  suggestions: CachedSuggestion[],
 ): Promise<void> {
   const key = getCacheKey(orgId, userId)
   const now = new Date()
@@ -68,7 +68,7 @@ export async function setCachedSuggestions(
 
 export async function invalidateSuggestionsCache(
   orgId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
   const key = getCacheKey(orgId, userId)
   await redis.del(key)
@@ -78,13 +78,15 @@ export async function updateSuggestionStatus(
   orgId: string,
   userId: string,
   suggestionId: string,
-  status: 'accepted' | 'dismissed'
+  status: 'accepted' | 'dismissed',
 ): Promise<void> {
   const cache = await getCachedSuggestions(orgId, userId)
-  if (!cache) return
+  if (!cache) {
+    return
+  }
 
   const updatedSuggestions = cache.suggestions.map((s) =>
-    s.id === suggestionId ? { ...s, status } : s
+    s.id === suggestionId ? { ...s, status } : s,
   )
 
   const key = getCacheKey(orgId, userId)
@@ -96,7 +98,7 @@ export async function updateSuggestionStatus(
   // Calculate remaining TTL
   const remainingTTL = Math.max(
     1,
-    Math.floor((new Date(cache.expiresAt).getTime() - Date.now()) / 1000)
+    Math.floor((new Date(cache.expiresAt).getTime() - Date.now()) / 1000),
   )
 
   await redis.set(key, updatedCache, { ex: remainingTTL })
@@ -104,10 +106,12 @@ export async function updateSuggestionStatus(
 
 export async function getCacheMetadata(
   orgId: string,
-  userId: string
+  userId: string,
 ): Promise<{ generatedAt: string; expiresAt: string } | null> {
   const cache = await getCachedSuggestions(orgId, userId)
-  if (!cache) return null
+  if (!cache) {
+    return null
+  }
 
   return {
     generatedAt: cache.generatedAt,

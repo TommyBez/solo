@@ -18,7 +18,7 @@ function getGitHubAccount(userId: string) {
   return db.query.account.findFirst({
     where: and(
       eq(account.userId, userId),
-      eq(account.providerId, GITHUB_PROVIDER_ID)
+      eq(account.providerId, GITHUB_PROVIDER_ID),
     ),
   })
 }
@@ -66,12 +66,15 @@ export async function disconnectGitHubForUser(userId: string) {
   await db
     .delete(account)
     .where(
-      and(eq(account.userId, userId), eq(account.providerId, GITHUB_PROVIDER_ID))
+      and(
+        eq(account.userId, userId),
+        eq(account.providerId, GITHUB_PROVIDER_ID),
+      ),
     )
 }
 
 export async function getGitHubStatusForUser(
-  userId: string
+  userId: string,
 ): Promise<GitHubConnectionStatus> {
   const enabled = isGitHubConfigured()
   if (!enabled) {
@@ -99,7 +102,7 @@ export async function getGitHubActivityForUser(params: {
   }
 
   const githubAccount = await getGitHubAccount(params.userId)
-  if (!githubAccount?.accessToken || !githubAccount.accountId) {
+  if (!(githubAccount?.accessToken && githubAccount.accountId)) {
     console.warn('[GitHub] No valid access token, skipping activity fetch')
     return []
   }
@@ -111,7 +114,7 @@ export async function getGitHubActivityForUser(params: {
     const activities = await fetchGitHubUserEvents(
       githubAccount.accessToken,
       githubAccount.accountId,
-      params.since
+      params.since,
     )
     console.log(`[GitHub] Fetched ${activities.length} activities`)
     return activities

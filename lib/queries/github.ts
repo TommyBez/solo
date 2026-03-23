@@ -3,8 +3,8 @@ import { getSession } from '@/lib/auth/session'
 import { getGitHubStatusForUser } from '@/lib/github/service'
 import type { GitHubConnectionStatus } from '@/lib/github/types'
 
-async function getGitHubStatusCached(
-  userId: string
+function getGitHubStatusCached(
+  userId: string,
 ): Promise<GitHubConnectionStatus> {
   'use cache'
   cacheLife('minutes')

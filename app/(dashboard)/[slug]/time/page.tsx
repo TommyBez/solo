@@ -8,6 +8,8 @@ import {
 import { FolderKanban } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { GitHubSuggestionsStrip } from '@/components/ai/github-suggestions-strip'
+import { WeeklyAuditBanner } from '@/components/ai/weekly-audit-banner'
 import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
@@ -16,21 +18,19 @@ import { GoogleCalendarBanner } from '@/components/time/google-calendar-banner'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
-import { GitHubSuggestionsStrip } from '@/components/ai/github-suggestions-strip'
-import { WeeklyAuditBanner } from '@/components/ai/weekly-audit-banner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
+import { getAreas } from '@/lib/queries/areas'
+import { getGitHubStatus } from '@/lib/queries/github'
 import {
   getGoogleCalendarEventsForDateRange,
   getGoogleCalendarStatus,
 } from '@/lib/queries/google-calendar'
 import { getProjects } from '@/lib/queries/projects'
-import { getAreas } from '@/lib/queries/areas'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
-import { getGitHubStatus } from '@/lib/queries/github'
-import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -126,18 +126,18 @@ async function TimeTrackingContent({
 
       {/* Weekly Audit Banner - shows on Friday/Sunday */}
       <WeeklyAuditBanner
-        weekEntries={entries}
-        weekCalendarEvents={googleCalendarEvents}
         areasWithExpectedHours={areasWithExpectedHours}
+        weekCalendarEvents={googleCalendarEvents}
+        weekEntries={entries}
         weekStartsOn={weekStartsOn as 0 | 1}
       />
 
       {/* GitHub AI Suggestions Strip */}
       <GitHubSuggestionsStrip
-        initialSuggestions={githubSuggestionsResult.suggestions}
         generatedAt={githubSuggestionsResult.generatedAt}
-        projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
         githubConnected={githubStatus.connected}
+        initialSuggestions={githubSuggestionsResult.suggestions}
+        projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
       />
 
       <div className="flex flex-wrap items-center justify-end gap-2">

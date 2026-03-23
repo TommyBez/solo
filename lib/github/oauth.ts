@@ -19,10 +19,10 @@ interface GitHubOAuthConfig {
 
 interface GitHubTokenResponse {
   access_token?: string
-  token_type?: string
-  scope?: string
   error?: string
   error_description?: string
+  scope?: string
+  token_type?: string
 }
 
 function getAppUrl() {
@@ -73,7 +73,7 @@ export function getGitHubOAuthAuthorizationUrl(state: string) {
 }
 
 export async function exchangeGitHubCodeForTokens(
-  code: string
+  code: string,
 ): Promise<GitHubTokenPayload> {
   const config = getGitHubOAuthConfigOrThrow()
 
@@ -106,7 +106,9 @@ export async function exchangeGitHubCodeForTokens(
   }
 }
 
-export async function fetchGitHubUser(accessToken: string): Promise<GitHubUser> {
+export async function fetchGitHubUser(
+  accessToken: string,
+): Promise<GitHubUser> {
   const response = await fetch(`${GITHUB_API_BASE}/user`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -126,7 +128,7 @@ export async function fetchGitHubUser(accessToken: string): Promise<GitHubUser> 
 export async function fetchGitHubUserEvents(
   accessToken: string,
   username: string,
-  since: Date
+  since: Date,
 ): Promise<GitHubActivity[]> {
   const activities: GitHubActivity[] = []
   let page = 1
@@ -144,7 +146,7 @@ export async function fetchGitHubUserEvents(
           'X-GitHub-Api-Version': '2022-11-28',
         },
         cache: 'no-store',
-      }
+      },
     )
 
     if (!response.ok) {
@@ -153,7 +155,9 @@ export async function fetchGitHubUserEvents(
     }
 
     const events = (await response.json()) as GitHubEvent[]
-    if (events.length === 0) break
+    if (events.length === 0) {
+      break
+    }
 
     for (const event of events) {
       const eventTime = new Date(event.created_at).getTime()
@@ -188,7 +192,9 @@ function mapEventToActivity(event: GitHubEvent): GitHubActivity[] {
         repoName,
         repoFullName,
         timestamp: event.created_at,
-        url: commit.url.replace('api.github.com/repos', 'github.com').replace('/commits/', '/commit/'),
+        url: commit.url
+          .replace('api.github.com/repos', 'github.com')
+          .replace('/commits/', '/commit/'),
         metadata: {
           commitSha: commit.sha,
           commitMessage: commit.message,
@@ -198,43 +204,49 @@ function mapEventToActivity(event: GitHubEvent): GitHubActivity[] {
 
     case 'PullRequestEvent': {
       const pr = event.payload.pull_request
-      if (!pr) return []
+      if (!pr) {
+        return []
+      }
 
       // Only track merged PRs and newly opened PRs
       if (event.payload.action === 'closed' && pr.merged) {
-        return [{
-          id: `${event.id}-pr-merged`,
-          type: 'pr_merged' as const,
-          description: `Merged PR: ${pr.title}`,
-          repoName,
-          repoFullName,
-          timestamp: pr.merged_at || event.created_at,
-          url: pr.html_url,
-          metadata: {
-            prNumber: pr.number,
-            prTitle: pr.title,
-            additions: pr.additions,
-            deletions: pr.deletions,
+        return [
+          {
+            id: `${event.id}-pr-merged`,
+            type: 'pr_merged' as const,
+            description: `Merged PR: ${pr.title}`,
+            repoName,
+            repoFullName,
+            timestamp: pr.merged_at || event.created_at,
+            url: pr.html_url,
+            metadata: {
+              prNumber: pr.number,
+              prTitle: pr.title,
+              additions: pr.additions,
+              deletions: pr.deletions,
+            },
           },
-        }]
+        ]
       }
 
       if (event.payload.action === 'opened') {
-        return [{
-          id: `${event.id}-pr-opened`,
-          type: 'pr_opened' as const,
-          description: `Opened PR: ${pr.title}`,
-          repoName,
-          repoFullName,
-          timestamp: event.created_at,
-          url: pr.html_url,
-          metadata: {
-            prNumber: pr.number,
-            prTitle: pr.title,
-            additions: pr.additions,
-            deletions: pr.deletions,
+        return [
+          {
+            id: `${event.id}-pr-opened`,
+            type: 'pr_opened' as const,
+            description: `Opened PR: ${pr.title}`,
+            repoName,
+            repoFullName,
+            timestamp: event.created_at,
+            url: pr.html_url,
+            metadata: {
+              prNumber: pr.number,
+              prTitle: pr.title,
+              additions: pr.additions,
+              deletions: pr.deletions,
+            },
           },
-        }]
+        ]
       }
 
       return []
@@ -243,22 +255,26 @@ function mapEventToActivity(event: GitHubEvent): GitHubActivity[] {
     case 'PullRequestReviewEvent': {
       const pr = event.payload.pull_request
       const review = event.payload.review
-      if (!pr || !review) return []
+      if (!(pr && review)) {
+        return []
+      }
 
-      return [{
-        id: `${event.id}-review`,
-        type: 'review' as const,
-        description: `Reviewed PR: ${pr.title}`,
-        repoName,
-        repoFullName,
-        timestamp: event.created_at,
-        url: review.html_url,
-        metadata: {
-          prNumber: pr.number,
-          prTitle: pr.title,
-          reviewState: review.state,
+      return [
+        {
+          id: `${event.id}-review`,
+          type: 'review' as const,
+          description: `Reviewed PR: ${pr.title}`,
+          repoName,
+          repoFullName,
+          timestamp: event.created_at,
+          url: review.html_url,
+          metadata: {
+            prNumber: pr.number,
+            prTitle: pr.title,
+            reviewState: review.state,
+          },
         },
-      }]
+      ]
     }
 
     default:

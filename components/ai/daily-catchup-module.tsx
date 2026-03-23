@@ -1,33 +1,33 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { endOfDay, isAfter, startOfDay } from 'date-fns'
 import { useRouter } from 'next/navigation'
-import { startOfDay, endOfDay, isAfter } from 'date-fns'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createTimeEntry } from '@/lib/actions/time-entries'
+import { isDescriptionVague } from '@/lib/ai/prompts'
 import { suggestEntryFromEvent } from '@/lib/ai/time-capture'
 import { generateSuggestionHash, timeRangesOverlap } from '@/lib/ai/utils'
-import { isDescriptionVague } from '@/lib/ai/prompts'
-import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
-import { EntrySuggestionCard } from './entry-suggestion-card'
-import { BatchActionBar } from './batch-action-bar'
+import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
 import { AiDraftBadge } from './ai-draft-badge'
+import { BatchActionBar } from './batch-action-bar'
+import { EntrySuggestionCard } from './entry-suggestion-card'
 import { EvidenceChip } from './evidence-chip'
 
 interface DailyCatchupModuleProps {
-  todayEntries: TimeEntry[]
-  todayCalendarEvents: GoogleCalendarEvent[]
-  projects: (Project & { area: Area })[]
   dismissedHashes: string[]
+  projects: (Project & { area: Area })[]
+  todayCalendarEvents: GoogleCalendarEvent[]
+  todayEntries: TimeEntry[]
 }
 
 // Find untracked events for today
 function findUntrackedEventsForToday(
   calendarEvents: GoogleCalendarEvent[],
   entries: TimeEntry[],
-  dismissedHashes: string[]
+  dismissedHashes: string[],
 ): GoogleCalendarEvent[] {
   const dismissedSet = new Set(dismissedHashes)
   const now = new Date()
@@ -39,19 +39,27 @@ function findUntrackedEventsForToday(
     const eventEnd = new Date(event.endTime)
 
     // Only include today's events
-    if (eventStart < todayStart || eventStart > todayEnd) return false
+    if (eventStart < todayStart || eventStart > todayEnd) {
+      return false
+    }
 
     // Skip all-day events
-    if (event.allDay) return false
+    if (event.allDay) {
+      return false
+    }
 
     // Skip future events (not yet happened)
-    if (isAfter(eventStart, now)) return false
+    if (isAfter(eventStart, now)) {
+      return false
+    }
 
     // Calculate event duration
-    const durationMinutes = (eventEnd.getTime() - eventStart.getTime()) / 60000
+    const durationMinutes = (eventEnd.getTime() - eventStart.getTime()) / 60_000
 
     // Skip very short events (< 15 minutes)
-    if (durationMinutes < 15) return false
+    if (durationMinutes < 15) {
+      return false
+    }
 
     // Check if dismissed
     const hash = generateSuggestionHash({
@@ -59,14 +67,16 @@ function findUntrackedEventsForToday(
       sourceId: event.id,
       date: event.startTime.split('T')[0],
     })
-    if (dismissedSet.has(hash)) return false
+    if (dismissedSet.has(hash)) {
+      return false
+    }
 
     // Check if any time entry overlaps with this event
     const hasOverlap = entries.some((entry) => {
       const entryStart = new Date(entry.startTime)
       const entryEnd = entry.endTime
         ? new Date(entry.endTime)
-        : new Date(entryStart.getTime() + entry.durationMinutes * 60000)
+        : new Date(entryStart.getTime() + entry.durationMinutes * 60_000)
 
       return timeRangesOverlap(eventStart, eventEnd, entryStart, entryEnd)
     })
@@ -82,7 +92,9 @@ function findVagueDescriptionEntries(entries: TimeEntry[]): TimeEntry[] {
 
   return entries.filter((entry) => {
     const entryDate = new Date(entry.startTime)
-    if (entryDate < todayStart) return false
+    if (entryDate < todayStart) {
+      return false
+    }
     return isDescriptionVague(entry.description)
   })
 }
@@ -108,13 +120,13 @@ export function DailyCatchupModule({
     return findUntrackedEventsForToday(
       todayCalendarEvents,
       todayEntries,
-      allDismissed
+      allDismissed,
     ).slice(0, 5)
   }, [todayCalendarEvents, todayEntries, dismissedHashes, localDismissed])
 
   const vagueEntries = useMemo(
     () => findVagueDescriptionEntries(todayEntries),
-    [todayEntries]
+    [todayEntries],
   )
 
   // Don't show if hidden, no suggestions, or not after work hours with entries
@@ -150,13 +162,15 @@ export function DailyCatchupModule({
     const results = await Promise.all(
       untrackedEvents.map(async (event) => {
         try {
-          const suggestion = await suggestEntryFromEvent({ calendarEvent: event })
+          const suggestion = await suggestEntryFromEvent({
+            calendarEvent: event,
+          })
           if (suggestion) {
             // Use calendar event times as source of truth and derive duration
             const eventStart = new Date(event.startTime)
             const eventEnd = new Date(event.endTime)
             const derivedDurationMinutes = Math.round(
-              (eventEnd.getTime() - eventStart.getTime()) / 60000
+              (eventEnd.getTime() - eventStart.getTime()) / 60_000,
             )
             await createTimeEntry({
               projectId: suggestion.projectId,
@@ -171,16 +185,20 @@ export function DailyCatchupModule({
         } catch {
           return false
         }
-      })
+      }),
     )
 
     const successCount = results.filter(Boolean).length
     if (successCount > 0) {
-      toast.success(`Created ${successCount} time ${successCount === 1 ? 'entry' : 'entries'}`)
+      toast.success(
+        `Created ${successCount} time ${successCount === 1 ? 'entry' : 'entries'}`,
+      )
       router.refresh()
       setIsHidden(true)
     } else {
-      toast.error('Failed to create time entries. Please try adding them manually.')
+      toast.error(
+        'Failed to create time entries. Please try adding them manually.',
+      )
     }
   }
 
@@ -202,17 +220,17 @@ export function DailyCatchupModule({
       <CardContent className="space-y-4">
         {untrackedEvents.length > 0 && (
           <div>
-            <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+            <h4 className="mb-2 font-medium text-muted-foreground text-sm">
               Missing entries ({untrackedEvents.length})
             </h4>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
+            <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted flex gap-3 overflow-x-auto pb-2">
               {untrackedEvents.map((event) => (
                 <EntrySuggestionCard
-                  key={event.id}
                   calendarEvent={event}
-                  projects={projects}
+                  key={event.id}
                   onAccept={() => handleAccept(event)}
                   onDismiss={() => handleDismiss(event)}
+                  projects={projects}
                 />
               ))}
             </div>
@@ -221,7 +239,7 @@ export function DailyCatchupModule({
 
         {vagueEntries.length > 0 && (
           <div>
-            <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+            <h4 className="mb-2 font-medium text-muted-foreground text-sm">
               Entries that could use more detail ({vagueEntries.length})
             </h4>
             <div className="space-y-2">
@@ -229,8 +247,8 @@ export function DailyCatchupModule({
                 const project = projects.find((p) => p.id === entry.projectId)
                 return (
                   <div
-                    key={entry.id}
                     className="flex items-center justify-between rounded-lg border bg-card p-3"
+                    key={entry.id}
                   >
                     <div className="flex items-center gap-3">
                       {project && (
@@ -240,8 +258,8 @@ export function DailyCatchupModule({
                         />
                       )}
                       <div>
-                        <p className="text-sm font-medium">{project?.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="font-medium text-sm">{project?.name}</p>
+                        <p className="text-muted-foreground text-xs">
                           {entry.description || '(no description)'}
                         </p>
                       </div>

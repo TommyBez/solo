@@ -18,15 +18,6 @@ import { z } from 'zod'
 import { ColorDot } from '@/components/color-indicator'
 import { Button } from '@/components/ui/button'
 import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFooter,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogTrigger,
-} from '@/components/ui/responsive-dialog'
-import {
   Form,
   FormControl,
   FormField,
@@ -35,6 +26,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@/components/ui/responsive-dialog'
 import {
   Select,
   SelectContent,
@@ -223,7 +223,9 @@ export function ScheduleNextWeekDialog({
       </ResponsiveDialogTrigger>
       <ResponsiveDialogContent className="md:max-w-[460px]">
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Schedule Tasks for Following Week</ResponsiveDialogTitle>
+          <ResponsiveDialogTitle>
+            Schedule Tasks for Following Week
+          </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
             Copy current tasks or create new ones directly in next week.
           </ResponsiveDialogDescription>

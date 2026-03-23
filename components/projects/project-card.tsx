@@ -26,13 +26,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@/components/ui/responsive-dialog'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -40,6 +33,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import { deleteProject, updateProject } from '@/lib/actions/projects'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Client } from '@/lib/db/schema'
@@ -113,7 +113,9 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <CardTitle className="truncate text-base sm:text-lg">{project.name}</CardTitle>
+              <CardTitle className="truncate text-base sm:text-lg">
+                {project.name}
+              </CardTitle>
               <Badge
                 className={`text-[10px] sm:text-xs ${statusClassNames[project.status] || ''}`}
                 variant={statusVariants[project.status]}
@@ -121,11 +123,17 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
                 {project.status}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-xs sm:text-sm">{project.area.name}</p>
+            <p className="text-muted-foreground text-xs sm:text-sm">
+              {project.area.name}
+            </p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="size-9 shrink-0 sm:size-8" size="icon" variant="ghost">
+              <Button
+                className="size-9 shrink-0 sm:size-8"
+                size="icon"
+                variant="ghost"
+              >
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>

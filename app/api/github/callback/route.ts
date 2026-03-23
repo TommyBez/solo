@@ -29,7 +29,7 @@ function clearOAuthStateCookie(response: NextResponse) {
 export async function GET(request: NextRequest) {
   if (!isGitHubConfigured()) {
     return clearOAuthStateCookie(
-      buildSettingsRedirect(request, 'missing-config')
+      buildSettingsRedirect(request, 'missing-config'),
     )
   }
 
@@ -41,13 +41,13 @@ export async function GET(request: NextRequest) {
 
   if (authError) {
     return clearOAuthStateCookie(
-      buildSettingsRedirect(request, 'connect-failed')
+      buildSettingsRedirect(request, 'connect-failed'),
     )
   }
 
   if (!(code && state && storedState && state === storedState)) {
     return clearOAuthStateCookie(
-      buildSettingsRedirect(request, 'invalid-state')
+      buildSettingsRedirect(request, 'invalid-state'),
     )
   }
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     return clearOAuthStateCookie(buildSettingsRedirect(request, 'connected'))
   } catch {
     return clearOAuthStateCookie(
-      buildSettingsRedirect(request, 'connect-failed')
+      buildSettingsRedirect(request, 'connect-failed'),
     )
   }
 }
