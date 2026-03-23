@@ -9,7 +9,6 @@ import type {
 const GITHUB_AUTH_ENDPOINT = 'https://github.com/login/oauth/authorize'
 const GITHUB_TOKEN_ENDPOINT = 'https://github.com/login/oauth/access_token'
 const GITHUB_API_BASE = 'https://api.github.com'
-const GITHUB_SCOPES = ['read:user', 'read:repo']
 
 interface GitHubOAuthConfig {
   clientId: string
@@ -21,6 +20,10 @@ interface GitHubTokenResponse {
   access_token?: string
   error?: string
   error_description?: string
+  /** Seconds until the access token expires (GitHub App user tokens). */
+  expires_in?: number
+  refresh_token?: string
+  refresh_token_expires_in?: number
   scope?: string
   token_type?: string
 }
@@ -58,7 +61,10 @@ export function isGitHubConfigured() {
 }
 
 export function getGitHubConfigHelpText() {
-  return 'Set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, BETTER_AUTH_URL'
+  return (
+    'GitHub App: set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET (from the app settings), ' +
+    'BETTER_AUTH_URL, and enable expiring user tokens + refresh tokens on the GitHub App.'
+  )
 }
 
 export function getGitHubOAuthAuthorizationUrl(state: string) {
@@ -66,10 +72,40 @@ export function getGitHubOAuthAuthorizationUrl(state: string) {
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
-    scope: GITHUB_SCOPES.join(' '),
     state,
   })
   return `${GITHUB_AUTH_ENDPOINT}?${params.toString()}`
+}
+
+function mapGitHubTokenResponseToPayload(
+  payload: GitHubTokenResponse,
+): GitHubTokenPayload {
+  if (payload.error || !payload.access_token) {
+    const message =
+      payload.error_description || payload.error || 'Unknown error'
+    throw new Error(message)
+  }
+
+  const accessTokenExpiresAt =
+    typeof payload.expires_in === 'number' &&
+    Number.isFinite(payload.expires_in)
+      ? new Date(Date.now() + payload.expires_in * 1000)
+      : undefined
+
+  const refreshTokenExpiresAt =
+    typeof payload.refresh_token_expires_in === 'number' &&
+    Number.isFinite(payload.refresh_token_expires_in)
+      ? new Date(Date.now() + payload.refresh_token_expires_in * 1000)
+      : undefined
+
+  return {
+    accessToken: payload.access_token,
+    tokenType: payload.token_type || 'bearer',
+    scope: payload.scope || '',
+    refreshToken: payload.refresh_token,
+    accessTokenExpiresAt,
+    refreshTokenExpiresAt,
+  }
 }
 
 export async function exchangeGitHubCodeForTokens(
@@ -87,22 +123,48 @@ export async function exchangeGitHubCodeForTokens(
       client_id: config.clientId,
       client_secret: config.clientSecret,
       code,
+      redirect_uri: config.redirectUri,
     }),
     cache: 'no-store',
   })
 
   const payload = (await response.json()) as GitHubTokenResponse
 
-  if (payload.error || !payload.access_token) {
-    const message =
-      payload.error_description || payload.error || 'Unknown error'
-    throw new Error(`GitHub token exchange failed: ${message}`)
+  try {
+    return mapGitHubTokenResponseToPayload(payload)
+  } catch (error) {
+    const label = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`GitHub token exchange failed: ${label}`)
   }
+}
 
-  return {
-    accessToken: payload.access_token,
-    tokenType: payload.token_type || 'bearer',
-    scope: payload.scope || '',
+export async function refreshGitHubUserAccessToken(
+  refreshToken: string,
+): Promise<GitHubTokenPayload> {
+  const config = getGitHubOAuthConfigOrThrow()
+
+  const response = await fetch(GITHUB_TOKEN_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
+    cache: 'no-store',
+  })
+
+  const payload = (await response.json()) as GitHubTokenResponse
+
+  try {
+    return mapGitHubTokenResponseToPayload(payload)
+  } catch (error) {
+    const label = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`GitHub token refresh failed: ${label}`)
   }
 }
 

@@ -8,6 +8,10 @@ export interface GitHubConnectionStatus {
 
 export interface GitHubTokenPayload {
   accessToken: string
+  accessTokenExpiresAt?: Date
+  /** Present when the GitHub App uses expiring user access tokens. */
+  refreshToken?: string
+  refreshTokenExpiresAt?: Date
   scope: string
   tokenType: string
 }
