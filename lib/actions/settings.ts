@@ -23,6 +23,7 @@ export async function updateSettings(data: Partial<Settings>) {
       dateFormat: data.dateFormat,
       timeFormat: data.timeFormat,
       weekStartsOn: data.weekStartsOn,
+      aiEnabled: data.aiEnabled,
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -35,6 +36,7 @@ export async function updateSettings(data: Partial<Settings>) {
         dateFormat: data.dateFormat,
         timeFormat: data.timeFormat,
         weekStartsOn: data.weekStartsOn,
+        aiEnabled: data.aiEnabled,
         updatedAt: now,
       },
     })

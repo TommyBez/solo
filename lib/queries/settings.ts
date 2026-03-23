@@ -6,6 +6,7 @@ import { userSettings } from '@/lib/db/schema'
 export type { UserSettings } from '@/lib/db/schema'
 
 export interface Settings {
+  aiEnabled: boolean
   companyAddress: string
   companyEmail: string
   companyName: string
@@ -23,6 +24,7 @@ const defaultSettings: Settings = {
   weekStartsOn: '1',
   dateFormat: 'MMM d, yyyy',
   timeFormat: '12',
+  aiEnabled: true,
 }
 
 export async function getSettings(userId: string): Promise<Settings> {
@@ -50,6 +52,7 @@ export async function getSettings(userId: string): Promise<Settings> {
       (result.timeFormat as '12' | '24') ?? defaultSettings.timeFormat,
     weekStartsOn:
       (result.weekStartsOn as '0' | '1') ?? defaultSettings.weekStartsOn,
+    aiEnabled: result.aiEnabled ?? defaultSettings.aiEnabled,
   }
 }
 

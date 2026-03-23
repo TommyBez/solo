@@ -34,10 +34,11 @@ import {
 import { cn } from '@/lib/utils'
 
 interface TimerWidgetProps {
+  aiEnabled?: boolean
   projects: (Project & { area: Area })[]
 }
 
-export function TimerWidget({ projects }: TimerWidgetProps) {
+export function TimerWidget({ aiEnabled = true, projects }: TimerWidgetProps) {
   const router = useRouter()
   const {
     isRunning,
@@ -112,8 +113,9 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
       toast.success(`Logged ${durationMinutes} minutes`)
       router.refresh()
 
-      // Check if description needs enhancement
+      // Check if description needs enhancement (only if AI is enabled)
       if (
+        aiEnabled &&
         currentProject &&
         isDescriptionVague(timerData.description) &&
         result?.id
@@ -131,7 +133,7 @@ export function TimerWidget({ projects }: TimerWidgetProps) {
     } catch {
       toast.error('Failed to save time entry')
     }
-  }, [projectId, startTime, stop, router, projects])
+  }, [aiEnabled, projectId, startTime, stop, router, projects])
 
   const handleProjectChange = (value: string) => {
     setProjectId(value)

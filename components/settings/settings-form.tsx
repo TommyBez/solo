@@ -1,6 +1,6 @@
 'use client'
 
-import { Globe, RotateCcw } from 'lucide-react'
+import { Bot, Globe, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { useActiveOrganization } from '@/lib/auth/client'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Settings } from '@/lib/queries/settings'
@@ -59,6 +60,7 @@ export function SettingsForm() {
         weekStartsOn: '1',
         dateFormat: 'MMM d, yyyy',
         timeFormat: '12',
+        aiEnabled: true,
       })
       setDraft({})
       toast.success('Settings reset to defaults')
@@ -147,6 +149,35 @@ export function SettingsForm() {
             </Link>
             .
           </p>
+        </CardContent>
+      </Card>
+
+      {/* AI Features */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="size-5" />
+            AI Features
+          </CardTitle>
+          <CardDescription>
+            Control AI-powered suggestions and enhancements
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="ai-enabled">Enable AI Features</Label>
+              <p className="text-muted-foreground text-sm">
+                Show AI-powered suggestions for time entries, descriptions, and
+                weekly reviews
+              </p>
+            </div>
+            <Switch
+              checked={form.aiEnabled}
+              id="ai-enabled"
+              onCheckedChange={(checked) => updateField('aiEnabled', checked)}
+            />
+          </div>
         </CardContent>
       </Card>
 
