@@ -7,7 +7,6 @@ import {
   Github,
   Loader2,
   Pencil,
-  Sparkles,
   X,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -148,12 +147,9 @@ export function GitHubSuggestionCard({
     <Card className="border-border/50 bg-muted/30">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            <Badge className="text-xs" variant="outline">
-              {suggestion.metadata.repoName}
-            </Badge>
-          </div>
+          <Badge className="text-xs" variant="outline">
+            {suggestion.metadata.repoName}
+          </Badge>
           {suggestion.metadata.primaryUrl && (
             <a
               className="text-muted-foreground hover:text-foreground"
