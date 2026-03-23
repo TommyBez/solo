@@ -250,11 +250,14 @@ Rules:
 1. Only return suggestions with HIGH confidence.
 2. If an existing Solo entry plausibly covers the work, skip the cluster.
 3. Match each cluster to the most likely project using repo name, project names, and patterns from existing entries.
-4. Generate a professional description (5-15 words) suitable for client reporting.
+4. Generate a description based on the ACTUAL CONTENT of the GitHub activity:
+   - Summarize what was actually done (e.g., "Fix authentication bug in login flow", "Add pagination to user list API", "Refactor database queries for performance")
+   - Extract key information from commit messages, PR titles, and descriptions
+   - Be specific about the feature, bug, or task - not generic actions
+   - NEVER use generic phrases like "Opened pull requests", "Committed code", "Merged changes", "Worked on GitHub tasks"
+   - Keep it 5-15 words, suitable for client reporting
 5. Estimate realistic duration based on the total cluster work, not per individual GitHub event.
-6. In the reasoning, explain both:
-   - why the project match is strong
-   - why the work still appears untracked in Solo
+6. In the reasoning field, keep it very brief - just internal tracking context, not shown to user.
 7. Prefer fewer, stronger suggestions over weak guesses.
 8. Return an empty array when there is no clear missing-entry signal.
 
@@ -262,7 +265,7 @@ Important:
 - Do not return medium or low confidence suggestions.
 - Do not output more than one suggestion for the same cluster.
 - Treat existing Solo entries as already tracked tasks/work.
-- Avoid generic wording like "worked on GitHub tasks".`
+- The description MUST reflect the actual work content from the GitHub activity summaries.`
 }
 
 interface GitHubSuggestionResponseItem {
