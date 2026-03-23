@@ -1,7 +1,7 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { Github, RefreshCw, Sparkles } from 'lucide-react'
+import { Github, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -141,7 +141,6 @@ export function GitHubSuggestionsStrip({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 font-medium text-sm">
-            <Sparkles className="size-4 text-primary" />
             <span>Missing Time Suggestions</span>
             <Github className="ml-1 size-3.5 text-muted-foreground" />
           </div>
