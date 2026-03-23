@@ -6,11 +6,11 @@ import {
   ExternalLink,
   Github,
   Loader2,
-  Sparkles,
+  Pencil,
   X,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { createTimeEntry } from '@/lib/actions/time-entries'
 import { updateCachedSuggestionStatus } from '@/lib/ai/time-capture'
 import type { CachedSuggestion } from '@/lib/redis/suggestions-cache'
@@ -42,15 +43,17 @@ export function GitHubSuggestionCard({
   const [isAccepting, startAcceptTransition] = useTransition()
   const [isDismissing, startDismissTransition] = useTransition()
   const [isHidden, setIsHidden] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedDescription, setEditedDescription] = useState(
+    suggestion.description,
+  )
+  const inputRef = useRef<HTMLInputElement>(null)
 
   if (isHidden) {
     return null
   }
 
-  const confidenceBadgeVariant =
-    suggestion.confidence === 'high' ? 'default' : 'secondary'
-
-  function handleAccept() {
+  function handleAccept(description: string) {
     startAcceptTransition(async () => {
       try {
         if (!suggestion.projectId) {
@@ -68,7 +71,7 @@ export function GitHubSuggestionCard({
 
         await createTimeEntry({
           projectId: suggestion.projectId,
-          description: suggestion.description,
+          description,
           startTime,
           endTime,
           durationMinutes: suggestion.durationMinutes,
@@ -105,23 +108,35 @@ export function GitHubSuggestionCard({
     })
   }
 
+  function handleStartEdit() {
+    setIsEditing(true)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  function handleCancelEdit() {
+    setIsEditing(false)
+    setEditedDescription(suggestion.description)
+  }
+
+  function handleSaveEdit() {
+    if (editedDescription.trim()) {
+      handleAccept(editedDescription.trim())
+    }
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if (event.key === 'Enter') {
+      handleSaveEdit()
+    } else if (event.key === 'Escape') {
+      handleCancelEdit()
+    }
+  }
+
   const formattedDate = new Date(suggestion.date).toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   })
-  const activityWindow = `${new Date(
-    suggestion.metadata.timeWindowStart,
-  ).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  })} - ${new Date(suggestion.metadata.timeWindowEnd).toLocaleTimeString(
-    'en-US',
-    {
-      hour: 'numeric',
-      minute: '2-digit',
-    },
-  )}`
 
   const hours = Math.floor(suggestion.durationMinutes / 60)
   const minutes = suggestion.durationMinutes % 60
@@ -132,18 +147,9 @@ export function GitHubSuggestionCard({
     <Card className="border-border/50 bg-muted/30">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            <Badge className="text-xs" variant="secondary">
-              Missing entry
-            </Badge>
-            <Badge className="text-xs" variant={confidenceBadgeVariant}>
-              {suggestion.confidence} confidence
-            </Badge>
-            <Badge className="text-xs" variant="outline">
-              {suggestion.metadata.repoName}
-            </Badge>
-          </div>
+          <Badge className="text-xs" variant="outline">
+            {suggestion.metadata.repoName}
+          </Badge>
           {suggestion.metadata.primaryUrl && (
             <a
               className="text-muted-foreground hover:text-foreground"
@@ -155,9 +161,20 @@ export function GitHubSuggestionCard({
             </a>
           )}
         </div>
-        <CardTitle className="font-medium text-sm">
-          {suggestion.description}
-        </CardTitle>
+        {isEditing ? (
+          <Input
+            ref={inputRef}
+            className="mt-1 h-8 text-sm"
+            onChange={(e) => setEditedDescription(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Describe the work..."
+            value={editedDescription}
+          />
+        ) : (
+          <CardTitle className="font-medium text-sm">
+            {suggestion.description}
+          </CardTitle>
+        )}
         <CardDescription className="flex flex-wrap items-center gap-3 text-xs">
           <span>{formattedDate}</span>
           <span className="flex items-center gap-1">
@@ -166,83 +183,73 @@ export function GitHubSuggestionCard({
           </span>
           <span className="flex items-center gap-1">
             <Github className="size-3" />
-            {activityWindow}
-          </span>
-          <span className="text-muted-foreground">
-            Project: {projectName || 'Unknown'}
+            {projectName || 'Unknown'}
           </span>
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="space-y-3">
-          <div className="rounded-md border bg-background/60 p-3">
-            <p className="font-medium text-xs">Why this looks missing</p>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {suggestion.reasoning}
-            </p>
-          </div>
-
-          <div className="rounded-md border border-dashed p-3">
-            <p className="font-medium text-xs">Solo duplicate check</p>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {suggestion.metadata.duplicateCheck.summary}
-            </p>
-          </div>
-
-          {suggestion.metadata.titles.length > 0 ? (
-            <div className="space-y-1">
-              <p className="font-medium text-xs">GitHub evidence</p>
-              <ul className="space-y-1 text-muted-foreground text-sm">
-                {suggestion.metadata.titles.slice(0, 3).map((title) => (
-                  <li className="line-clamp-2" key={title}>
-                    • {title}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {suggestion.metadata.existingEntryEvidence.length > 0 ? (
-            <div className="space-y-1">
-              <p className="font-medium text-xs">Tracked pattern in Solo</p>
-              <ul className="space-y-1 text-muted-foreground text-sm">
-                {suggestion.metadata.existingEntryEvidence.map((entry) => (
-                  <li key={`${entry.date}-${entry.description}`}>
-                    • {entry.date}: {entry.description} ({entry.durationMinutes}
-                    m)
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          <div className="flex items-center gap-2">
-            <Button
-              disabled={isAccepting || isDismissing}
-              onClick={handleAccept}
-              size="sm"
-            >
-              {isAccepting ? (
-                <Loader2 className="mr-1 size-3 animate-spin" />
-              ) : (
-                <Check className="mr-1 size-3" />
-              )}
-              Accept
-            </Button>
-            <Button
-              disabled={isAccepting || isDismissing}
-              onClick={handleDismiss}
-              size="sm"
-              variant="ghost"
-            >
-              {isDismissing ? (
-                <Loader2 className="mr-1 size-3 animate-spin" />
-              ) : (
-                <X className="mr-1 size-3" />
-              )}
-              Dismiss
-            </Button>
-          </div>
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                disabled={isAccepting || !editedDescription.trim()}
+                onClick={handleSaveEdit}
+                size="sm"
+              >
+                {isAccepting ? (
+                  <Loader2 className="mr-1 size-3 animate-spin" />
+                ) : (
+                  <Check className="mr-1 size-3" />
+                )}
+                Save
+              </Button>
+              <Button
+                disabled={isAccepting}
+                onClick={handleCancelEdit}
+                size="sm"
+                variant="ghost"
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                disabled={isAccepting || isDismissing}
+                onClick={() => handleAccept(suggestion.description)}
+                size="sm"
+              >
+                {isAccepting ? (
+                  <Loader2 className="mr-1 size-3 animate-spin" />
+                ) : (
+                  <Check className="mr-1 size-3" />
+                )}
+                Accept
+              </Button>
+              <Button
+                disabled={isAccepting || isDismissing}
+                onClick={handleStartEdit}
+                size="sm"
+                variant="outline"
+              >
+                <Pencil className="mr-1 size-3" />
+                Edit
+              </Button>
+              <Button
+                disabled={isAccepting || isDismissing}
+                onClick={handleDismiss}
+                size="sm"
+                variant="ghost"
+              >
+                {isDismissing ? (
+                  <Loader2 className="mr-1 size-3 animate-spin" />
+                ) : (
+                  <X className="mr-1 size-3" />
+                )}
+                Dismiss
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

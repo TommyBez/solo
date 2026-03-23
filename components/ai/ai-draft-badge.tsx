@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface AiDraftBadgeProps {
@@ -15,7 +14,6 @@ export function AiDraftBadge({ className }: AiDraftBadgeProps) {
       )}
       role="img"
     >
-      <Sparkles aria-hidden="true" className="size-3" />
       AI draft
     </span>
   )
