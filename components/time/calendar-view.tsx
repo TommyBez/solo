@@ -203,7 +203,7 @@ function CalendarDayCell({
         )}
         {dayEntries.slice(0, eventSlice).map((entry) => (
           <div
-            className="flex items-center gap-0.5 truncate rounded bg-muted p-0.5 text-[9px] sm:gap-1 sm:p-1 sm:text-xs overflow-hidden"
+            className="flex items-center gap-0.5 truncate rounded bg-muted p-0.5 text-[9px] sm:gap-1 sm:p-1 sm:text-xs"
             key={entry.id}
             title={`${entry.project.name}: ${entry.description}`}
           >
