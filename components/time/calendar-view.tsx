@@ -86,12 +86,14 @@ function GoogleCalendarEventRow({
       <Plus className="size-3 shrink-0 text-blue-700/80 opacity-0 transition-opacity group-hover:opacity-100 sm:hidden dark:text-blue-300/80" />
       {projects.length > 0 ? (
         <Button
+          asChild
           className="hidden h-5 w-5 p-0 text-blue-700/80 hover:text-blue-900 sm:flex dark:text-blue-300/80 dark:hover:text-blue-100"
           size="icon"
-          type="button"
           variant="ghost"
         >
-          <Plus className="size-3" />
+          <span aria-hidden="true">
+            <Plus className="size-3" />
+          </span>
         </Button>
       ) : null}
     </>
@@ -124,7 +126,7 @@ function GoogleCalendarEventRow({
 
   return (
     <div
-      className="group flex items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10 overflow-hidden"
+      className="group flex items-start gap-1 overflow-hidden rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
       title={event.title}
     >
       {eventContent}
@@ -207,7 +209,10 @@ function CalendarDayCell({
             key={entry.id}
             title={`${entry.project.name}: ${entry.description}`}
           >
-            <ColorDot className="size-1.5 shrink-0" color={entry.project.area.color} />
+            <ColorDot
+              className="size-1.5 shrink-0"
+              color={entry.project.area.color}
+            />
             <span className="truncate font-medium">{entry.project.name}</span>
             <span className="hidden shrink-0 font-mono tabular-nums opacity-70 sm:inline">
               ({Math.round((entry.durationMinutes / 60) * 10) / 10}h)

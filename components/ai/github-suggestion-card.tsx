@@ -163,11 +163,11 @@ export function GitHubSuggestionCard({
         </div>
         {isEditing ? (
           <Input
-            ref={inputRef}
             className="mt-1 h-8 text-sm"
             onChange={(e) => setEditedDescription(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Describe the work..."
+            ref={inputRef}
             value={editedDescription}
           />
         ) : (

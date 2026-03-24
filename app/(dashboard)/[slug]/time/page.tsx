@@ -169,7 +169,10 @@ async function TimeTrackingContent({
       ) : (
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="order-first lg:order-none lg:col-span-1">
-            <TimerWidget aiEnabled={settings.aiEnabled} projects={activeProjects} />
+            <TimerWidget
+              aiEnabled={settings.aiEnabled}
+              projects={activeProjects}
+            />
           </div>
           <div className="lg:col-span-2">
             <TimeEntriesList entries={entries} projects={activeProjects} />
