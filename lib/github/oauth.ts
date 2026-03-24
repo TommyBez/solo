@@ -226,79 +226,137 @@ async function fetchPullRequestDetails(
   }
 }
 
+interface PrEnrichmentTarget {
+  activity: GitHubActivity
+  owner: string
+  prNumber: number
+  repo: string
+}
+
+function isPrActivityNeedingEnrichment(
+  activity: GitHubActivity,
+): activity is GitHubActivity & {
+  type: 'pr_opened' | 'pr_merged' | 'review'
+  metadata: { prNumber: number }
+} {
+  if (
+    activity.type !== 'pr_opened' &&
+    activity.type !== 'pr_merged' &&
+    activity.type !== 'review'
+  ) {
+    return false
+  }
+  const prNumber = activity.metadata.prNumber
+  return Boolean(prNumber && needsPrEnrichment(activity))
+}
+
+function maybeEnqueuePrEnrichment(
+  event: GitHubEvent,
+  activity: GitHubActivity,
+  prEventsToEnrich: PrEnrichmentTarget[],
+): void {
+  if (!isPrActivityNeedingEnrichment(activity)) {
+    return
+  }
+  const [owner, repo] = event.repo.name.split('/')
+  if (!(owner && repo)) {
+    return
+  }
+  prEventsToEnrich.push({
+    activity,
+    owner,
+    repo,
+    prNumber: activity.metadata.prNumber,
+  })
+}
+
+/**
+ * Appends activities from one event. Returns true if `since` was passed (stop paging).
+ */
+function appendActivitiesFromEvent(
+  event: GitHubEvent,
+  sinceTime: number,
+  activities: GitHubActivity[],
+  prEventsToEnrich: PrEnrichmentTarget[],
+): boolean {
+  const eventTime = new Date(event.created_at).getTime()
+  if (eventTime < sinceTime) {
+    return true
+  }
+
+  const mapped = mapEventToActivity(event)
+  if (!mapped) {
+    return false
+  }
+
+  for (const activity of mapped) {
+    activities.push(activity)
+    maybeEnqueuePrEnrichment(event, activity, prEventsToEnrich)
+  }
+  return false
+}
+
+async function fetchUserEventsPage(
+  accessToken: string,
+  username: string,
+  page: number,
+  perPage: number,
+): Promise<GitHubEvent[] | null> {
+  const response = await fetch(
+    `${GITHUB_API_BASE}/users/${username}/events?page=${page}&per_page=${perPage}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      cache: 'no-store',
+    },
+  )
+
+  if (!response.ok) {
+    console.error('[GitHub] Failed to fetch events:', response.status)
+    return null
+  }
+
+  return (await response.json()) as GitHubEvent[]
+}
+
 export async function fetchGitHubUserEvents(
   accessToken: string,
   username: string,
   since: Date,
 ): Promise<GitHubActivity[]> {
   const activities: GitHubActivity[] = []
-  const prEventsToEnrich: Array<{
-    activity: GitHubActivity
-    owner: string
-    repo: string
-    prNumber: number
-  }> = []
+  const prEventsToEnrich: PrEnrichmentTarget[] = []
   let page = 1
   const perPage = 100
   const sinceTime = since.getTime()
 
   // GitHub Events API returns up to 300 events from the last 90 days
   while (page <= 3) {
-    const response = await fetch(
-      `${GITHUB_API_BASE}/users/${username}/events?page=${page}&per_page=${perPage}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-        cache: 'no-store',
-      },
+    const events = await fetchUserEventsPage(
+      accessToken,
+      username,
+      page,
+      perPage,
     )
-
-    if (!response.ok) {
-      console.error('[GitHub] Failed to fetch events:', response.status)
-      break
-    }
-
-    const events = (await response.json()) as GitHubEvent[]
-    if (events.length === 0) {
+    if (!events || events.length === 0) {
       break
     }
 
     let reachedEndOfTimeRange = false
     for (const event of events) {
-      const eventTime = new Date(event.created_at).getTime()
-      if (eventTime < sinceTime) {
-        // Events are sorted by date desc, so we can stop here
+      if (
+        appendActivitiesFromEvent(
+          event,
+          sinceTime,
+          activities,
+          prEventsToEnrich,
+        )
+      ) {
         reachedEndOfTimeRange = true
         break
-      }
-
-      const mapped = mapEventToActivity(event)
-      if (mapped) {
-        for (const activity of mapped) {
-          activities.push(activity)
-
-          // Track PR activities that need enrichment (missing title or other key fields)
-          if (
-            (activity.type === 'pr_opened' ||
-              activity.type === 'pr_merged' ||
-              activity.type === 'review') &&
-            activity.metadata.prNumber &&
-            needsPrEnrichment(activity)
-          ) {
-            const [owner, repo] = event.repo.name.split('/')
-            if (owner && repo) {
-              prEventsToEnrich.push({
-                activity,
-                owner,
-                repo,
-                prNumber: activity.metadata.prNumber,
-              })
-            }
-          }
-        }
       }
     }
 
@@ -308,7 +366,6 @@ export async function fetchGitHubUserEvents(
     page++
   }
 
-  // Enrich PR events with full details (deduplicated by PR)
   if (prEventsToEnrich.length > 0) {
     await enrichPrActivities(accessToken, prEventsToEnrich)
   }

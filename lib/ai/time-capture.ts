@@ -95,50 +95,59 @@ function clusterGitHubActivities(
   return clusters
 }
 
+function gitHubActivityTypeLabel(type: GitHubActivity['type']): string {
+  switch (type) {
+    case 'commit':
+      return 'Commit'
+    case 'pr_merged':
+      return 'Merged PR'
+    case 'pr_opened':
+      return 'Opened PR'
+    default:
+      return 'Review'
+  }
+}
+
+function appendGitHubActivityDetailParts(
+  activity: GitHubActivity,
+  parts: string[],
+): void {
+  if (activity.metadata.branchName) {
+    parts.push(`(branch: ${activity.metadata.branchName})`)
+  }
+
+  if (
+    activity.metadata.additions !== undefined &&
+    activity.metadata.deletions !== undefined
+  ) {
+    parts.push(
+      `[+${activity.metadata.additions}/-${activity.metadata.deletions}, ${activity.metadata.changedFiles || '?'} files]`,
+    )
+  }
+
+  if (activity.metadata.labels && activity.metadata.labels.length > 0) {
+    parts.push(`[labels: ${activity.metadata.labels.slice(0, 3).join(', ')}]`)
+  }
+
+  if (!activity.metadata.prBody) {
+    return
+  }
+  const bodyExcerpt = activity.metadata.prBody
+    .replace(/\r?\n/g, ' ')
+    .trim()
+    .slice(0, 150)
+  if (bodyExcerpt.length > 10) {
+    parts.push(
+      `Description: "${bodyExcerpt}${activity.metadata.prBody.length > 150 ? '...' : ''}"`,
+    )
+  }
+}
+
 function summarizeClusterActivities(cluster: GitHubActivityCluster): string[] {
   return cluster.activities.slice(0, 6).map((activity) => {
-    let typeLabel = 'Review'
-    if (activity.type === 'commit') {
-      typeLabel = 'Commit'
-    } else if (activity.type === 'pr_merged') {
-      typeLabel = 'Merged PR'
-    } else if (activity.type === 'pr_opened') {
-      typeLabel = 'Opened PR'
-    }
-
+    const typeLabel = gitHubActivityTypeLabel(activity.type)
     const parts: string[] = [`[${typeLabel}] ${activity.description}`]
-
-    // Add branch name for PRs (often contains ticket numbers like "feature/JIRA-123")
-    if (activity.metadata.branchName) {
-      parts.push(`(branch: ${activity.metadata.branchName})`)
-    }
-
-    // Add change stats for PRs
-    if (
-      activity.metadata.additions !== undefined &&
-      activity.metadata.deletions !== undefined
-    ) {
-      parts.push(
-        `[+${activity.metadata.additions}/-${activity.metadata.deletions}, ${activity.metadata.changedFiles || '?'} files]`,
-      )
-    }
-
-    // Add labels if present (e.g., "bug", "feature", "refactor")
-    if (activity.metadata.labels && activity.metadata.labels.length > 0) {
-      parts.push(`[labels: ${activity.metadata.labels.slice(0, 3).join(', ')}]`)
-    }
-
-    // Add PR body excerpt for context (first 150 chars)
-    if (activity.metadata.prBody) {
-      const bodyExcerpt = activity.metadata.prBody
-        .replace(/\r?\n/g, ' ')
-        .trim()
-        .slice(0, 150)
-      if (bodyExcerpt.length > 10) {
-        parts.push(`Description: "${bodyExcerpt}${activity.metadata.prBody.length > 150 ? '...' : ''}"`)
-      }
-    }
-
+    appendGitHubActivityDetailParts(activity, parts)
     return parts.join(' ')
   })
 }
