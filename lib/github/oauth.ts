@@ -2,6 +2,7 @@ import 'server-only'
 import type {
   GitHubActivity,
   GitHubEvent,
+  GitHubPullRequestDetails,
   GitHubTokenPayload,
   GitHubUser,
 } from './types'
@@ -187,12 +188,56 @@ export async function fetchGitHubUser(
   return response.json() as Promise<GitHubUser>
 }
 
+/**
+ * Fetches full PR details from the dedicated Pull Request API.
+ * Returns null if the request fails (graceful degradation).
+ */
+async function fetchPullRequestDetails(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
+): Promise<GitHubPullRequestDetails | null> {
+  try {
+    const response = await fetch(
+      `${GITHUB_API_BASE}/repos/${owner}/${repo}/pulls/${pullNumber}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        cache: 'no-store',
+      },
+    )
+
+    if (!response.ok) {
+      console.error(
+        `[GitHub] Failed to fetch PR #${pullNumber} details:`,
+        response.status,
+      )
+      return null
+    }
+
+    return response.json() as Promise<GitHubPullRequestDetails>
+  } catch (error) {
+    console.error(`[GitHub] Error fetching PR #${pullNumber}:`, error)
+    return null
+  }
+}
+
 export async function fetchGitHubUserEvents(
   accessToken: string,
   username: string,
   since: Date,
 ): Promise<GitHubActivity[]> {
   const activities: GitHubActivity[] = []
+  const prEventsToEnrich: Array<{
+    activity: GitHubActivity
+    owner: string
+    repo: string
+    prNumber: number
+  }> = []
   let page = 1
   const perPage = 100
   const sinceTime = since.getTime()
@@ -221,23 +266,154 @@ export async function fetchGitHubUserEvents(
       break
     }
 
+    let reachedEndOfTimeRange = false
     for (const event of events) {
       const eventTime = new Date(event.created_at).getTime()
       if (eventTime < sinceTime) {
         // Events are sorted by date desc, so we can stop here
-        return activities
+        reachedEndOfTimeRange = true
+        break
       }
 
       const mapped = mapEventToActivity(event)
       if (mapped) {
-        activities.push(...mapped)
+        for (const activity of mapped) {
+          activities.push(activity)
+
+          // Track PR activities that need enrichment (missing title or other key fields)
+          if (
+            (activity.type === 'pr_opened' ||
+              activity.type === 'pr_merged' ||
+              activity.type === 'review') &&
+            activity.metadata.prNumber &&
+            needsPrEnrichment(activity)
+          ) {
+            const [owner, repo] = event.repo.name.split('/')
+            if (owner && repo) {
+              prEventsToEnrich.push({
+                activity,
+                owner,
+                repo,
+                prNumber: activity.metadata.prNumber,
+              })
+            }
+          }
+        }
       }
     }
 
+    if (reachedEndOfTimeRange) {
+      break
+    }
     page++
   }
 
+  // Enrich PR events with full details (deduplicated by PR)
+  if (prEventsToEnrich.length > 0) {
+    await enrichPrActivities(accessToken, prEventsToEnrich)
+  }
+
   return activities
+}
+
+/**
+ * Checks if a PR activity needs enrichment (missing key fields).
+ */
+function needsPrEnrichment(activity: GitHubActivity): boolean {
+  const { prTitle, additions, prBody } = activity.metadata
+  // Enrich if title is missing/undefined or if we don't have the PR body yet
+  return !prTitle || additions === undefined || prBody === undefined
+}
+
+/**
+ * Batch fetches PR details and enriches activity objects in-place.
+ * Deduplicates requests for the same PR across multiple activities.
+ */
+async function enrichPrActivities(
+  accessToken: string,
+  prEvents: Array<{
+    activity: GitHubActivity
+    owner: string
+    repo: string
+    prNumber: number
+  }>,
+): Promise<void> {
+  // Deduplicate: group activities by unique PR
+  const prMap = new Map<
+    string,
+    {
+      owner: string
+      repo: string
+      prNumber: number
+      activities: GitHubActivity[]
+    }
+  >()
+
+  for (const { activity, owner, repo, prNumber } of prEvents) {
+    const key = `${owner}/${repo}#${prNumber}`
+    const existing = prMap.get(key)
+    if (existing) {
+      existing.activities.push(activity)
+    } else {
+      prMap.set(key, { owner, repo, prNumber, activities: [activity] })
+    }
+  }
+
+  // Fetch all unique PRs in parallel
+  const fetchPromises = Array.from(prMap.values()).map(
+    async ({ owner, repo, prNumber, activities }) => {
+      const details = await fetchPullRequestDetails(
+        accessToken,
+        owner,
+        repo,
+        prNumber,
+      )
+      if (details) {
+        // Apply enriched data to all activities referencing this PR
+        for (const activity of activities) {
+          applyPrDetailsToActivity(activity, details)
+        }
+      }
+    },
+  )
+
+  await Promise.all(fetchPromises)
+}
+
+/**
+ * Applies fetched PR details to an activity object in-place.
+ */
+function applyPrDetailsToActivity(
+  activity: GitHubActivity,
+  details: GitHubPullRequestDetails,
+): void {
+  // Update metadata with enriched fields
+  activity.metadata.prTitle = details.title
+  activity.metadata.prBody = details.body || undefined
+  activity.metadata.branchName = details.head.ref
+  activity.metadata.additions = details.additions
+  activity.metadata.deletions = details.deletions
+  activity.metadata.changedFiles = details.changed_files
+  activity.metadata.labels = details.labels.map((l) => l.name)
+
+  // Update the URL if it was missing
+  if (!activity.url) {
+    activity.url = details.html_url
+  }
+
+  // Update description with actual title
+  const changeStats =
+    details.additions !== undefined && details.deletions !== undefined
+      ? ` (+${details.additions}/-${details.deletions})`
+      : ''
+
+  if (activity.type === 'pr_opened') {
+    activity.description = `Opened PR: ${details.title}${changeStats}`
+  } else if (activity.type === 'pr_merged') {
+    activity.description = `Merged PR: ${details.title}${changeStats}`
+  } else if (activity.type === 'review') {
+    activity.description = `Reviewed PR: ${details.title}`
+  }
 }
 
 function mapEventToActivity(event: GitHubEvent): GitHubActivity[] {

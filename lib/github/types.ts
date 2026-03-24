@@ -32,8 +32,12 @@ export interface GitHubActivity {
     commitMessage?: string
     prNumber?: number
     prTitle?: string
+    prBody?: string
+    branchName?: string
     additions?: number
     deletions?: number
+    changedFiles?: number
+    labels?: string[]
     reviewState?: string
   }
   repoFullName: string
@@ -70,6 +74,21 @@ export interface GitHubPullRequest {
   user: {
     login: string
   }
+}
+
+/** Full PR details from GET /repos/{owner}/{repo}/pulls/{pull_number} */
+export interface GitHubPullRequestDetails {
+  additions: number
+  body: string | null
+  changed_files: number
+  deletions: number
+  head: {
+    ref: string
+  }
+  html_url: string
+  labels: Array<{ name: string }>
+  number: number
+  title: string
 }
 
 export interface GitHubEvent {
