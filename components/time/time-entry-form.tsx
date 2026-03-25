@@ -188,8 +188,15 @@ export function TimeEntryForm({
         addRecentProject(values.projectId)
         toast.success('Time entry added')
       }
-      router.refresh()
       onSuccess?.()
+      // Close modal UI before refresh: the time page wraps data in Suspense, and
+      // router.refresh() can unmount this tree while Radix Dialog is still open,
+      // which skips scroll/pointer-lock cleanup and leaves the app unclickable.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          router.refresh()
+        })
+      })
     } catch {
       toast.error(isEditing ? 'Failed to update entry' : 'Failed to add entry')
     }
