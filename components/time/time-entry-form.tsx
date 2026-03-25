@@ -119,7 +119,6 @@ export function TimeEntryForm({
   })
   const isLoading = form.formState.isSubmitting
   const [recentProjectIds] = useState<string[]>(() => getRecentProjects())
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   // Deduplicate projects by id to prevent duplicate key errors
   const uniqueProjects = projects.filter(
@@ -299,11 +298,7 @@ export function TimeEntryForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
-              <Popover
-                modal
-                onOpenChange={setDatePickerOpen}
-                open={datePickerOpen}
-              >
+              <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -318,11 +313,7 @@ export function TimeEntryForm({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="z-[100] w-auto p-0"
-                  onOpenAutoFocus={(e) => e.preventDefault()}
-                >
+                <PopoverContent align="start" className="w-auto p-0">
                   <Calendar
                     defaultMonth={field.value}
                     endMonth={TIME_ENTRY_DATE_RANGE_END}
@@ -330,10 +321,8 @@ export function TimeEntryForm({
                     onSelect={(d) => {
                       if (d) {
                         field.onChange(d)
-                        setDatePickerOpen(false)
                       }
                     }}
-                    required
                     selected={field.value}
                     startMonth={TIME_ENTRY_DATE_RANGE_START}
                     weekStartsOn={weekStartsOn}
