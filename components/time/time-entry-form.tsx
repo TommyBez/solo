@@ -49,6 +49,10 @@ import {
   parseDuration,
 } from '@/lib/utils/duration-parser'
 
+/** Bounds for react-day-picker navigation when used outside dropdown mode. */
+const TIME_ENTRY_DATE_RANGE_START = new Date(2000, 0, 1)
+const TIME_ENTRY_DATE_RANGE_END = new Date(2100, 11, 31)
+
 interface TimeEntryFormProps {
   entry?: TimeEntry
   initialValues?: TimeEntryInitialValues
@@ -115,6 +119,7 @@ export function TimeEntryForm({
   })
   const isLoading = form.formState.isSubmitting
   const [recentProjectIds] = useState<string[]>(() => getRecentProjects())
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   // Deduplicate projects by id to prevent duplicate key errors
   const uniqueProjects = projects.filter(
@@ -294,7 +299,11 @@ export function TimeEntryForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
-              <Popover>
+              <Popover
+                modal
+                onOpenChange={setDatePickerOpen}
+                open={datePickerOpen}
+              >
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -309,15 +318,24 @@ export function TimeEntryForm({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto p-0">
+                <PopoverContent
+                  align="start"
+                  className="z-[100] w-auto p-0"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
                   <Calendar
+                    defaultMonth={field.value}
+                    endMonth={TIME_ENTRY_DATE_RANGE_END}
                     mode="single"
                     onSelect={(d) => {
                       if (d) {
                         field.onChange(d)
+                        setDatePickerOpen(false)
                       }
                     }}
+                    required
                     selected={field.value}
+                    startMonth={TIME_ENTRY_DATE_RANGE_START}
                     weekStartsOn={weekStartsOn}
                   />
                 </PopoverContent>
