@@ -219,7 +219,7 @@ export function TimeEntryForm({
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a project" />
-                  </SelectTrigger>««
+                  </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {recentProjects.length > 0 && (
