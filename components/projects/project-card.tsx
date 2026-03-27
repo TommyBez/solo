@@ -33,13 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { deleteProject, updateProject } from '@/lib/actions/projects'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Client } from '@/lib/db/schema'
@@ -106,6 +100,35 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
     }
   }
 
+  const openEditDialog = () => {
+    window.setTimeout(() => {
+      setIsEditOpen(true)
+    }, 0)
+  }
+
+  const editForm = (
+    <ProjectForm
+      areas={areas}
+      clients={clients}
+      onSuccess={() => setIsEditOpen(false)}
+      project={{
+        id: project.id,
+        areaId: project.area.id,
+        clientId: project.clientId,
+        name: project.name,
+        description: project.description,
+        status: project.status,
+        expectedHours: project.expectedHours,
+        recurring: project.recurring,
+        deadline: project.deadline,
+        hourlyRate: project.hourlyRate,
+        archived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }}
+    />
+  )
+
   return (
     <>
       <Card className="relative overflow-hidden transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
@@ -139,7 +162,7 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+              <DropdownMenuItem onSelect={openEditDialog}>
                 <Pencil className="mr-2 size-4" />
                 Edit
               </DropdownMenuItem>
@@ -196,37 +219,13 @@ export function ProjectCard({ project, areas, clients }: ProjectCardProps) {
         </CardContent>
       </Card>
 
-      <ResponsiveDialog onOpenChange={setIsEditOpen} open={isEditOpen}>
-        <ResponsiveDialogContent>
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Edit Project</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Update the project details below.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="px-4 pb-4 md:px-0 md:pb-0">
-            <ProjectForm
-              areas={areas}
-              clients={clients}
-              onSuccess={() => setIsEditOpen(false)}
-              project={{
-                id: project.id,
-                areaId: project.area.id,
-                clientId: project.clientId,
-                name: project.name,
-                description: project.description,
-                status: project.status,
-                expectedHours: project.expectedHours,
-                recurring: project.recurring,
-                deadline: project.deadline,
-                hourlyRate: project.hourlyRate,
-                archived: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }}
-            />
-          </div>
-        </ResponsiveDialogContent>
+      <ResponsiveDialog
+        description="Update the project details below."
+        onOpenChange={setIsEditOpen}
+        open={isEditOpen}
+        title="Edit Project"
+      >
+        {editForm}
       </ResponsiveDialog>
 
       <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>

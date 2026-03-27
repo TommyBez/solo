@@ -26,15 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFooter,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogTrigger,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import {
   Select,
   SelectContent,
@@ -213,198 +205,189 @@ export function ScheduleNextWeekDialog({
 
   const isBusy = isCopying || isCreating
 
-  return (
-    <ResponsiveDialog onOpenChange={setOpen} open={open}>
-      <ResponsiveDialogTrigger asChild>
-        <Button variant="outline">
-          <CalendarClock className="mr-2 size-4" />
-          Schedule Next Week
+  const trigger = (
+    <Button variant="outline">
+      <CalendarClock className="mr-2 size-4" />
+      Schedule Next Week
+    </Button>
+  )
+
+  const workflowContent = (
+    <div className="space-y-5">
+      <div className="space-y-3 rounded-lg border bg-muted/20 p-4 text-sm">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-muted-foreground">Source week</span>
+          <span className="font-medium">{sourceWeekLabel}</span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-muted-foreground">Scheduled into</span>
+          <span className="font-medium">{targetWeekLabel}</span>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Existing matching tasks in the target week are skipped automatically.
+        </p>
+        <Button disabled={isBusy} onClick={handleSchedule} variant="outline">
+          {isCopying ? 'Copying...' : 'Copy current week tasks'}
         </Button>
-      </ResponsiveDialogTrigger>
-      <ResponsiveDialogContent className="md:max-w-[460px]">
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>
-            Schedule Tasks for Following Week
-          </ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            Copy current tasks or create new ones directly in next week.
-          </ResponsiveDialogDescription>
-        </ResponsiveDialogHeader>
+      </div>
 
-        <div className="space-y-5">
-          <div className="space-y-3 rounded-lg border bg-muted/20 p-4 text-sm">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">Source week</span>
-              <span className="font-medium">{sourceWeekLabel}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">Scheduled into</span>
-              <span className="font-medium">{targetWeekLabel}</span>
-            </div>
-            <p className="text-muted-foreground text-xs">
-              Existing matching tasks in the target week are skipped
-              automatically.
-            </p>
-            <Button
-              disabled={isBusy}
-              onClick={handleSchedule}
-              variant="outline"
-            >
-              {isCopying ? 'Copying...' : 'Copy current week tasks'}
-            </Button>
-          </div>
+      <Separator />
 
-          <Separator />
-
-          <div className="space-y-4 rounded-lg border p-4">
-            <div>
-              <h3 className="font-medium text-sm">Create task independently</h3>
-              <p className="text-muted-foreground text-xs">
-                Add a task directly in {targetWeekLabel}.
-              </p>
-            </div>
-
-            {projects.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Add at least one active project to create a task.
-              </p>
-            ) : (
-              <Form {...form}>
-                <form className="space-y-4" onSubmit={handleCreateManualTask}>
-                  <FormField
-                    control={form.control}
-                    name="projectId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Project</FormLabel>
-                        <Select
-                          disabled={isBusy}
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(projectsByArea).map(
-                              ([
-                                areaName,
-                                { area, projects: areaProjects },
-                              ]) => (
-                                <SelectGroup key={areaName}>
-                                  <SelectLabel className="flex items-center gap-2">
-                                    <ColorDot color={area.color} />
-                                    {areaName}
-                                  </SelectLabel>
-                                  {areaProjects.map((project) => (
-                                    <SelectItem
-                                      key={project.id}
-                                      value={project.id.toString()}
-                                    >
-                                      {project.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              ),
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="dayOffset"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Day</FormLabel>
-                          <Select
-                            disabled={isBusy}
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {nextWeekDayOptions.map((day) => (
-                                <SelectItem
-                                  key={day.dayOffset}
-                                  value={day.dayOffset}
-                                >
-                                  {day.label} ({day.dateLabel})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="durationInput"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Duration</FormLabel>
-                          <FormControl>
-                            <Input
-                              disabled={isBusy}
-                              placeholder="1h 30m"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            disabled={isBusy}
-                            placeholder="What needs to be done?"
-                            rows={2}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button disabled={isBusy} type="submit">
-                    {isCreating ? 'Creating...' : 'Create next-week task'}
-                  </Button>
-                </form>
-              </Form>
-            )}
-          </div>
+      <div className="space-y-4 rounded-lg border p-4">
+        <div>
+          <h3 className="font-medium text-sm">Create task independently</h3>
+          <p className="text-muted-foreground text-xs">
+            Add a task directly in {targetWeekLabel}.
+          </p>
         </div>
 
-        <ResponsiveDialogFooter>
-          <Button
-            disabled={isBusy}
-            onClick={() => setOpen(false)}
-            variant="outline"
-          >
-            Cancel
-          </Button>
-        </ResponsiveDialogFooter>
-      </ResponsiveDialogContent>
+        {projects.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            Add at least one active project to create a task.
+          </p>
+        ) : (
+          <Form {...form}>
+            <form className="space-y-4" onSubmit={handleCreateManualTask}>
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <Select
+                      disabled={isBusy}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(projectsByArea).map(
+                          ([areaName, { area, projects: areaProjects }]) => (
+                            <SelectGroup key={areaName}>
+                              <SelectLabel className="flex items-center gap-2">
+                                <ColorDot color={area.color} />
+                                {areaName}
+                              </SelectLabel>
+                              {areaProjects.map((project) => (
+                                <SelectItem
+                                  key={project.id}
+                                  value={project.id.toString()}
+                                >
+                                  {project.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="dayOffset"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Day</FormLabel>
+                      <Select
+                        disabled={isBusy}
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {nextWeekDayOptions.map((day) => (
+                            <SelectItem
+                              key={day.dayOffset}
+                              value={day.dayOffset}
+                            >
+                              {day.label} ({day.dateLabel})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="durationInput"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duration</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={isBusy}
+                          placeholder="1h 30m"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        disabled={isBusy}
+                        placeholder="What needs to be done?"
+                        rows={2}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button disabled={isBusy} type="submit">
+                {isCreating ? 'Creating...' : 'Create next-week task'}
+              </Button>
+            </form>
+          </Form>
+        )}
+      </div>
+    </div>
+  )
+
+  const footerButton = (
+    <Button disabled={isBusy} onClick={() => setOpen(false)} variant="outline">
+      Cancel
+    </Button>
+  )
+
+  return (
+    <ResponsiveDialog
+      className="md:max-w-[460px]"
+      description="Copy current tasks or create new ones directly in next week."
+      footer={footerButton}
+      mobileFooterClassName="pt-0"
+      onOpenChange={setOpen}
+      open={open}
+      title="Schedule Tasks for Following Week"
+      trigger={trigger}
+    >
+      {workflowContent}
     </ResponsiveDialog>
   )
 }

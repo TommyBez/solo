@@ -31,13 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { deleteTimeEntry } from '@/lib/actions/time-entries'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project } from '@/lib/db/schema'
@@ -91,6 +85,29 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
     }
     setDeleteEntryId(null)
   }
+
+  const openEditDialog = (entry: TimeEntry) => {
+    window.setTimeout(() => {
+      setEditEntry(entry)
+    }, 0)
+  }
+
+  const editForm = editEntry ? (
+    <TimeEntryForm
+      entry={{
+        id: editEntry.id,
+        projectId: editEntry.projectId,
+        description: editEntry.description,
+        startTime: editEntry.startTime,
+        endTime: editEntry.endTime,
+        durationMinutes: editEntry.durationMinutes,
+        billable: editEntry.billable,
+        createdAt: editEntry.createdAt,
+      }}
+      onSuccess={() => setEditEntry(null)}
+      projects={projects}
+    />
+  ) : null
 
   // Group entries by date (internal key format)
   const entriesByDate = entries.reduce(
@@ -198,7 +215,7 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
-                                  onClick={() => setEditEntry(entry)}
+                                  onSelect={() => openEditDialog(entry)}
                                 >
                                   <Pencil className="mr-2 size-4" />
                                   Edit
@@ -225,35 +242,12 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
       </Card>
 
       <ResponsiveDialog
+        description="Update the time entry details."
         onOpenChange={(open) => !open && setEditEntry(null)}
         open={!!editEntry}
+        title="Edit Time Entry"
       >
-        <ResponsiveDialogContent>
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Edit Time Entry</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Update the time entry details.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="px-4 pb-4 md:px-0 md:pb-0">
-            {editEntry ? (
-              <TimeEntryForm
-                entry={{
-                  id: editEntry.id,
-                  projectId: editEntry.projectId,
-                  description: editEntry.description,
-                  startTime: editEntry.startTime,
-                  endTime: editEntry.endTime,
-                  durationMinutes: editEntry.durationMinutes,
-                  billable: editEntry.billable,
-                  createdAt: editEntry.createdAt,
-                }}
-                onSuccess={() => setEditEntry(null)}
-                projects={projects}
-              />
-            ) : null}
-          </div>
-        </ResponsiveDialogContent>
+        {editForm}
       </ResponsiveDialog>
 
       <AlertDialog

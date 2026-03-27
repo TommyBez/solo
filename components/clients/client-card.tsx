@@ -23,13 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { archiveClient, deleteClient } from '@/lib/actions/clients'
 import type { Client } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
@@ -95,6 +89,16 @@ export function ClientCard({ client }: ClientCardProps) {
     }
   }
 
+  const openEditDialog = () => {
+    window.setTimeout(() => {
+      setEditOpen(true)
+    }, 0)
+  }
+
+  const editForm = (
+    <ClientForm client={client} onSuccess={() => setEditOpen(false)} />
+  )
+
   return (
     <>
       <Card className="transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
@@ -134,7 +138,7 @@ export function ClientCard({ client }: ClientCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+              <DropdownMenuItem onSelect={openEditDialog}>
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleArchive}>
@@ -178,18 +182,14 @@ export function ClientCard({ client }: ClientCardProps) {
         </CardContent>
       </Card>
 
-      <ResponsiveDialog onOpenChange={setEditOpen} open={editOpen}>
-        <ResponsiveDialogContent className="md:max-w-lg">
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Edit Client</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Update client information.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="px-4 pb-4 md:px-0 md:pb-0">
-            <ClientForm client={client} onSuccess={() => setEditOpen(false)} />
-          </div>
-        </ResponsiveDialogContent>
+      <ResponsiveDialog
+        className="md:max-w-lg"
+        description="Update client information."
+        onOpenChange={setEditOpen}
+        open={editOpen}
+        title="Edit Client"
+      >
+        {editForm}
       </ResponsiveDialog>
 
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>

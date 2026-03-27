@@ -18,14 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogTrigger,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import {
   Select,
   SelectContent,
@@ -81,103 +74,102 @@ export function InviteMemberDialog({
     }
   })
 
+  const handleOpenChange = (value: boolean) => {
+    setOpen(value)
+    if (!value) {
+      form.reset()
+      setError('')
+    }
+  }
+
+  const trigger = (
+    <Button size="sm">
+      <UserPlus className="mr-2 size-4" />
+      Invite Member
+    </Button>
+  )
+
+  const formContent = (
+    <Form {...form}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        {error ? (
+          <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
+            {error}
+          </div>
+        ) : null}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email Address</FormLabel>
+              <FormControl>
+                <Input
+                  disabled={isLoading}
+                  placeholder="colleague@example.com"
+                  type="email"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <Select
+                disabled={isLoading}
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Viewers can only view data and export. Members can create and
+                edit. Admins can also manage workspace settings.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => setOpen(false)}
+            type="button"
+            variant="outline"
+          >
+            Cancel
+          </Button>
+          <Button disabled={isLoading} type="submit">
+            {isLoading ? 'Sending...' : 'Send Invitation'}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+
   return (
     <ResponsiveDialog
-      onOpenChange={(value) => {
-        setOpen(value)
-        if (!value) {
-          form.reset()
-          setError('')
-        }
-      }}
+      description="Send an invitation to join this workspace."
+      onOpenChange={handleOpenChange}
       open={open}
+      title="Invite Member"
+      trigger={trigger}
     >
-      <ResponsiveDialogTrigger asChild>
-        <Button size="sm">
-          <UserPlus className="mr-2 size-4" />
-          Invite Member
-        </Button>
-      </ResponsiveDialogTrigger>
-      <ResponsiveDialogContent>
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Invite Member</ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            Send an invitation to join this workspace.
-          </ResponsiveDialogDescription>
-        </ResponsiveDialogHeader>
-        <Form {...form}>
-          <form
-            className="space-y-4 px-4 pb-4 md:px-0 md:pb-0"
-            onSubmit={handleSubmit}
-          >
-            {error ? (
-              <div className="rounded-none border border-destructive/50 bg-destructive/10 p-3 text-destructive text-xs">
-                {error}
-              </div>
-            ) : null}
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={isLoading}
-                      placeholder="colleague@example.com"
-                      type="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select
-                    disabled={isLoading}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Viewers can only view data and export. Members can create
-                    and edit. Admins can also manage workspace settings.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                onClick={() => setOpen(false)}
-                type="button"
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button disabled={isLoading} type="submit">
-                {isLoading ? 'Sending...' : 'Send Invitation'}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </ResponsiveDialogContent>
+      {formContent}
     </ResponsiveDialog>
   )
 }

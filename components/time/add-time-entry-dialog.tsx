@@ -3,14 +3,7 @@
 import { Plus } from 'lucide-react'
 import { type ReactNode, useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogTrigger,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import type { Area, Project } from '@/lib/db/schema'
 import {
   SHORTCUT_EVENTS,
@@ -59,33 +52,30 @@ export function AddTimeEntryDialog({
     )
   }
 
+  const triggerButton = trigger ?? (
+    <Button>
+      <Plus className="mr-2 size-4" />
+      {buttonLabel ?? 'Add Entry'}
+    </Button>
+  )
+
+  const form = (
+    <TimeEntryForm
+      initialValues={initialValues}
+      onSuccess={() => setOpen(false)}
+      projects={projects}
+    />
+  )
+
   return (
-    <ResponsiveDialog onOpenChange={setOpen} open={open}>
-      <ResponsiveDialogTrigger asChild>
-        {trigger ?? (
-          <Button>
-            <Plus className="mr-2 size-4" />
-            {buttonLabel ?? 'Add Entry'}
-          </Button>
-        )}
-      </ResponsiveDialogTrigger>
-      <ResponsiveDialogContent>
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>
-            {title ?? 'Add Time Entry'}
-          </ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            {description ?? 'Log time spent on a project.'}
-          </ResponsiveDialogDescription>
-        </ResponsiveDialogHeader>
-        <div className="px-4 pb-4 md:px-0 md:pb-0">
-          <TimeEntryForm
-            initialValues={initialValues}
-            onSuccess={() => setOpen(false)}
-            projects={projects}
-          />
-        </div>
-      </ResponsiveDialogContent>
+    <ResponsiveDialog
+      description={description ?? 'Log time spent on a project.'}
+      onOpenChange={setOpen}
+      open={open}
+      title={title ?? 'Add Time Entry'}
+      trigger={triggerButton}
+    >
+      {form}
     </ResponsiveDialog>
   )
 }

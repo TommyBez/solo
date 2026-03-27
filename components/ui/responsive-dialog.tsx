@@ -1,10 +1,9 @@
 'use client'
 
 import type * as React from 'react'
-import { createContext, useContext, useEffect } from 'react'
+import { useEffect } from 'react'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -14,7 +13,6 @@ import {
 } from '@/components/ui/dialog'
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -23,222 +21,111 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer'
 import { useIsMobile } from '@/hooks/use-mobile'
-
-type ResponsiveMode = 'dialog' | 'drawer'
-
-const ResponsiveDialogContext = createContext<ResponsiveMode>('dialog')
-
-function useResponsiveMode() {
-  return useContext(ResponsiveDialogContext)
-}
+import { cn } from '@/lib/utils'
 
 interface ResponsiveDialogProps {
   children: React.ReactNode
-  open?: boolean
+  className?: string
+  description?: React.ReactNode
+  desktopFooterClassName?: string
+  footer?: React.ReactNode
+  mobileBodyClassName?: string
+  mobileFooterClassName?: string
   onOpenChange?: (open: boolean) => void
+  open?: boolean
+  showCloseButton?: boolean
+  title?: React.ReactNode
+  trigger?: React.ReactNode
 }
 
 function ResponsiveDialog({
   children,
-  open,
+  className,
+  description,
+  desktopFooterClassName,
+  footer,
+  mobileBodyClassName,
+  mobileFooterClassName,
   onOpenChange,
+  open,
+  showCloseButton,
+  title,
+  trigger,
 }: ResponsiveDialogProps) {
   const isMobile = useIsMobile()
+  const hasHeader = title || description
 
-  // Workaround for vaul bug (https://github.com/emilkowalski/vaul/issues/492):
-  // Controlled drawers leave pointer-events: none stuck on body after closing
-  // because Radix DismissableLayer's cleanup doesn't fire properly on re-renders
-  // (e.g. triggered by router.refresh()). This runs on every render while the
-  // drawer is closed to catch late re-renders that re-apply the stale style.
   useEffect(() => {
-    if (!isMobile || open) return
-    if (document.body.style.pointerEvents === 'none') {
-      document.body.style.pointerEvents = ''
+    if (!isMobile || open) {
+      return
     }
-  })
 
-  if (isMobile) {
+    const clearInteractionLock = () => {
+      document.body.style.pointerEvents = ''
+      document.body.style.removeProperty('pointer-events')
+      document.documentElement.style.pointerEvents = ''
+      document.documentElement.style.removeProperty('pointer-events')
+    }
+
+    clearInteractionLock()
+
+    const frameId = window.requestAnimationFrame(clearInteractionLock)
+    const timeoutId = window.setTimeout(clearInteractionLock, 500)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.clearTimeout(timeoutId)
+    }
+  }, [isMobile, open])
+
+  if (!isMobile) {
     return (
-      <ResponsiveDialogContext.Provider value="drawer">
-        <Drawer open={open} onOpenChange={onOpenChange}>
+      <Dialog onOpenChange={onOpenChange} open={open}>
+        {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
+        <DialogContent className={className} showCloseButton={showCloseButton}>
+          {hasHeader ? (
+            <DialogHeader>
+              {title ? <DialogTitle>{title}</DialogTitle> : null}
+              {description ? (
+                <DialogDescription>{description}</DialogDescription>
+              ) : null}
+            </DialogHeader>
+          ) : null}
           {children}
-        </Drawer>
-      </ResponsiveDialogContext.Provider>
-    )
-  }
-
-  return (
-    <ResponsiveDialogContext.Provider value="dialog">
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        {children}
+          {footer ? (
+            <DialogFooter className={desktopFooterClassName}>{footer}</DialogFooter>
+          ) : null}
+        </DialogContent>
       </Dialog>
-    </ResponsiveDialogContext.Provider>
-  )
-}
-
-function ResponsiveDialogTrigger({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogTrigger>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
-      <DrawerTrigger className={className} {...props}>
-        {children}
-      </DrawerTrigger>
     )
   }
 
   return (
-    <DialogTrigger className={className} {...props}>
-      {children}
-    </DialogTrigger>
-  )
-}
-
-function ResponsiveDialogContent({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogContent>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
+    <Drawer onOpenChange={onOpenChange} open={open}>
+      {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
       <DrawerContent className={className}>
-        <div className="max-h-[calc(80vh-3.5rem)] overflow-y-auto overscroll-y-contain">
+        {hasHeader ? (
+          <DrawerHeader className="text-left">
+            {title ? <DrawerTitle>{title}</DrawerTitle> : null}
+            {description ? (
+              <DrawerDescription>{description}</DrawerDescription>
+            ) : null}
+          </DrawerHeader>
+        ) : null}
+        <div
+          className={cn(
+            'max-h-[calc(80vh-3.5rem)] overflow-y-auto overscroll-y-contain px-4 pb-4',
+            mobileBodyClassName,
+          )}
+        >
           {children}
         </div>
+        {footer ? (
+          <DrawerFooter className={mobileFooterClassName}>{footer}</DrawerFooter>
+        ) : null}
       </DrawerContent>
-    )
-  }
-
-  return (
-    <DialogContent className={className} {...props}>
-      {children}
-    </DialogContent>
+    </Drawer>
   )
 }
 
-function ResponsiveDialogHeader({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogHeader>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
-      <DrawerHeader className={className} {...props}>
-        {children}
-      </DrawerHeader>
-    )
-  }
-
-  return (
-    <DialogHeader className={className} {...props}>
-      {children}
-    </DialogHeader>
-  )
-}
-
-function ResponsiveDialogFooter({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogFooter>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
-      <DrawerFooter className={className} {...props}>
-        {children}
-      </DrawerFooter>
-    )
-  }
-
-  return (
-    <DialogFooter className={className} {...props}>
-      {children}
-    </DialogFooter>
-  )
-}
-
-function ResponsiveDialogTitle({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogTitle>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
-      <DrawerTitle className={className} {...props}>
-        {children}
-      </DrawerTitle>
-    )
-  }
-
-  return (
-    <DialogTitle className={className} {...props}>
-      {children}
-    </DialogTitle>
-  )
-}
-
-function ResponsiveDialogDescription({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogDescription>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
-      <DrawerDescription className={className} {...props}>
-        {children}
-      </DrawerDescription>
-    )
-  }
-
-  return (
-    <DialogDescription className={className} {...props}>
-      {children}
-    </DialogDescription>
-  )
-}
-
-function ResponsiveDialogClose({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogClose>) {
-  const mode = useResponsiveMode()
-
-  if (mode === 'drawer') {
-    return (
-      <DrawerClose className={className} {...props}>
-        {children}
-      </DrawerClose>
-    )
-  }
-
-  return (
-    <DialogClose className={className} {...props}>
-      {children}
-    </DialogClose>
-  )
-}
-
-export {
-  ResponsiveDialog,
-  ResponsiveDialogTrigger,
-  ResponsiveDialogContent,
-  ResponsiveDialogHeader,
-  ResponsiveDialogFooter,
-  ResponsiveDialogTitle,
-  ResponsiveDialogDescription,
-  ResponsiveDialogClose,
-}
+export { ResponsiveDialog }

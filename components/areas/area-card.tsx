@@ -31,13 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@/components/ui/responsive-dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { deleteArea, updateArea } from '@/lib/actions/areas'
 import { AreaForm } from './area-form'
 
@@ -79,6 +73,25 @@ export function AreaCard({ area }: AreaCardProps) {
     }
   }
 
+  const openEditDialog = () => {
+    window.setTimeout(() => {
+      setIsEditOpen(true)
+    }, 0)
+  }
+
+  const editForm = (
+    <AreaForm
+      area={{
+        id: area.id,
+        name: area.name,
+        description: area.description,
+        color: area.color,
+        expectedHoursPerWeek: area.expectedHoursPerWeek,
+      }}
+      onSuccess={() => setIsEditOpen(false)}
+    />
+  )
+
   return (
     <>
       <Card className="relative overflow-hidden transition-[box-shadow,ring-color] duration-200 hover:ring-foreground/20">
@@ -106,7 +119,7 @@ export function AreaCard({ area }: AreaCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+              <DropdownMenuItem onSelect={openEditDialog}>
                 <Pencil className="mr-2 size-4" />
                 Edit
               </DropdownMenuItem>
@@ -153,27 +166,13 @@ export function AreaCard({ area }: AreaCardProps) {
         </CardContent>
       </Card>
 
-      <ResponsiveDialog onOpenChange={setIsEditOpen} open={isEditOpen}>
-        <ResponsiveDialogContent>
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Edit Area</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Update the area details below.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="px-4 pb-4 md:px-0 md:pb-0">
-            <AreaForm
-              area={{
-                id: area.id,
-                name: area.name,
-                description: area.description,
-                color: area.color,
-                expectedHoursPerWeek: area.expectedHoursPerWeek,
-              }}
-              onSuccess={() => setIsEditOpen(false)}
-            />
-          </div>
-        </ResponsiveDialogContent>
+      <ResponsiveDialog
+        description="Update the area details below."
+        onOpenChange={setIsEditOpen}
+        open={isEditOpen}
+        title="Edit Area"
+      >
+        {editForm}
       </ResponsiveDialog>
 
       <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
