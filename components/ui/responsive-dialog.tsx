@@ -106,7 +106,13 @@ function ResponsiveDialogContent({
   const mode = useResponsiveMode()
 
   if (mode === 'drawer') {
-    return <DrawerContent className={className}>{children}</DrawerContent>
+    return (
+      <DrawerContent className={className}>
+        <div className="max-h-[calc(80vh-3.5rem)] overflow-y-auto overscroll-y-contain">
+          {children}
+        </div>
+      </DrawerContent>
+    )
   }
 
   return (
