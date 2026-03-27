@@ -40,7 +40,7 @@ export default async function TimeTrackingPage(props: {
   const dateParam =
     typeof searchParams.date === 'string' ? searchParams.date : undefined
   const viewParam =
-    typeof searchParams.view === 'string' ? searchParams.view : 'month'
+    typeof searchParams.view === 'string' ? searchParams.view : 'week'
   return (
     <div className="space-y-6">
       <PageHeader
