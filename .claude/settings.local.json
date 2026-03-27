@@ -18,7 +18,15 @@
       "mcp__hades-tools__get_process_tree",
       "mcp__hades-tools__get_process_logs",
       "mcp__hades-tools__type_text",
-      "mcp__hades-tools__get_network_logs"
+      "mcp__hades-tools__get_network_logs",
+      "Bash(pnpm dev:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(xargs kill:*)",
+      "Bash(ls /Users/tommaso/personal-projects/solo/node_modules/.pnpm/vaul*/node_modules/vaul/dist/)",
+      "Bash(grep -r \"pointerEvents\\\\|pointer-events\" /Users/tommaso/personal-projects/solo/node_modules/.pnpm/radix*/node_modules/@radix-ui/*/dist/*.js)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
