@@ -58,7 +58,7 @@ function getEventDescription(event: GoogleCalendarEvent) {
 }
 
 const googleEventTriggerClassName =
-  'group flex cursor-pointer items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-left text-[9px] active:opacity-70 sm:cursor-default sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10 overflow-hidden'
+  'group flex w-full min-w-0 cursor-pointer items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-left text-[9px] active:opacity-70 sm:cursor-default sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10 overflow-hidden'
 
 function GoogleCalendarEventRow({
   event,
@@ -126,7 +126,7 @@ function GoogleCalendarEventRow({
 
   return (
     <div
-      className="group flex items-start gap-1 overflow-hidden rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
+      className="group flex w-full min-w-0 items-start gap-1 overflow-hidden rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
       title={event.title}
     >
       {eventContent}
@@ -171,7 +171,7 @@ function CalendarDayCell({
   return (
     <div
       className={cn(
-        'min-h-[80px] border-r border-b p-1 transition-colors hover:bg-muted/50 sm:min-h-[140px] sm:p-2',
+        'min-h-[80px] min-w-0 border-r border-b p-1 transition-colors hover:bg-muted/50 sm:min-h-[140px] sm:p-2',
         isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
         isToday && isCurrentMonth ? 'bg-primary/5 dark:bg-primary/10' : '',
         isLastRow ? 'border-b-0' : '',
@@ -189,7 +189,7 @@ function CalendarDayCell({
         </span>
       </div>
 
-      <div className="space-y-0.5 overflow-hidden sm:space-y-1">
+      <div className="min-w-0 space-y-0.5 overflow-hidden sm:space-y-1">
         {dayGoogleEvents.slice(0, eventSlice).map((event) => (
           <GoogleCalendarEventRow
             event={event}
