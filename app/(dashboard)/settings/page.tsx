@@ -2,6 +2,7 @@ import { PageHeader } from '@/components/page-header'
 import { GitHubCard } from '@/components/settings/github-card'
 import { GoogleCalendarCard } from '@/components/settings/google-calendar-card'
 import { SettingsForm } from '@/components/settings/settings-form'
+import { ThemeSwitcherCard } from '@/components/settings/theme-switcher-card'
 import { getGitHubStatus } from '@/lib/queries/github'
 import { getGoogleCalendarStatus } from '@/lib/queries/google-calendar'
 
@@ -29,6 +30,8 @@ export default async function SettingsPage(props: {
         description="Manage your account preferences"
         title="Settings"
       />
+
+      <ThemeSwitcherCard />
 
       <SettingsForm />
 
