@@ -1,7 +1,7 @@
 'use client'
 
 import type * as React from 'react'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import {
   Dialog,
   DialogClose,
@@ -44,6 +44,18 @@ function ResponsiveDialog({
   onOpenChange,
 }: ResponsiveDialogProps) {
   const isMobile = useIsMobile()
+
+  // Workaround for vaul bug (https://github.com/emilkowalski/vaul/issues/492):
+  // Controlled drawers leave pointer-events: none stuck on body after closing
+  // because Radix DismissableLayer's cleanup doesn't fire properly on re-renders
+  // (e.g. triggered by router.refresh()). This runs on every render while the
+  // drawer is closed to catch late re-renders that re-apply the stale style.
+  useEffect(() => {
+    if (!isMobile || open) return
+    if (document.body.style.pointerEvents === 'none') {
+      document.body.style.pointerEvents = ''
+    }
+  })
 
   if (isMobile) {
     return (

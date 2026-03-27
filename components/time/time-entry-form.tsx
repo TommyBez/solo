@@ -188,8 +188,8 @@ export function TimeEntryForm({
         addRecentProject(values.projectId)
         toast.success('Time entry added')
       }
-      router.refresh()
       onSuccess?.()
+      router.refresh()
     } catch {
       toast.error(isEditing ? 'Failed to update entry' : 'Failed to add entry')
     }
