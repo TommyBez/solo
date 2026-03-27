@@ -174,7 +174,7 @@ async function TimeTrackingContent({
               projects={activeProjects}
             />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2" data-catchup-module>
             <TimeEntriesList entries={entries} projects={activeProjects} />
           </div>
         </div>
