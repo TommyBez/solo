@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { isAiFeaturesEnabled } from '@/flags'
 import { db } from '@/lib/db'
 import { userSettings } from '@/lib/db/schema'
 
@@ -33,7 +32,6 @@ export async function getSettings(userId: string): Promise<Settings> {
   cacheTag(`user-settings-${userId}`)
   cacheLife('hours')
 
-  const aiFlagEnabled = await isAiFeaturesEnabled()
   const result = await db
     .select()
     .from(userSettings)
@@ -41,10 +39,7 @@ export async function getSettings(userId: string): Promise<Settings> {
     .then((rows) => rows[0])
 
   if (!result) {
-    return {
-      ...defaultSettings,
-      aiEnabled: aiFlagEnabled && defaultSettings.aiEnabled,
-    }
+    return defaultSettings
   }
 
   return {
@@ -57,7 +52,7 @@ export async function getSettings(userId: string): Promise<Settings> {
       (result.timeFormat as '12' | '24') ?? defaultSettings.timeFormat,
     weekStartsOn:
       (result.weekStartsOn as '0' | '1') ?? defaultSettings.weekStartsOn,
-    aiEnabled: aiFlagEnabled && (result.aiEnabled ?? defaultSettings.aiEnabled),
+    aiEnabled: result.aiEnabled ?? defaultSettings.aiEnabled,
   }
 }
 

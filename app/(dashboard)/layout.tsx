@@ -17,6 +17,10 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import {
+  getAiFeatureAvailability,
+  getEffectiveAiSettings,
+} from '@/lib/ai/access'
+import {
   ensureActiveOrganization,
   getActiveOrganizationSlug,
   getSession,
@@ -35,9 +39,18 @@ async function SettingsProviderWrapper({
   // Ensure the user has an active organization set server-side
   await ensureActiveOrganization()
 
-  const settings = session?.user
-    ? await getSettings(session.user.id)
-    : defaultSettings
+  let settings = defaultSettings
+
+  if (session?.user) {
+    const [baseSettings, aiFeatureAvailability] = await Promise.all([
+      getSettings(session.user.id),
+      getAiFeatureAvailability(),
+    ])
+    settings = getEffectiveAiSettings(
+      baseSettings,
+      aiFeatureAvailability.allowed,
+    )
+  }
 
   return (
     <SettingsProvider initialSettings={settings}>{children}</SettingsProvider>

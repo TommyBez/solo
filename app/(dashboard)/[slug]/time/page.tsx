@@ -20,7 +20,10 @@ import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { isAiAvailableForUser } from '@/lib/ai/access'
+import {
+  getAiFeatureAvailability,
+  getEffectiveAiSettings,
+} from '@/lib/ai/access'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
 import { getAreas } from '@/lib/queries/areas'
 import { getGitHubStatus } from '@/lib/queries/github'
@@ -67,13 +70,18 @@ async function TimeTrackingContent({
 
   // Fetch user settings for week start preference
   const session = await getSession()
-  const settings = session?.user
-    ? await getSettings(session.user.id)
-    : defaultSettings
-  const aiEnabled = session?.user
-    ? await isAiAvailableForUser(session.user.id)
-    : false
-  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
+  const [settings, aiFeatureAvailability] = session?.user
+    ? await Promise.all([
+        getSettings(session.user.id),
+        getAiFeatureAvailability(),
+      ])
+    : [defaultSettings, { allowed: false }]
+  const effectiveSettings = getEffectiveAiSettings(
+    settings,
+    aiFeatureAvailability.allowed,
+  )
+  const aiEnabled = effectiveSettings.aiEnabled
+  const weekStartsOn = effectiveSettings.weekStartsOn === '0' ? 0 : 1
 
   // Calculate range for the calendar view
   let startDate: Date
