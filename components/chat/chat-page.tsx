@@ -25,50 +25,54 @@ export function ChatPage() {
   })
 
   const isLoading = status === 'streaming' || status === 'submitted'
+  const lastPartCount = messages.at(-1)?.parts.length ?? 0
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: effect must re-run when the transcript grows or streams; deps are not read in the body by design
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: 'smooth',
     })
-  }, [messages])
+  }, [messages.length, lastPartCount, status])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const text = input.trim()
-    if (!text || isLoading) return
+    if (!text || isLoading) {
+      return
+    }
     sendMessage({ text })
     setInput('')
   }
 
   function handleSuggestion(text: string) {
-    if (isLoading) return
+    if (isLoading) {
+      return
+    }
     sendMessage({ text })
   }
 
   return (
     <div className="flex h-[calc(100vh-12rem)] flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-4">
             <div className="flex size-12 items-center justify-center rounded-lg border border-border bg-muted">
               <MessageSquare className="size-6 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <p className="font-medium text-sm">
-                Ask about your data
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="font-medium text-sm">Ask about your data</p>
+              <p className="mt-1 text-muted-foreground text-xs">
                 I can look up your time entries, projects, areas, and clients.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((suggestion) => (
                 <button
-                  key={suggestion}
-                  type="button"
                   className="rounded-md border border-border bg-card px-3 py-1.5 text-xs transition-colors hover:bg-muted"
+                  key={suggestion}
                   onClick={() => handleSuggestion(suggestion)}
+                  type="button"
                 >
                   {suggestion}
                 </button>
@@ -84,21 +88,21 @@ export function ChatPage() {
         )}
       </div>
       <form
+        className="flex items-center gap-2 border-border border-t pt-4"
         onSubmit={handleSubmit}
-        className="flex items-center gap-2 border-t border-border pt-4"
       >
         <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about your data..."
           className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none ring-ring/50 placeholder:text-muted-foreground focus:ring-2"
           disabled={isLoading}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about your data..."
+          type="text"
+          value={input}
         />
         <button
-          type="submit"
-          disabled={isLoading || !input.trim()}
           className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          disabled={isLoading || !input.trim()}
+          type="submit"
         >
           <ArrowUp className="size-4" />
         </button>

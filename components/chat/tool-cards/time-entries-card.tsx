@@ -9,22 +9,20 @@ import {
 } from '@/components/ui/table'
 
 interface TimeEntry {
-  id: number
-  description: string | null
-  startTime: string
-  durationMinutes: number
-  billable: boolean
-  projectName: string
-  areaName: string
   areaColor: string
+  areaName: string
+  billable: boolean
+  description: string | null
+  durationMinutes: number
+  id: number
+  projectName: string
+  startTime: string
 }
 
-export function TimeEntriesCard({
-  entries,
-}: { entries: TimeEntry[] }) {
+export function TimeEntriesCard({ entries }: { entries: TimeEntry[] }) {
   if (entries.length === 0) {
     return (
-      <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+      <div className="rounded-md border border-border bg-card p-3 text-muted-foreground text-sm">
         No time entries found.
       </div>
     )

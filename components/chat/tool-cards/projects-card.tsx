@@ -1,14 +1,14 @@
 import { Badge } from '@/components/ui/badge'
 
 interface Project {
-  id: number
-  name: string
-  status: string
-  areaName: string
   areaColor: string
+  areaName: string
   clientName: string | null
   expectedHours: number
   hourlyRate: string | null
+  id: number
+  name: string
+  status: string
 }
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
@@ -20,7 +20,7 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
 export function ProjectsCard({ projects }: { projects: Project[] }) {
   if (projects.length === 0) {
     return (
-      <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+      <div className="rounded-md border border-border bg-card p-3 text-muted-foreground text-sm">
         No projects found.
       </div>
     )
@@ -30,12 +30,12 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
     <div className="grid gap-2">
       {projects.map((project) => (
         <div
-          key={project.id}
           className="flex items-center justify-between rounded-md border border-border bg-card px-3 py-2"
+          key={project.id}
         >
           <div className="flex flex-col gap-0.5">
             <span className="font-medium text-sm">{project.name}</span>
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
               <span
                 className="inline-block size-2 rounded-full"
                 style={{ backgroundColor: project.areaColor }}

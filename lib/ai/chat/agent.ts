@@ -1,9 +1,9 @@
-import { type InferAgentUIMessage, ToolLoopAgent, stepCountIs } from 'ai'
+import { type InferAgentUIMessage, stepCountIs, ToolLoopAgent } from 'ai'
 import { createChatTools } from './tools'
 
 export function createChatAgent(organizationId: string) {
   return new ToolLoopAgent({
-    model: 'google/gemini-3-flash',
+    model: 'openai/gpt-5.4',
     instructions: `You are a helpful assistant for a freelance time tracking app called Solo.
 You help users understand their time tracking data, projects, areas, and clients.
 Use the available tools to query data before answering. Be concise and specific.

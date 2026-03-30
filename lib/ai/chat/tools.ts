@@ -46,14 +46,20 @@ export function createChatTools(organizationId: string) {
       }),
       execute: async ({ startDate, endDate, projectId, limit }) => {
         const orgProjectIds = await getOrgProjectIds(organizationId)
-        if (orgProjectIds.length === 0) return { entries: [] }
+        if (orgProjectIds.length === 0) {
+          return { entries: [] }
+        }
 
         const conditions = [inArray(timeEntries.projectId, orgProjectIds)]
-        if (projectId) conditions.push(eq(timeEntries.projectId, projectId))
-        if (startDate)
+        if (projectId) {
+          conditions.push(eq(timeEntries.projectId, projectId))
+        }
+        if (startDate) {
           conditions.push(gte(timeEntries.startTime, new Date(startDate)))
-        if (endDate)
+        }
+        if (endDate) {
           conditions.push(lte(timeEntries.startTime, new Date(endDate)))
+        }
 
         const entries = await db.query.timeEntries.findMany({
           where: and(...conditions),
@@ -92,12 +98,20 @@ export function createChatTools(organizationId: string) {
       }),
       execute: async ({ areaId, status, includeArchived }) => {
         const orgAreaIds = await getOrgAreaIds(organizationId)
-        if (orgAreaIds.length === 0) return { projects: [] }
+        if (orgAreaIds.length === 0) {
+          return { projects: [] }
+        }
 
         const conditions = [inArray(projects.areaId, orgAreaIds)]
-        if (areaId) conditions.push(eq(projects.areaId, areaId))
-        if (status) conditions.push(eq(projects.status, status))
-        if (!includeArchived) conditions.push(eq(projects.archived, false))
+        if (areaId) {
+          conditions.push(eq(projects.areaId, areaId))
+        }
+        if (status) {
+          conditions.push(eq(projects.status, status))
+        }
+        if (!includeArchived) {
+          conditions.push(eq(projects.archived, false))
+        }
 
         const result = await db.query.projects.findMany({
           where: and(...conditions),
@@ -222,8 +236,10 @@ export function createChatTools(organizationId: string) {
         const weekEnd = endOfWeek(weekStart, { weekStartsOn })
 
         async function getEntries(start: Date, end: Date) {
-          if (orgProjectIds.length === 0) return []
-          return db.query.timeEntries.findMany({
+          if (orgProjectIds.length === 0) {
+            return []
+          }
+          return await db.query.timeEntries.findMany({
             where: and(
               inArray(timeEntries.projectId, orgProjectIds),
               gte(timeEntries.startTime, start),
@@ -277,19 +293,20 @@ export function createChatTools(organizationId: string) {
           {} as Record<string, number>,
         )
 
+        let weeklyChange = 0
+        if (prevWeeklyMinutes > 0) {
+          weeklyChange = Math.round(
+            ((weeklyMinutes - prevWeeklyMinutes) / prevWeeklyMinutes) * 100,
+          )
+        } else if (weeklyMinutes > 0) {
+          weeklyChange = 100
+        }
+
         return {
           weekStartDate: weekStart.toISOString(),
           weeklyHours: Math.round((weeklyMinutes / 60) * 10) / 10,
           prevWeeklyHours: Math.round((prevWeeklyMinutes / 60) * 10) / 10,
-          weeklyChange:
-            prevWeeklyMinutes > 0
-              ? Math.round(
-                  ((weeklyMinutes - prevWeeklyMinutes) / prevWeeklyMinutes) *
-                    100,
-                )
-              : weeklyMinutes > 0
-                ? 100
-                : 0,
+          weeklyChange,
           activeAreasCount: activeAreas.length,
           activeProjectsCount: activeProjectCount,
           totalExpectedWeeklyHours: activeAreas.reduce(
