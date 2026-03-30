@@ -1,4 +1,4 @@
-import { startOfWeek, subWeeks } from 'date-fns'
+import { endOfWeek, startOfWeek, subWeeks } from 'date-fns'
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getActiveOrganizationId, getSession } from '@/lib/auth/session'
@@ -172,7 +172,7 @@ async function getDashboardStatsCached(
     weekOffset === 0
       ? currentWeekStart
       : subWeeks(currentWeekStart, Math.abs(weekOffset))
-  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const weekEnd = endOfWeek(weekStart, { weekStartsOn })
   const prevWeekStart = subWeeks(weekStart, 1)
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
