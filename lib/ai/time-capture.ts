@@ -3,6 +3,7 @@
 import { generateText, Output } from 'ai'
 import { and, desc, eq, gte, inArray } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
+import { requireAiAccess } from '@/lib/ai/access'
 import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { aiSuggestionDismissals, projects, timeEntries } from '@/lib/db/schema'
@@ -200,6 +201,7 @@ export async function enhanceDescription(params: {
   durationMinutes: number
 }): Promise<DescriptionEnhancement | null> {
   try {
+    await requireAiAccess()
     const { organizationId } = await requireOrganization()
 
     // Verify project belongs to current organization
@@ -251,6 +253,7 @@ export async function suggestEntryFromEvent(params: {
   calendarEvent: GoogleCalendarEvent
 }): Promise<EntrySuggestion | null> {
   try {
+    await requireAiAccess()
     const { organizationId } = await requireOrganization()
 
     // Get active projects with areas
@@ -326,6 +329,7 @@ export async function dismissSuggestion(params: {
   sourceEventId?: string
 }): Promise<{ success: boolean }> {
   try {
+    await requireAiAccess()
     const { session, organizationId } = await requireOrganization()
 
     await db.insert(aiSuggestionDismissals).values({
@@ -354,6 +358,7 @@ export async function generateGitHubSuggestions(params: {
   fromCache: boolean
 }> {
   try {
+    await requireAiAccess()
     const { session, organizationId } = await requireOrganization()
 
     // Check cache first (unless force refresh)
@@ -572,6 +577,7 @@ export async function updateCachedSuggestionStatus(params: {
   status: 'accepted' | 'dismissed'
 }): Promise<{ success: boolean }> {
   try {
+    await requireAiAccess()
     const { session, organizationId } = await requireOrganization()
 
     await updateSuggestionStatus(
