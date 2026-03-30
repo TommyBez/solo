@@ -17,6 +17,7 @@ interface StatsCardsProps {
   monthlyChange: number
   monthlyHours: number
   totalExpectedWeeklyHours: number
+  weekLabel?: string
   weeklyChange: number
   weeklyHours: number
 }
@@ -56,6 +57,7 @@ export function StatsCards({
   activeAreasCount,
   activeProjectsCount,
   totalExpectedWeeklyHours,
+  weekLabel,
 }: StatsCardsProps) {
   const avgDailyHours = Math.round((weeklyHours / 7) * 10) / 10
   const goalProgress =
@@ -69,7 +71,7 @@ export function StatsCards({
       <Card className="bg-primary/5 ring-primary/20 dark:bg-primary/10">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="font-medium text-xs sm:text-sm">
-            This Week
+            {weekLabel ?? 'This Week'}
           </CardTitle>
           <div className="flex size-6 items-center justify-center rounded-md bg-primary/10 sm:size-8">
             <Clock className="size-3 text-primary sm:size-4" />

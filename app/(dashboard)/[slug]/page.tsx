@@ -1,33 +1,50 @@
+import { format } from 'date-fns'
+import type { SearchParams } from 'nuqs/server'
 import { Suspense } from 'react'
 import { AreasComparisonChart } from '@/components/dashboard/areas-comparison-chart'
 import { DailyBreakdownChart } from '@/components/dashboard/daily-breakdown-chart'
 import { RecentEntries } from '@/components/dashboard/recent-entries'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { TimeDistributionChart } from '@/components/dashboard/time-distribution-chart'
+import { WeekSwitcher } from '@/components/dashboard/week-switcher'
 import { PageHeader } from '@/components/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getDashboardStats, getTimeEntries } from '@/lib/queries/time-entries'
+import { loadDashboardSearchParams } from '@/lib/search-params'
 
-export default function DashboardPage() {
+interface PageProps {
+  searchParams: Promise<SearchParams>
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
+  const { week } = await loadDashboardSearchParams(searchParams)
+
   return (
     <div className="space-y-6">
       <PageHeader
         description="Overview of your freelance activity and time tracking"
         title="Dashboard"
-      />
+      >
+        <WeekSwitcher />
+      </PageHeader>
 
-      <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardContent />
+      <Suspense fallback={<DashboardSkeleton />} key={week}>
+        <DashboardContent week={week} />
       </Suspense>
     </div>
   )
 }
 
-async function DashboardContent() {
+async function DashboardContent({ week }: { week: number }) {
   const [stats, recentEntries] = await Promise.all([
-    getDashboardStats(),
+    getDashboardStats(week),
     getTimeEntries(undefined, 5),
   ])
+
+  const weekLabel =
+    week !== 0
+      ? `Week of ${format(new Date(stats.weekStartDate), 'MMM d')}`
+      : undefined
 
   return (
     <>
@@ -37,6 +54,7 @@ async function DashboardContent() {
         monthlyChange={stats.monthlyChange}
         monthlyHours={stats.monthlyHours}
         totalExpectedWeeklyHours={stats.totalExpectedWeeklyHours}
+        weekLabel={weekLabel}
         weeklyChange={stats.weeklyChange}
         weeklyHours={stats.weeklyHours}
       />
