@@ -26,7 +26,14 @@
       "Bash(grep -r \"pointerEvents\\\\|pointer-events\" /Users/tommaso/personal-projects/solo/node_modules/.pnpm/radix*/node_modules/@radix-ui/*/dist/*.js)",
       "Bash(npm view:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(git checkout:*)",
+      "Bash(grep -r SearchParams /Users/tommaso/personal-projects/solo/node_modules/nuqs/dist --include=*.d.ts -l)",
+      "Bash(pnpm fix:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }

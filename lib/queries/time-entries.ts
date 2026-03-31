@@ -1,4 +1,4 @@
-import { startOfWeek, subWeeks } from 'date-fns'
+import { endOfWeek, startOfWeek, subWeeks } from 'date-fns'
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getActiveOrganizationId, getSession } from '@/lib/auth/session'
@@ -160,13 +160,19 @@ export async function getTimeEntriesForProjectAndDateRange(
 async function getDashboardStatsCached(
   organizationId: string,
   weekStartsOn: 0 | 1,
+  weekOffset = 0,
 ) {
   'use cache'
   cacheLife('minutes')
   cacheTag('time-entries', 'projects', 'areas')
   const orgProjectIds = await getOrgProjectIds(organizationId)
   const now = new Date()
-  const weekStart = startOfWeek(now, { weekStartsOn })
+  const currentWeekStart = startOfWeek(now, { weekStartsOn })
+  const weekStart =
+    weekOffset === 0
+      ? currentWeekStart
+      : subWeeks(currentWeekStart, Math.abs(weekOffset))
+  const weekEnd = endOfWeek(weekStart, { weekStartsOn })
   const prevWeekStart = subWeeks(weekStart, 1)
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
@@ -200,7 +206,7 @@ async function getDashboardStatsCached(
   // Get time entries for different periods
   const [weekEntries, prevWeekEntries, monthEntries, prevMonthEntries] =
     await Promise.all([
-      getFilteredTimeEntries(weekStart),
+      getFilteredTimeEntries(weekStart, weekEnd),
       getFilteredTimeEntries(prevWeekStart, weekStart),
       getFilteredTimeEntries(monthAgo),
       getFilteredTimeEntries(twoMonthsAgo, monthAgo),
@@ -328,6 +334,7 @@ async function getDashboardStatsCached(
     0,
   )
   const result = {
+    weekStartDate: weekStart.toISOString(),
     weeklyHours: Math.round((weeklyMinutes / 60) * 10) / 10,
     prevWeeklyHours: Math.round((prevWeeklyMinutes / 60) * 10) / 10,
     weeklyChange,
@@ -354,10 +361,11 @@ async function getDashboardStatsCached(
   return result
 }
 
-export async function getDashboardStats() {
+export async function getDashboardStats(weekOffset = 0) {
   const orgId = await getActiveOrganizationId()
   if (!orgId) {
     return {
+      weekStartDate: new Date().toISOString(),
       weeklyHours: 0,
       prevWeeklyHours: 0,
       weeklyChange: 0,
@@ -380,5 +388,5 @@ export async function getDashboardStats() {
     : defaultSettings
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
 
-  return getDashboardStatsCached(orgId, weekStartsOn)
+  return getDashboardStatsCached(orgId, weekStartsOn, weekOffset)
 }
