@@ -9,7 +9,15 @@ interface FlagEntities {
   }
 }
 
-const AI_ALLOWED_EMAIL = 'tommaso.carnemolla@gmail.com'
+function getAiAllowedEmails() {
+  return new Set(
+    (process.env.AI_ALLOWED_EMAILS ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  )
+}
+
 const aiFeaturesAdapter = process.env.FLAGS
   ? vercelAdapter<boolean, FlagEntities>()
   : undefined
@@ -36,7 +44,12 @@ export const aiFeaturesFlag = flag<boolean, FlagEntities>({
   description: 'Enable AI-powered time tracking features for beta users',
   ...(aiFeaturesAdapter ? { adapter: aiFeaturesAdapter } : {}),
   decide({ entities }) {
-    return entities?.user?.email === AI_ALLOWED_EMAIL
+    const email = entities?.user?.email?.toLowerCase()
+    if (!email) {
+      return false
+    }
+
+    return getAiAllowedEmails().has(email)
   },
   options: [
     { value: false, label: 'Disabled' },

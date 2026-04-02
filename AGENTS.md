@@ -22,6 +22,7 @@ The app was originally built for Neon serverless PostgreSQL (cloud). For local d
 - `BETTER_AUTH_URL` — App URL for Better Auth (e.g., the local dev server URL)
 - `NEXT_PUBLIC_APP_URL` — Public app URL for auth client (same as BETTER_AUTH_URL for local dev)
 - `BETTER_AUTH_SECRET` — Secret key for Better Auth sessions
+- `AI_ALLOWED_EMAILS` — Comma-separated allowlist for AI features (e.g., `tommaso.carnemolla@gmail.com`)
 - `USE_LOCAL_DB=true` — Enables the standard `pg` driver instead of Neon HTTP driver
 
 **Database initialization:** Auth tables (user, session, account, verification, rate_limit) and app tables (clients, areas, projects, time_entries) must be created manually since `drizzle-kit push` has issues with the split schema setup. The auth schema is in `lib/auth/schema.ts` and app schema is in `lib/db/schema.ts`. Create tables using `psql` SQL statements matching these schemas.
