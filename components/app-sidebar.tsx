@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
 import { OrganizationSwitcher } from '@/components/organization-switcher'
 import {
   Sidebar,
@@ -28,9 +27,11 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { UserMenu } from '@/components/user-menu'
+import { useSettingsContext } from '@/lib/context/settings-context'
 
 export function AppSidebar({ slug }: { slug: string }) {
   const pathname = usePathname()
+  const { settings } = useSettingsContext()
   const prefix = slug ? `/${slug}` : ''
 
   const navigationItems = [
@@ -59,11 +60,15 @@ export function AppSidebar({ slug }: { slug: string }) {
       url: `${prefix}/clients`,
       icon: Users,
     },
-    {
-      title: 'Chat',
-      url: `${prefix}/chat`,
-      icon: MessageSquare,
-    },
+    ...(settings.aiEnabled
+      ? [
+          {
+            title: 'Chat',
+            url: `${prefix}/chat`,
+            icon: MessageSquare,
+          },
+        ]
+      : []),
   ]
 
   return (
