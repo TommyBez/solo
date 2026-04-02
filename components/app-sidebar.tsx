@@ -5,6 +5,7 @@ import {
   FolderKanban,
   Layers,
   LayoutDashboard,
+  MessageSquare,
   Settings,
   Users,
 } from 'lucide-react'
@@ -57,6 +58,11 @@ export function AppSidebar({ slug }: { slug: string }) {
       title: 'Clients',
       url: `${prefix}/clients`,
       icon: Users,
+    },
+    {
+      title: 'Chat',
+      url: `${prefix}/chat`,
+      icon: MessageSquare,
     },
   ]
 

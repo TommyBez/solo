@@ -34,6 +34,14 @@ export const AI_MODELS = {
    * - Alternative: anthropic/claude-haiku-4.5 for premium quality
    */
   gapAudit: 'google/gemini-3-flash',
+
+  /**
+   * Business Data Chat
+   * - Conversational, multi-step tool calling
+   * - Grok 4.1 Fast Reasoning: 2M context, tool-use support, fast
+   * - Alternative: google/gemini-3-flash or anthropic/claude-haiku-4.5
+   */
+  chat: 'openai/gpt-5.4',
 } as const
 
 export type AIModelKey = keyof typeof AI_MODELS

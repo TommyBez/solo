@@ -16,7 +16,10 @@
   },
   "dependencies": {
     "@flags-sdk/vercel": "^1.2.1",
+    "@ai-sdk/react": "^3.0.143",
     "@hookform/resolvers": "^3.10.0",
+    "@json-render/core": "^0.16.0",
+    "@json-render/react": "^0.16.0",
     "@neondatabase/serverless": "1.0.2",
     "@opentelemetry/api": "latest",
     "@radix-ui/react-accordion": "1.2.2",
