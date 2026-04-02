@@ -33,11 +33,24 @@ const dateFormats = [
   { value: 'yyyy-MM-dd', label: '2025-01-01 (ISO)' },
 ]
 
-export function SettingsForm() {
+export function SettingsForm({
+  canUseAiFeatures,
+}: {
+  canUseAiFeatures: boolean
+}) {
   const { settings, updateSettings, isPending } = useSettingsContext()
   const { data: activeOrg } = useActiveOrganization()
   const [draft, setDraft] = useState<Partial<Settings>>({})
   const form: Settings = { ...settings, ...draft }
+
+  function buildSettingsPayload(values: Settings): Partial<Settings> {
+    if (canUseAiFeatures) {
+      return values
+    }
+
+    const { aiEnabled: _aiEnabled, ...rest } = values
+    return rest
+  }
 
   function updateField<K extends keyof Settings>(key: K, value: Settings[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }))
@@ -45,7 +58,7 @@ export function SettingsForm() {
 
   const handleSave = async () => {
     try {
-      await updateSettings(form)
+      await updateSettings(buildSettingsPayload(form))
       setDraft({})
       toast.success('Settings saved')
     } catch {
@@ -55,13 +68,15 @@ export function SettingsForm() {
 
   const handleReset = async () => {
     try {
-      await updateSettings({
-        ...settings,
-        weekStartsOn: '1',
-        dateFormat: 'MMM d, yyyy',
-        timeFormat: '12',
-        aiEnabled: true,
-      })
+      await updateSettings(
+        buildSettingsPayload({
+          ...settings,
+          weekStartsOn: '1',
+          dateFormat: 'MMM d, yyyy',
+          timeFormat: '12',
+          aiEnabled: true,
+        }),
+      )
       setDraft({})
       toast.success('Settings reset to defaults')
     } catch {
@@ -152,34 +167,35 @@ export function SettingsForm() {
         </CardContent>
       </Card>
 
-      {/* AI Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="size-5" />
-            AI Features
-          </CardTitle>
-          <CardDescription>
-            Control AI-powered suggestions and enhancements
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="ai-enabled">Enable AI Features</Label>
-              <p className="text-muted-foreground text-sm">
-                Show AI-powered suggestions for time entries, descriptions, and
-                weekly reviews
-              </p>
+      {canUseAiFeatures ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="size-5" />
+              AI Features
+            </CardTitle>
+            <CardDescription>
+              Control AI-powered suggestions and enhancements
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="ai-enabled">Enable AI Features</Label>
+                <p className="text-muted-foreground text-sm">
+                  Show AI-powered suggestions for time entries, descriptions,
+                  and weekly reviews
+                </p>
+              </div>
+              <Switch
+                checked={form.aiEnabled}
+                id="ai-enabled"
+                onCheckedChange={(checked) => updateField('aiEnabled', checked)}
+              />
             </div>
-            <Switch
-              checked={form.aiEnabled}
-              id="ai-enabled"
-              onCheckedChange={(checked) => updateField('aiEnabled', checked)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Separator />
 

@@ -3,6 +3,7 @@ import { GitHubCard } from '@/components/settings/github-card'
 import { GoogleCalendarCard } from '@/components/settings/google-calendar-card'
 import { SettingsForm } from '@/components/settings/settings-form'
 import { ThemeSwitcherCard } from '@/components/settings/theme-switcher-card'
+import { getAiFeatureAvailability } from '@/lib/ai/access'
 import { getGitHubStatus } from '@/lib/queries/github'
 import { getGoogleCalendarStatus } from '@/lib/queries/google-calendar'
 
@@ -19,10 +20,12 @@ export default async function SettingsPage(props: {
   const githubParam =
     typeof searchParams.github === 'string' ? searchParams.github : undefined
 
-  const [googleCalendarStatus, githubStatus] = await Promise.all([
-    getGoogleCalendarStatus(),
-    getGitHubStatus(),
-  ])
+  const [googleCalendarStatus, githubStatus, aiFeatureAvailability] =
+    await Promise.all([
+      getGoogleCalendarStatus(),
+      getGitHubStatus(),
+      getAiFeatureAvailability(),
+    ])
 
   return (
     <div className="space-y-6">
@@ -33,7 +36,7 @@ export default async function SettingsPage(props: {
 
       <ThemeSwitcherCard />
 
-      <SettingsForm />
+      <SettingsForm canUseAiFeatures={aiFeatureAvailability.allowed} />
 
       <GitHubCard callbackStatus={githubParam} status={githubStatus} />
 

@@ -7,6 +7,7 @@ import {
   streamText,
   type UIMessage,
 } from 'ai'
+import { requireAiAccess } from '@/lib/ai/access'
 import { AI_MODELS } from '@/lib/ai/models'
 import { requireOrganization } from '@/lib/auth/session'
 import { catalog } from '@/lib/chat/catalog'
@@ -14,6 +15,7 @@ import { buildChatSystemPrompt } from '@/lib/chat/system-prompt'
 import { createChatTools } from '@/lib/chat/tools'
 
 export async function POST(req: Request) {
+  await requireAiAccess()
   const { organizationId } = await requireOrganization()
   const { messages }: { messages: UIMessage[] } = await req.json()
 

@@ -20,6 +20,10 @@ import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  getAiFeatureAvailability,
+  getEffectiveAiSettings,
+} from '@/lib/ai/access'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
 import { getAreas } from '@/lib/queries/areas'
 import { getGitHubStatus } from '@/lib/queries/github'
@@ -66,10 +70,18 @@ async function TimeTrackingContent({
 
   // Fetch user settings for week start preference
   const session = await getSession()
-  const settings = session?.user
-    ? await getSettings(session.user.id)
-    : defaultSettings
-  const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
+  const [settings, aiFeatureAvailability] = session?.user
+    ? await Promise.all([
+        getSettings(session.user.id),
+        getAiFeatureAvailability(),
+      ])
+    : [defaultSettings, { allowed: false }]
+  const effectiveSettings = getEffectiveAiSettings(
+    settings,
+    aiFeatureAvailability.allowed,
+  )
+  const aiEnabled = effectiveSettings.aiEnabled
+  const weekStartsOn = effectiveSettings.weekStartsOn === '0' ? 0 : 1
 
   // Calculate range for the calendar view
   let startDate: Date
@@ -119,7 +131,7 @@ async function TimeTrackingContent({
       {googleCalendarStatus.connected ? null : <GoogleCalendarBanner />}
 
       {/* Weekly Audit Banner - shows on Friday/Sunday */}
-      {settings.aiEnabled && (
+      {aiEnabled && (
         <WeeklyAuditBanner
           areasWithExpectedHours={areasWithExpectedHours}
           weekCalendarEvents={googleCalendarEvents}
@@ -129,7 +141,7 @@ async function TimeTrackingContent({
       )}
 
       {/* GitHub AI Suggestions Strip */}
-      {settings.aiEnabled && (
+      {aiEnabled && (
         <GitHubSuggestionsStrip
           githubConnected={githubStatus.connected}
           projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
@@ -169,10 +181,7 @@ async function TimeTrackingContent({
       ) : (
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="order-first lg:order-none lg:col-span-1">
-            <TimerWidget
-              aiEnabled={settings.aiEnabled}
-              projects={activeProjects}
-            />
+            <TimerWidget aiEnabled={aiEnabled} projects={activeProjects} />
           </div>
           <div className="lg:col-span-2" data-catchup-module>
             <TimeEntriesList entries={entries} projects={activeProjects} />
