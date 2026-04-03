@@ -132,6 +132,19 @@
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -205,6 +218,9 @@
     animation: none !important;
   }
   .timer-running {
+    animation: none !important;
+  }
+  .animate-shimmer {
     animation: none !important;
   }
 }
