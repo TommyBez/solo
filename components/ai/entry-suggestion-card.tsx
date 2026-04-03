@@ -97,7 +97,6 @@ export function EntrySuggestionCard({
   function handleEditSuccess() {
     setEditOpen(false)
     onAccept()
-    router.refresh()
   }
 
   async function handleDismiss() {
