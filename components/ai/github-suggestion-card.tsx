@@ -10,8 +10,9 @@ import {
   X,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { TimeEntryForm } from '@/components/time/time-entry-form'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,21 +22,24 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { createTimeEntry } from '@/lib/actions/time-entries'
 import { updateCachedSuggestionStatus } from '@/lib/ai/time-capture'
+import type { Area, Project } from '@/lib/db/schema'
 import type { CachedSuggestion } from '@/lib/redis/suggestions-cache'
 
 interface GitHubSuggestionCardProps {
   onAccept?: () => void
   onDismiss?: () => void
   projectName: string
+  projects: (Project & { area: Area })[]
   suggestion: CachedSuggestion
 }
 
 export function GitHubSuggestionCard({
   suggestion,
   projectName,
+  projects,
   onAccept,
   onDismiss,
 }: GitHubSuggestionCardProps) {
@@ -43,11 +47,7 @@ export function GitHubSuggestionCard({
   const [isAccepting, startAcceptTransition] = useTransition()
   const [isDismissing, startDismissTransition] = useTransition()
   const [isHidden, setIsHidden] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedDescription, setEditedDescription] = useState(
-    suggestion.description,
-  )
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
 
   if (isHidden) {
     return null
@@ -108,28 +108,18 @@ export function GitHubSuggestionCard({
     })
   }
 
-  function handleStartEdit() {
-    setIsEditing(true)
-    setTimeout(() => inputRef.current?.focus(), 0)
+  function handleOpenEditDialog() {
+    setEditDialogOpen(true)
   }
 
-  function handleCancelEdit() {
-    setIsEditing(false)
-    setEditedDescription(suggestion.description)
-  }
-
-  function handleSaveEdit() {
-    if (editedDescription.trim()) {
-      handleAccept(editedDescription.trim())
-    }
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'Enter') {
-      handleSaveEdit()
-    } else if (event.key === 'Escape') {
-      handleCancelEdit()
-    }
+  async function handleEditSuccess() {
+    await updateCachedSuggestionStatus({
+      suggestionId: suggestion.id,
+      status: 'accepted',
+    })
+    setEditDialogOpen(false)
+    setIsHidden(true)
+    onAccept?.()
   }
 
   const formattedDate = new Date(suggestion.date).toLocaleDateString('en-US', {
@@ -161,20 +151,9 @@ export function GitHubSuggestionCard({
             </a>
           )}
         </div>
-        {isEditing ? (
-          <Input
-            className="mt-1 h-8 text-sm"
-            onChange={(e) => setEditedDescription(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Describe the work..."
-            ref={inputRef}
-            value={editedDescription}
-          />
-        ) : (
-          <CardTitle className="font-medium text-sm">
-            {suggestion.description}
-          </CardTitle>
-        )}
+        <CardTitle className="font-medium text-sm">
+          {suggestion.description}
+        </CardTitle>
         <CardDescription className="flex flex-wrap items-center gap-3 text-xs">
           <span>{formattedDate}</span>
           <span className="flex items-center gap-1">
@@ -189,69 +168,60 @@ export function GitHubSuggestionCard({
       </CardHeader>
       <CardContent className="pt-2">
         <div className="flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <Button
-                disabled={isAccepting || !editedDescription.trim()}
-                onClick={handleSaveEdit}
-                size="sm"
-              >
-                {isAccepting ? (
-                  <Loader2 className="mr-1 size-3 animate-spin" />
-                ) : (
-                  <Check className="mr-1 size-3" />
-                )}
-                Save
-              </Button>
-              <Button
-                disabled={isAccepting}
-                onClick={handleCancelEdit}
-                size="sm"
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                disabled={isAccepting || isDismissing}
-                onClick={() => handleAccept(suggestion.description)}
-                size="sm"
-              >
-                {isAccepting ? (
-                  <Loader2 className="mr-1 size-3 animate-spin" />
-                ) : (
-                  <Check className="mr-1 size-3" />
-                )}
-                Accept
-              </Button>
-              <Button
-                disabled={isAccepting || isDismissing}
-                onClick={handleStartEdit}
-                size="sm"
-                variant="outline"
-              >
-                <Pencil className="mr-1 size-3" />
-                Edit
-              </Button>
-              <Button
-                disabled={isAccepting || isDismissing}
-                onClick={handleDismiss}
-                size="sm"
-                variant="ghost"
-              >
-                {isDismissing ? (
-                  <Loader2 className="mr-1 size-3 animate-spin" />
-                ) : (
-                  <X className="mr-1 size-3" />
-                )}
-                Dismiss
-              </Button>
-            </>
-          )}
+          <Button
+            disabled={isAccepting || isDismissing}
+            onClick={() => handleAccept(suggestion.description)}
+            size="sm"
+          >
+            {isAccepting ? (
+              <Loader2 className="mr-1 size-3 animate-spin" />
+            ) : (
+              <Check className="mr-1 size-3" />
+            )}
+            Accept
+          </Button>
+          <Button
+            disabled={isAccepting || isDismissing}
+            onClick={handleOpenEditDialog}
+            size="sm"
+            variant="outline"
+          >
+            <Pencil className="mr-1 size-3" />
+            Edit
+          </Button>
+          <Button
+            disabled={isAccepting || isDismissing}
+            onClick={handleDismiss}
+            size="sm"
+            variant="ghost"
+          >
+            {isDismissing ? (
+              <Loader2 className="mr-1 size-3 animate-spin" />
+            ) : (
+              <X className="mr-1 size-3" />
+            )}
+            Dismiss
+          </Button>
         </div>
       </CardContent>
+
+      <ResponsiveDialog
+        description="Review and modify all fields before logging."
+        onOpenChange={setEditDialogOpen}
+        open={editDialogOpen}
+        title="Edit Entry"
+      >
+        <TimeEntryForm
+          initialValues={{
+            projectId: suggestion.projectId?.toString(),
+            description: suggestion.description,
+            date: suggestion.date,
+            durationMinutes: suggestion.durationMinutes,
+          }}
+          onSuccess={handleEditSuccess}
+          projects={projects}
+        />
+      </ResponsiveDialog>
     </Card>
   )
 }

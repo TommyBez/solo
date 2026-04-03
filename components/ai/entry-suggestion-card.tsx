@@ -9,6 +9,8 @@ import { dismissSuggestion, suggestEntryFromEvent } from '@/lib/ai/time-capture'
 import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { Area, Project } from '@/lib/db/schema'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
+import { TimeEntryForm } from '@/components/time/time-entry-form'
 import { SuggestionCard } from './suggestion-card'
 
 interface EntrySuggestionCardProps {
@@ -27,6 +29,7 @@ export function EntrySuggestionCard({
   const router = useRouter()
   const [status, setStatus] = useState<SuggestionStatus>('loading')
   const [suggestion, setSuggestion] = useState<EntrySuggestion | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -88,8 +91,12 @@ export function EntrySuggestionCard({
   }
 
   function handleEdit() {
-    // For now, accept and let user edit in the list
-    handleAccept()
+    setEditOpen(true)
+  }
+
+  function handleEditSuccess() {
+    setEditOpen(false)
+    onAccept()
   }
 
   async function handleDismiss() {
@@ -142,20 +149,40 @@ export function EntrySuggestionCard({
     : []
 
   return (
-    <SuggestionCard
-      areaName={selectedProject?.area.name}
-      description={suggestion?.description || calendarEvent.title}
-      duration={suggestion?.durationMinutes}
-      evidenceLines={evidenceLines}
-      onAccept={handleAccept}
-      onDismiss={handleDismiss}
-      onEdit={handleEdit}
-      onRetry={handleRetry}
-      projectColor={selectedProject?.area.color}
-      projectName={selectedProject?.name || calendarEvent.title}
-      status={status}
-      timeWindow={timeWindow}
-      type="entry"
-    />
+    <>
+      <SuggestionCard
+        areaName={selectedProject?.area.name}
+        description={suggestion?.description || calendarEvent.title}
+        duration={suggestion?.durationMinutes}
+        evidenceLines={evidenceLines}
+        onAccept={handleAccept}
+        onDismiss={handleDismiss}
+        onEdit={handleEdit}
+        onRetry={handleRetry}
+        projectColor={selectedProject?.area.color}
+        projectName={selectedProject?.name || calendarEvent.title}
+        status={status}
+        timeWindow={timeWindow}
+        type="entry"
+      />
+
+      <ResponsiveDialog
+        description="Review and modify all fields before logging."
+        onOpenChange={setEditOpen}
+        open={editOpen}
+        title="Edit &amp; Accept Entry"
+      >
+        <TimeEntryForm
+          initialValues={{
+            projectId: suggestion?.projectId?.toString(),
+            description: suggestion?.description,
+            date: calendarEvent.startTime,
+            durationMinutes: suggestion?.durationMinutes,
+          }}
+          onSuccess={handleEditSuccess}
+          projects={projects}
+        />
+      </ResponsiveDialog>
+    </>
   )
 }
