@@ -144,7 +144,7 @@ async function TimeTrackingContent({
       {aiEnabled && (
         <GitHubSuggestionsStrip
           githubConnected={githubStatus.connected}
-          projects={activeProjects.map((p) => ({ id: p.id, name: p.name }))}
+          projects={activeProjects}
         />
       )}
 

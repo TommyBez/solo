@@ -7,17 +7,13 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { generateGitHubSuggestions } from '@/lib/ai/time-capture'
+import type { Area, Project } from '@/lib/db/schema'
 import type { CachedSuggestion } from '@/lib/redis/suggestions-cache'
 import { GitHubSuggestionCard } from './github-suggestion-card'
 
-interface Project {
-  id: number
-  name: string
-}
-
 interface GitHubSuggestionsStripProps {
   githubConnected: boolean
-  projects: Project[]
+  projects: (Project & { area: Area })[]
 }
 
 export function GitHubSuggestionsStrip({
@@ -91,7 +87,7 @@ export function GitHubSuggestionsStrip({
     return null
   }
 
-  // Project lookup map
+  // Project lookup map for display names
   const projectMap = new Map(projects.map((p) => [p.id, p.name]))
 
   const generatedTimeAgo = lastGenerated
@@ -128,6 +124,7 @@ export function GitHubSuggestionsStrip({
                   ? projectMap.get(suggestion.projectId) || 'Unknown'
                   : 'No project'
               }
+              projects={projects}
               suggestion={suggestion}
             />
           </div>
