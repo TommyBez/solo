@@ -7,106 +7,231 @@ import {
   useJsonRenderMessage,
 } from '@json-render/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
-import { Bot, Send, User } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Bot, CopyIcon, PlusIcon, RefreshCcwIcon } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from '@/components/ai-elements/conversation'
+import {
+  Message,
+  MessageAction,
+  MessageActions,
+  MessageContent,
+  MessageResponse,
+} from '@/components/ai-elements/message'
+import {
+  PromptInput,
+  type PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from '@/components/ai-elements/prompt-input'
+import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Textarea } from '@/components/ui/textarea'
 import { registry } from '@/lib/chat/registry'
 
 const transport = new DefaultChatTransport({ api: '/api/chat' })
 
+const SUGGESTION_PROMPTS = [
+  'How many hours did I track this week?',
+  'Show me all my projects',
+  'Which client has the most billable hours?',
+  'Am I on track with my weekly goals?',
+] as const
+
 export function ChatInterface() {
-  const [input, setInput] = useState('')
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [chatSessionKey, setChatSessionKey] = useState(0)
 
-  const { messages, sendMessage, status } = useChat({ transport })
-
-  const isLoading = status === 'streaming' || status === 'submitted'
-
-  useEffect(() => {
-    if (messages.length === 0 || !scrollRef.current) {
-      return
-    }
-
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-  }, [messages.length])
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const text = input.trim()
-    if (!text || isLoading) {
-      return
-    }
-    sendMessage({ text })
-    setInput('')
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit(e)
-    }
-  }
+  const handleStartNewChat = useCallback(() => {
+    setChatSessionKey((currentKey) => currentKey + 1)
+  }, [])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col rounded-lg border bg-background">
-      {/* Messages area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        {messages.length === 0 ? (
-          <EmptyChat />
-        ) : (
-          <div className="mx-auto max-w-3xl space-y-4">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-            {isLoading && messages.at(-1)?.role === 'user' && (
-              <div className="flex items-start gap-3">
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <Bot className="size-4 text-muted-foreground" />
-                </div>
-                <div className="animate-pulse text-muted-foreground text-sm">
-                  Thinking...
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </ScrollArea>
+    <ChatSession key={chatSessionKey} onStartNewChat={handleStartNewChat} />
+  )
+}
 
-      {/* Input area */}
-      <form className="border-t p-3" onSubmit={handleSubmit}>
-        <div className="mx-auto flex max-w-3xl items-end gap-2">
-          <Textarea
-            className="max-h-[120px] min-h-[44px] resize-none"
-            disabled={isLoading}
+function ChatSession({
+  onStartNewChat,
+}: {
+  onStartNewChat: () => void
+}) {
+  const [input, setInput] = useState('')
+  const { messages, sendMessage, status, stop, error, clearError, regenerate } =
+    useChat({ transport })
+
+  const isLoading = status === 'streaming' || status === 'submitted'
+  const hasDraft = input.trim().length > 0
+  const showNewChatButton =
+    messages.length > 0 || hasDraft || !!error || isLoading
+
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.role === 'assistant') {
+        return messages[i]?.id
+      }
+    }
+    return undefined
+  }, [messages])
+
+  const handlePromptSubmit = useCallback(
+    (message: PromptInputMessage) => {
+      const text = message.text.trim()
+      if (!text || isLoading) {
+        return
+      }
+      sendMessage({ text })
+      setInput('')
+    },
+    [isLoading, sendMessage],
+  )
+
+  const handleSuggestion = useCallback(
+    (text: string) => {
+      if (isLoading) {
+        return
+      }
+      sendMessage({ text })
+      setInput('')
+    },
+    [isLoading, sendMessage],
+  )
+
+  const handleNewChat = useCallback(() => {
+    stop()
+    clearError()
+    onStartNewChat()
+  }, [clearError, onStartNewChat, stop])
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-background">
+      {showNewChatButton ? (
+        <div className="border-b px-3 py-2">
+          <div className="mx-auto flex max-w-3xl justify-end">
+            <Button
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={handleNewChat}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <PlusIcon className="size-4" />
+              New chat
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      <Conversation className="min-h-0">
+        <ConversationContent className="mx-auto max-w-3xl">
+          {messages.length === 0 ? (
+            <>
+              <ConversationEmptyState
+                description="Ask questions about your time entries, projects, clients, and areas."
+                icon={<Bot className="size-12 text-muted-foreground" />}
+                title="Business Data Assistant"
+              />
+              <Suggestions className="pb-2">
+                {SUGGESTION_PROMPTS.map((text) => (
+                  <Suggestion
+                    key={text}
+                    onClick={handleSuggestion}
+                    suggestion={text}
+                  />
+                ))}
+              </Suggestions>
+            </>
+          ) : (
+            <>
+              {messages.map((message) => (
+                <ChatMessage
+                  isLatestAssistant={message.id === lastAssistantMessageId}
+                  isStreamingText={
+                    message.role === 'assistant' &&
+                    message.id === messages.at(-1)?.id &&
+                    status === 'streaming'
+                  }
+                  key={message.id}
+                  message={message}
+                  onRegenerate={() => regenerate()}
+                />
+              ))}
+              {isLoading && messages.at(-1)?.role === 'user' && (
+                <Message from="assistant">
+                  <MessageContent>
+                    <p className="animate-pulse text-muted-foreground text-sm">
+                      Thinking…
+                    </p>
+                  </MessageContent>
+                </Message>
+              )}
+            </>
+          )}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+
+      {error && (
+        <div
+          className="border-destructive/30 border-t bg-destructive/5 px-4 py-2 text-destructive text-sm"
+          role="alert"
+        >
+          <div className="mx-auto flex max-w-3xl items-start justify-between gap-3">
+            <p className="min-w-0">{error.message}</p>
+            <Button
+              className="shrink-0"
+              onClick={() => clearError()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="border-t p-3">
+        <PromptInput
+          className="relative mx-auto w-full max-w-3xl border-0 bg-transparent p-0 shadow-none"
+          onSubmit={handlePromptSubmit}
+        >
+          <PromptInputTextarea
+            className="max-h-[120px] min-h-[52px] pr-12"
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about your time tracking data..."
-            ref={textareaRef}
-            rows={1}
+            placeholder="Ask about your time tracking data…"
             value={input}
           />
-          <Button
-            className="shrink-0"
-            disabled={!input.trim() || isLoading}
-            size="icon"
-            type="submit"
-          >
-            <Send className="size-4" />
-          </Button>
-        </div>
-      </form>
+          <PromptInputSubmit
+            className="absolute right-1 bottom-2"
+            disabled={!(input.trim() || isLoading)}
+            onStop={stop}
+            status={status}
+          />
+        </PromptInput>
+        <p className="mx-auto mt-2 max-w-3xl text-center text-muted-foreground text-xs">
+          Enter to send · Shift+Enter for newline
+        </p>
+      </div>
     </div>
   )
 }
 
-function ChatMessage({ message }: { message: UIMessage }) {
+function ChatMessage({
+  message,
+  isLatestAssistant,
+  isStreamingText,
+  onRegenerate,
+}: {
+  message: UIMessage
+  isLatestAssistant: boolean
+  isStreamingText: boolean
+  onRegenerate: () => void
+}) {
   const isUser = message.role === 'user'
   const { spec, text, hasSpec } = useJsonRenderMessage(message.parts)
 
-  // For user messages, just show the text
   if (isUser) {
     const userText = message.parts
       .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
@@ -114,86 +239,56 @@ function ChatMessage({ message }: { message: UIMessage }) {
       .join('')
 
     return (
-      <div className="flex items-start justify-end gap-3">
-        <div className="max-w-[80%] rounded-lg bg-primary px-3 py-2 text-primary-foreground text-sm">
-          {userText}
-        </div>
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <User className="size-4 text-primary" />
-        </div>
-      </div>
+      <Message from="user">
+        <MessageContent>
+          <p className="whitespace-pre-wrap">{userText}</p>
+        </MessageContent>
+      </Message>
     )
   }
 
-  // Assistant messages: text + optional json-render spec
-  return (
-    <div className="flex items-start gap-3">
-      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Bot className="size-4 text-muted-foreground" />
-      </div>
-      <div className="min-w-0 flex-1 space-y-3">
-        {text && (
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">
-            {text}
-          </div>
-        )}
-        {hasSpec && spec && (
-          <JSONUIProvider registry={registry}>
-            <Renderer loading={false} registry={registry} spec={spec} />
-          </JSONUIProvider>
-        )}
-        {/* Render tool loading states for parts not captured by json-render */}
-        {message.parts
-          .filter((p) => p.type.startsWith('tool-'))
-          .map((part) => {
-            const toolPart = part as {
-              type: string
-              state: string
-              toolCallId: string
-            }
-            if (
-              toolPart.state === 'input-streaming' ||
-              toolPart.state === 'input-available'
-            ) {
-              const toolName = toolPart.type.replace('tool-', '')
-              return (
-                <div
-                  className="animate-pulse text-muted-foreground text-xs"
-                  key={toolPart.toolCallId}
-                >
-                  Querying {toolName}...
-                </div>
-              )
-            }
-            return null
-          })}
-      </div>
-    </div>
-  )
-}
+  const copyText = text?.trim() ?? ''
 
-function EmptyChat() {
   return (
-    <div className="flex h-full flex-col items-center justify-center py-16 text-center">
-      <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
-        <Bot className="size-6 text-muted-foreground" />
-      </div>
-      <h3 className="mb-1 font-medium text-lg">Business Data Assistant</h3>
-      <p className="mb-6 max-w-sm text-muted-foreground text-sm">
-        Ask questions about your time entries, projects, clients, and areas.
-      </p>
-      <div className="grid gap-2 text-muted-foreground text-xs sm:grid-cols-2">
-        <SuggestionChip text="How many hours did I track this week?" />
-        <SuggestionChip text="Show me all my projects" />
-        <SuggestionChip text="Which client has the most billable hours?" />
-        <SuggestionChip text="Am I on track with my weekly goals?" />
-      </div>
+    <div className="flex w-full flex-col gap-2">
+      <Message from="assistant">
+        <MessageContent>
+          {text ? (
+            <MessageResponse isAnimating={isStreamingText}>
+              {text}
+            </MessageResponse>
+          ) : null}
+          {hasSpec && spec ? (
+            <JSONUIProvider registry={registry}>
+              <Renderer loading={false} registry={registry} spec={spec} />
+            </JSONUIProvider>
+          ) : null}
+        </MessageContent>
+      </Message>
+      {isLatestAssistant ? (
+        <MessageActions className="pl-0">
+          {copyText ? (
+            <MessageAction
+              label="Copy"
+              onClick={() => navigator.clipboard.writeText(copyText)}
+              size="icon-sm"
+              tooltip="Copy text"
+              variant="ghost"
+            >
+              <CopyIcon className="size-3.5" />
+            </MessageAction>
+          ) : null}
+          <MessageAction
+            label="Retry"
+            onClick={onRegenerate}
+            size="icon-sm"
+            tooltip="Regenerate response"
+            variant="ghost"
+          >
+            <RefreshCcwIcon className="size-3.5" />
+          </MessageAction>
+        </MessageActions>
+      ) : null}
     </div>
-  )
-}
-
-function SuggestionChip({ text }: { text: string }) {
-  return (
-    <div className="rounded-md border px-3 py-2 text-left text-xs">{text}</div>
   )
 }
