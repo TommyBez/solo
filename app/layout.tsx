@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from 'next'
 import type React from 'react'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
 export const viewport: Viewport = {
@@ -45,9 +46,11 @@ export default function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          {children}
-          <Toaster position="bottom-center" richColors />
-          <Analytics />
+          <TooltipProvider delayDuration={0}>
+            {children}
+            <Toaster position="bottom-center" richColors />
+            <Analytics />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>
