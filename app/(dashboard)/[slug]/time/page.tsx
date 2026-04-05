@@ -26,17 +26,17 @@ import {
   getEffectiveAiSettings,
 } from '@/lib/ai/access'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
+import { getDateKey } from '@/lib/out-of-office'
 import { getAreas } from '@/lib/queries/areas'
 import { getGitHubStatus } from '@/lib/queries/github'
 import {
   getGoogleCalendarEventsForDateRange,
   getGoogleCalendarStatus,
 } from '@/lib/queries/google-calendar'
-import { getProjects } from '@/lib/queries/projects'
 import { getOutOfOfficeDateKeysForDateRange } from '@/lib/queries/out-of-office'
+import { getProjects } from '@/lib/queries/projects'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
-import { getDateKey } from '@/lib/out-of-office'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 

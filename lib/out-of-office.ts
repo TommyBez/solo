@@ -1,10 +1,11 @@
 import { eachDayOfInterval, format, isWeekend, parseISO } from 'date-fns'
 
 export const DATE_KEY_FORMAT = 'yyyy-MM-dd'
+const DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 export function getDateKey(value: Date | string) {
   if (typeof value === 'string') {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    if (DATE_KEY_REGEX.test(value)) {
       return value
     }
 
@@ -15,7 +16,7 @@ export function getDateKey(value: Date | string) {
 }
 
 export function isDateKey(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+  return DATE_KEY_REGEX.test(value)
 }
 
 export function countWeekdaysInRange(startDate: Date, endDate: Date) {

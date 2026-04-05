@@ -15,7 +15,7 @@ async function getOutOfOfficeDaysForDateRangeCached(
   cacheLife('minutes')
   cacheTag('out-of-office-days')
 
-  return db.query.outOfOfficeDays.findMany({
+  return await db.query.outOfOfficeDays.findMany({
     where: and(
       eq(outOfOfficeDays.organizationId, organizationId),
       eq(outOfOfficeDays.userId, userId),
@@ -32,7 +32,7 @@ export async function getOutOfOfficeDaysForDateRangeByUser(
   startDate: Date,
   endDate: Date,
 ) {
-  return getOutOfOfficeDaysForDateRangeCached(
+  return await getOutOfOfficeDaysForDateRangeCached(
     organizationId,
     userId,
     getDateKey(startDate),
@@ -65,7 +65,7 @@ export async function getOutOfOfficeDaysForDateRange(
     getSession(),
   ])
 
-  if (!organizationId || !session?.user) {
+  if (!(organizationId && session?.user)) {
     return []
   }
 

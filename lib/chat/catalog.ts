@@ -32,7 +32,9 @@ export const catalog = defineCatalog(schema, {
           ),
         outOfOfficeDays: z
           .number()
-          .describe('Number of marked out-of-office days in the selected week.'),
+          .describe(
+            'Number of marked out-of-office days in the selected week.',
+          ),
         weekLabel: z
           .string()
           .nullable()

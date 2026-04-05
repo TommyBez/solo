@@ -131,9 +131,9 @@ export function TimeEntriesList({
   const sortedDates = Object.keys(entriesByDate).sort((a, b) =>
     b.localeCompare(a),
   )
-  const allDates = Array.from(new Set([...sortedDates, ...outOfOfficeDateKeys])).sort(
-    (a, b) => b.localeCompare(a),
-  )
+  const allDates = Array.from(
+    new Set([...sortedDates, ...outOfOfficeDateKeys]),
+  ).sort((a, b) => b.localeCompare(a))
   const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
 
   return (
@@ -172,7 +172,9 @@ export function TimeEntriesList({
                             {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
                           </span>
                         </h3>
-                        {isOutOfOffice ? <Badge variant="outline">OOO</Badge> : null}
+                        {isOutOfOffice ? (
+                          <Badge variant="outline">OOO</Badge>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2">
                         {dayEntries.length > 0 ? (
@@ -188,7 +190,10 @@ export function TimeEntriesList({
                           entryCount={dayEntries.length}
                           isOutOfOffice={isOutOfOffice}
                           trigger={
-                            <Button size="sm" variant={isOutOfOffice ? 'secondary' : 'outline'}>
+                            <Button
+                              size="sm"
+                              variant={isOutOfOffice ? 'secondary' : 'outline'}
+                            >
                               <Plane data-icon="inline-start" />
                               {isOutOfOffice ? 'OOO' : 'Mark'}
                             </Button>

@@ -179,9 +179,7 @@ function CalendarDayCell({
       className={cn(
         'min-h-[80px] min-w-0 border-r border-b p-1 transition-colors hover:bg-muted/50 sm:min-h-[140px] sm:p-2',
         isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
-        isOutOfOffice
-          ? 'bg-amber-50/70 dark:bg-amber-950/20'
-          : '',
+        isOutOfOffice ? 'bg-amber-50/70 dark:bg-amber-950/20' : '',
         isToday && isCurrentMonth ? 'bg-primary/5 dark:bg-primary/10' : '',
         isLastRow ? 'border-b-0' : '',
         isLastCol ? 'border-r-0' : '',
@@ -207,7 +205,10 @@ function CalendarDayCell({
                 {format(day, 'd')}
               </span>
               {isOutOfOffice ? (
-                <Badge className="h-5 px-1.5 text-[9px] sm:text-[10px]" variant="secondary">
+                <Badge
+                  className="h-5 px-1.5 text-[9px] sm:text-[10px]"
+                  variant="secondary"
+                >
                   OOO
                 </Badge>
               ) : (
@@ -222,7 +223,7 @@ function CalendarDayCell({
 
       <div className="min-w-0 space-y-0.5 overflow-hidden sm:space-y-1">
         {isOutOfOffice ? (
-          <div className="rounded bg-amber-100/80 px-1 py-0.5 text-[9px] font-medium text-amber-900 sm:text-[10px] dark:bg-amber-400/10 dark:text-amber-200">
+          <div className="rounded bg-amber-100/80 px-1 py-0.5 font-medium text-[9px] text-amber-900 sm:text-[10px] dark:bg-amber-400/10 dark:text-amber-200">
             Out of office
           </div>
         ) : null}

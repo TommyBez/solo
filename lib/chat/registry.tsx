@@ -178,7 +178,9 @@ export const { registry } = defineRegistry(catalog, {
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
               <div className="font-bold font-mono text-lg tabular-nums sm:text-2xl">
-                {props.adjustedExpectedWeeklyHours > 0 ? `${goalProgress}%` : '—'}
+                {props.adjustedExpectedWeeklyHours > 0
+                  ? `${goalProgress}%`
+                  : '—'}
               </div>
               {props.adjustedExpectedWeeklyHours > 0 && (
                 <>

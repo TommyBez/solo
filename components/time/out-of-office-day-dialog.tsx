@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
-import { removeOutOfOfficeDay, markOutOfOfficeDay } from '@/lib/actions/out-of-office'
+import {
+  markOutOfOfficeDay,
+  removeOutOfOfficeDay,
+} from '@/lib/actions/out-of-office'
 import { useSettingsContext } from '@/lib/context/settings-context'
 
 interface OutOfOfficeDayDialogProps {
@@ -39,7 +38,7 @@ export function OutOfOfficeDayDialog({
     [date, formatDate],
   )
   const hasTrackedTime = entryCount > 0
-  const canMarkDay = !isOutOfOffice && !hasTrackedTime
+  const canMarkDay = !(isOutOfOffice || hasTrackedTime)
 
   const defaultTrigger = (
     <Button size="sm" variant={isOutOfOffice ? 'secondary' : 'outline'}>
@@ -48,7 +47,9 @@ export function OutOfOfficeDayDialog({
     </Button>
   )
 
-  const actionLabel = isOutOfOffice ? 'Remove out-of-office status' : 'Mark out of office'
+  const actionLabel = isOutOfOffice
+    ? 'Remove out-of-office status'
+    : 'Mark out of office'
 
   const footer = (
     <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -56,7 +57,7 @@ export function OutOfOfficeDayDialog({
         Cancel
       </Button>
       <Button
-        disabled={isPending || (!isOutOfOffice && !canMarkDay)}
+        disabled={isPending || !(isOutOfOffice || canMarkDay)}
         onClick={() =>
           startTransition(async () => {
             try {
@@ -121,8 +122,9 @@ export function OutOfOfficeDayDialog({
             <AlertCircle />
             <AlertTitle>Tracked time already exists</AlertTitle>
             <AlertDescription>
-              Remove the {entryCount} time {entryCount === 1 ? 'entry' : 'entries'} on
-              this day before marking it out of office.
+              Remove the {entryCount} time{' '}
+              {entryCount === 1 ? 'entry' : 'entries'} on this day before
+              marking it out of office.
             </AlertDescription>
           </Alert>
         ) : null}

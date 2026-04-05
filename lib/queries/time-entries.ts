@@ -4,10 +4,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getActiveOrganizationId, getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
-import {
-  getAdjustedExpectedHours,
-  getDateKey,
-} from '@/lib/out-of-office'
+import { getAdjustedExpectedHours, getDateKey } from '@/lib/out-of-office'
 import { getOutOfOfficeDateKeysForDateRangeByUser } from '@/lib/queries/out-of-office'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 
@@ -435,5 +432,10 @@ export async function getDashboardStats(weekOffset = 0) {
     }
   }
 
-  return getDashboardStatsCached(orgId, session.user.id, weekStartsOn, weekOffset)
+  return getDashboardStatsCached(
+    orgId,
+    session.user.id,
+    weekStartsOn,
+    weekOffset,
+  )
 }

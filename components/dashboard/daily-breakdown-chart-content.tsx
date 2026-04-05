@@ -52,7 +52,11 @@ export function DailyBreakdownChartContent({
         <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
           {data.map((day) => (
             <Cell
-              fill={day.isOutOfOffice ? 'var(--muted-foreground)' : 'var(--color-hours)'}
+              fill={
+                day.isOutOfOffice
+                  ? 'var(--muted-foreground)'
+                  : 'var(--color-hours)'
+              }
               fillOpacity={day.isOutOfOffice ? 0.35 : 1}
               key={day.date}
             />

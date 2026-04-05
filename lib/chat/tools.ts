@@ -82,12 +82,13 @@ export function createChatTools(organizationId: string, userId: string) {
             project: { with: { area: true } },
           },
         })
-        const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
-          organizationId,
-          userId,
-          rangeStart,
-          rangeEnd,
-        )
+        const outOfOfficeDateKeys =
+          await getOutOfOfficeDateKeysForDateRangeByUser(
+            organizationId,
+            userId,
+            rangeStart,
+            rangeEnd,
+          )
 
         return {
           entries: rows.map((e) => ({
@@ -250,12 +251,13 @@ export function createChatTools(organizationId: string, userId: string) {
 
         const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
         const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 })
-        const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
-          organizationId,
-          userId,
-          weekStart,
-          weekEnd,
-        )
+        const outOfOfficeDateKeys =
+          await getOutOfOfficeDateKeysForDateRangeByUser(
+            organizationId,
+            userId,
+            weekStart,
+            weekEnd,
+          )
 
         return {
           outOfOfficeDaysCount: outOfOfficeDateKeys.length,
@@ -382,12 +384,13 @@ export function createChatTools(organizationId: string, userId: string) {
 
         const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 })
         const currentWeekEnd = endOfWeek(now, { weekStartsOn: 1 })
-        const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
-          organizationId,
-          userId,
-          currentWeekStart,
-          currentWeekEnd,
-        )
+        const outOfOfficeDateKeys =
+          await getOutOfOfficeDateKeysForDateRangeByUser(
+            organizationId,
+            userId,
+            currentWeekStart,
+            currentWeekEnd,
+          )
         const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
 
         const dailyBreakdown = eachDayOfInterval({
