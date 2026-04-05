@@ -97,9 +97,9 @@ export const { registry } = defineRegistry(catalog, {
     StatsCards: ({ props }) => {
       const avgDailyHours = Math.round((props.weeklyHours / 7) * 10) / 10
       const goalProgress =
-        props.totalExpectedWeeklyHours > 0
+        props.adjustedExpectedWeeklyHours > 0
           ? Math.round(
-              (props.weeklyHours / props.totalExpectedWeeklyHours) * 100,
+              (props.weeklyHours / props.adjustedExpectedWeeklyHours) * 100,
             )
           : 0
 
@@ -178,18 +178,24 @@ export const { registry } = defineRegistry(catalog, {
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
               <div className="font-bold font-mono text-lg tabular-nums sm:text-2xl">
-                {props.totalExpectedWeeklyHours > 0 ? `${goalProgress}%` : '—'}
+                {props.adjustedExpectedWeeklyHours > 0 ? `${goalProgress}%` : '—'}
               </div>
-              {props.totalExpectedWeeklyHours > 0 && (
+              {props.adjustedExpectedWeeklyHours > 0 && (
                 <>
                   <Progress
                     className="my-1 h-2"
                     value={Math.min(goalProgress, 100)}
                   />
                   <p className="text-muted-foreground text-xs">
-                    {props.weeklyHours}h / {props.totalExpectedWeeklyHours}h
+                    {props.weeklyHours}h / {props.adjustedExpectedWeeklyHours}h
                     target
                   </p>
+                  {props.outOfOfficeDays > 0 ? (
+                    <p className="text-muted-foreground text-xs">
+                      Adjusted for {props.outOfOfficeDays} out-of-office
+                      {props.outOfOfficeDays === 1 ? ' day' : ' days'}
+                    </p>
+                  ) : null}
                 </>
               )}
             </CardContent>

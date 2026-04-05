@@ -8,6 +8,7 @@ import { isDescriptionVague } from '@/lib/ai/prompts'
 import { timeRangesOverlap } from '@/lib/ai/utils'
 import type { TimeEntry } from '@/lib/db/schema'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
+import { getDateKey } from '@/lib/out-of-office'
 
 interface WeeklyAuditBannerProps {
   areasWithExpectedHours: Array<{
@@ -16,6 +17,7 @@ interface WeeklyAuditBannerProps {
     expectedHoursPerWeek: number
     color: string
   }>
+  outOfOfficeDateKeys: string[]
   weekCalendarEvents: GoogleCalendarEvent[]
   weekEntries: TimeEntry[]
   weekStartsOn?: 0 | 1
@@ -25,8 +27,15 @@ interface WeeklyAuditBannerProps {
 function countUntrackedEvents(
   calendarEvents: GoogleCalendarEvent[],
   entries: TimeEntry[],
+  outOfOfficeDateKeys: string[],
 ): number {
+  const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
+
   return calendarEvents.filter((event) => {
+    if (outOfOfficeDateKeySet.has(getDateKey(event.startTime))) {
+      return false
+    }
+
     if (event.allDay) {
       return false
     }
@@ -91,6 +100,7 @@ export function WeeklyAuditBanner({
   weekEntries,
   weekCalendarEvents,
   areasWithExpectedHours: _areasWithExpectedHours,
+  outOfOfficeDateKeys,
   weekStartsOn: _weekStartsOn = 1,
 }: WeeklyAuditBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false)
@@ -99,6 +109,7 @@ export function WeeklyAuditBanner({
     const untrackedEvents = countUntrackedEvents(
       weekCalendarEvents,
       weekEntries,
+      outOfOfficeDateKeys,
     )
     const vagueDescriptions = countVagueDescriptions(weekEntries)
 
@@ -106,7 +117,7 @@ export function WeeklyAuditBanner({
     const underTrackedAreas: GapInfo['underTrackedAreas'] = []
 
     return { untrackedEvents, vagueDescriptions, underTrackedAreas }
-  }, [weekCalendarEvents, weekEntries])
+  }, [outOfOfficeDateKeys, weekCalendarEvents, weekEntries])
 
   // Don't show if dismissed or not review time or no issues
   if (isDismissed) {

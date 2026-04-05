@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic'
+import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
@@ -26,11 +27,13 @@ interface DailyBreakdownChartProps {
     date: string
     dayName: string
     hours: number
+    isOutOfOffice: boolean
   }>
 }
 
 export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
   const hasAnyTrackedHours = data.some((day) => day.hours > 0)
+  const outOfOfficeDays = data.filter((day) => day.isOutOfOffice)
 
   return (
     <Card>
@@ -40,9 +43,18 @@ export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
           Hours tracked per day this week
         </CardDescription>
       </CardHeader>
-      {hasAnyTrackedHours ? (
+      {hasAnyTrackedHours || outOfOfficeDays.length > 0 ? (
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
           <DailyBreakdownChartContent data={data} />
+          {outOfOfficeDays.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {outOfOfficeDays.map((day) => (
+                <Badge key={day.date} variant="outline">
+                  {day.dayName}: OOO
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </CardContent>
       ) : (
         <CardContent className="flex h-[240px] items-center justify-center p-4 pt-0 sm:h-[300px] sm:p-6 sm:pt-0">

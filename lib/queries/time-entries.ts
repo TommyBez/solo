@@ -4,6 +4,11 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getActiveOrganizationId, getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, projects, timeEntries } from '@/lib/db/schema'
+import {
+  getAdjustedExpectedHours,
+  getDateKey,
+} from '@/lib/out-of-office'
+import { getOutOfOfficeDateKeysForDateRangeByUser } from '@/lib/queries/out-of-office'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 
 // Helper to get org's project IDs for filtering time entries
@@ -159,6 +164,7 @@ export async function getTimeEntriesForProjectAndDateRange(
 
 async function getDashboardStatsCached(
   organizationId: string,
+  userId: string,
   weekStartsOn: 0 | 1,
   weekOffset = 0,
 ) {
@@ -211,6 +217,12 @@ async function getDashboardStatsCached(
       getFilteredTimeEntries(monthAgo),
       getFilteredTimeEntries(twoMonthsAgo, monthAgo),
     ])
+  const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
+    organizationId,
+    userId,
+    weekStart,
+    weekEnd,
+  )
 
   // Calculate weekly totals
   const weeklyMinutes = weekEntries.reduce(
@@ -306,11 +318,13 @@ async function getDashboardStatsCached(
         (entry) => entry.startTime >= dayStart && entry.startTime <= dayEnd,
       )
       .reduce((sum, entry) => sum + entry.durationMinutes, 0)
+    const dateKey = getDateKey(dayStart)
 
     return {
-      date: dayStart.toISOString().split('T')[0],
+      date: dateKey,
       dayName: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
       hours: Math.round((dayMinutes / 60) * 10) / 10,
+      isOutOfOffice: outOfOfficeDateKeys.includes(dateKey),
     }
   })
 
@@ -323,7 +337,12 @@ async function getDashboardStatsCached(
     return {
       name: area.name,
       color: area.color,
-      expected: area.expectedHoursPerWeek,
+      expected: getAdjustedExpectedHours(
+        area.expectedHoursPerWeek,
+        outOfOfficeDateKeys,
+        weekStart,
+        weekEnd,
+      ),
       actual: Math.round((areaMinutes / 60) * 10) / 10,
     }
   })
@@ -332,6 +351,12 @@ async function getDashboardStatsCached(
   const totalExpectedWeeklyHours = activeAreas.reduce(
     (sum, area) => sum + area.expectedHoursPerWeek,
     0,
+  )
+  const adjustedExpectedWeeklyHours = getAdjustedExpectedHours(
+    totalExpectedWeeklyHours,
+    outOfOfficeDateKeys,
+    weekStart,
+    weekEnd,
   )
   const result = {
     weekStartDate: weekStart.toISOString(),
@@ -343,7 +368,8 @@ async function getDashboardStatsCached(
     monthlyChange,
     activeAreasCount: activeAreas.length,
     activeProjectsCount: activeProjects.length,
-    totalExpectedWeeklyHours,
+    totalExpectedWeeklyHours: adjustedExpectedWeeklyHours,
+    outOfOfficeDaysCount: outOfOfficeDateKeys.length,
     timeByArea: Object.entries(timeByArea).map(([name, data]) => ({
       name,
       hours: Math.round((data.minutes / 60) * 10) / 10,
@@ -375,6 +401,7 @@ export async function getDashboardStats(weekOffset = 0) {
       activeAreasCount: 0,
       activeProjectsCount: 0,
       totalExpectedWeeklyHours: 0,
+      outOfOfficeDaysCount: 0,
       timeByArea: [],
       timeByProject: [],
       dailyBreakdown: [],
@@ -388,5 +415,25 @@ export async function getDashboardStats(weekOffset = 0) {
     : defaultSettings
   const weekStartsOn = settings.weekStartsOn === '0' ? 0 : 1
 
-  return getDashboardStatsCached(orgId, weekStartsOn, weekOffset)
+  if (!session?.user) {
+    return {
+      weekStartDate: new Date().toISOString(),
+      weeklyHours: 0,
+      prevWeeklyHours: 0,
+      weeklyChange: 0,
+      monthlyHours: 0,
+      prevMonthlyHours: 0,
+      monthlyChange: 0,
+      activeAreasCount: 0,
+      activeProjectsCount: 0,
+      totalExpectedWeeklyHours: 0,
+      outOfOfficeDaysCount: 0,
+      timeByArea: [],
+      timeByProject: [],
+      dailyBreakdown: [],
+      areasComparison: [],
+    }
+  }
+
+  return getDashboardStatsCached(orgId, session.user.id, weekStartsOn, weekOffset)
 }

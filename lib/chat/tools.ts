@@ -1,5 +1,6 @@
 import { tool } from 'ai'
 import {
+  eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   startOfMonth,
@@ -11,6 +12,8 @@ import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { areas, clients, projects, timeEntries } from '@/lib/db/schema'
+import { getAdjustedExpectedHours, getDateKey } from '@/lib/out-of-office'
+import { getOutOfOfficeDateKeysForDateRangeByUser } from '@/lib/queries/out-of-office'
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -33,7 +36,7 @@ async function getOrgAreaIds(organizationId: string): Promise<number[]> {
 
 // ── Tool factory ───────────────────────────────────────────────────────
 
-export function createChatTools(organizationId: string) {
+export function createChatTools(organizationId: string, userId: string) {
   return {
     queryTimeEntries: tool({
       description:
@@ -57,13 +60,15 @@ export function createChatTools(organizationId: string) {
       execute: async ({ startDate, endDate, projectId, limit }) => {
         const orgProjectIds = await getOrgProjectIds(organizationId)
         if (orgProjectIds.length === 0) {
-          return { entries: [] }
+          return { entries: [], outOfOfficeDays: [] }
         }
 
+        const rangeStart = new Date(startDate)
+        const rangeEnd = new Date(endDate)
         const conditions = [
           inArray(timeEntries.projectId, orgProjectIds),
-          gte(timeEntries.startTime, new Date(startDate)),
-          lte(timeEntries.startTime, new Date(endDate)),
+          gte(timeEntries.startTime, rangeStart),
+          lte(timeEntries.startTime, rangeEnd),
         ]
         if (projectId) {
           conditions.push(eq(timeEntries.projectId, projectId))
@@ -77,6 +82,12 @@ export function createChatTools(organizationId: string) {
             project: { with: { area: true } },
           },
         })
+        const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
+          organizationId,
+          userId,
+          rangeStart,
+          rangeEnd,
+        )
 
         return {
           entries: rows.map((e) => ({
@@ -89,6 +100,10 @@ export function createChatTools(organizationId: string) {
             projectName: e.project.name,
             areaName: e.project.area.name,
             areaColor: e.project.area.color,
+          })),
+          outOfOfficeDays: outOfOfficeDateKeys.map((dateKey) => ({
+            date: dateKey,
+            status: 'out_of_office',
           })),
           totalCount: rows.length,
           totalMinutes: rows.reduce((s, e) => s + e.durationMinutes, 0),
@@ -234,8 +249,16 @@ export function createChatTools(organizationId: string) {
         })
 
         const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+        const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 })
+        const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
+          organizationId,
+          userId,
+          weekStart,
+          weekEnd,
+        )
 
         return {
+          outOfOfficeDaysCount: outOfOfficeDateKeys.length,
           areas: rows.map((a) => {
             const weekMinutes = a.projects.reduce(
               (s, p) =>
@@ -251,18 +274,24 @@ export function createChatTools(organizationId: string) {
               0,
             )
             const hoursThisWeek = Math.round((weekMinutes / 60) * 10) / 10
+            const adjustedExpectedHours = getAdjustedExpectedHours(
+              a.expectedHoursPerWeek,
+              outOfOfficeDateKeys,
+              weekStart,
+              weekEnd,
+            )
 
             return {
               id: a.id,
               name: a.name,
               description: a.description,
               color: a.color,
-              expectedHoursPerWeek: a.expectedHoursPerWeek,
+              expectedHoursPerWeek: adjustedExpectedHours,
               hoursThisWeek,
               totalHours: Math.round((totalMinutes / 60) * 10) / 10,
               percentageComplete:
-                a.expectedHoursPerWeek > 0
-                  ? Math.round((hoursThisWeek / a.expectedHoursPerWeek) * 100)
+                adjustedExpectedHours > 0
+                  ? Math.round((hoursThisWeek / adjustedExpectedHours) * 100)
                   : 0,
               projectCount: a.projects.length,
             }
@@ -291,6 +320,9 @@ export function createChatTools(organizationId: string) {
             previousPeriodHours: 0,
             changePercent: 0,
             dailyBreakdown: [],
+            totalExpectedWeeklyHours: 0,
+            adjustedExpectedWeeklyHours: 0,
+            outOfOfficeDays: 0,
           }
         }
 
@@ -348,24 +380,32 @@ export function createChatTools(organizationId: string) {
             ? Math.round(((totalHours - prevHours) / prevHours) * 100)
             : 0
 
-        // Daily breakdown
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-        const dailyMap = new Map<string, number>()
-        for (const entry of currentEntries) {
-          const dateKey = entry.startTime.toISOString().slice(0, 10)
-          dailyMap.set(
-            dateKey,
-            (dailyMap.get(dateKey) ?? 0) + entry.durationMinutes,
-          )
-        }
+        const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 })
+        const currentWeekEnd = endOfWeek(now, { weekStartsOn: 1 })
+        const outOfOfficeDateKeys = await getOutOfOfficeDateKeysForDateRangeByUser(
+          organizationId,
+          userId,
+          currentWeekStart,
+          currentWeekEnd,
+        )
+        const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
 
-        const dailyBreakdown = Array.from(dailyMap.entries())
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([date, minutes]) => ({
-            date,
-            dayName: dayNames[new Date(date).getDay()],
+        const dailyBreakdown = eachDayOfInterval({
+          start: periodStart,
+          end: periodEnd,
+        }).map((day) => {
+          const dateKey = getDateKey(day)
+          const minutes = currentEntries
+            .filter((entry) => getDateKey(entry.startTime) === dateKey)
+            .reduce((sum, entry) => sum + entry.durationMinutes, 0)
+
+          return {
+            date: dateKey,
+            dayName: day.toLocaleDateString('en-US', { weekday: 'short' }),
             hours: Math.round((minutes / 60) * 10) / 10,
-          }))
+            isOutOfOffice: outOfOfficeDateKeySet.has(dateKey),
+          }
+        })
 
         // By area
         const areaMap = new Map<
@@ -407,6 +447,12 @@ export function createChatTools(organizationId: string) {
           (s, a) => s + a.expectedHoursPerWeek,
           0,
         )
+        const adjustedExpectedWeeklyHours = getAdjustedExpectedHours(
+          totalExpectedWeeklyHours,
+          outOfOfficeDateKeys,
+          currentWeekStart,
+          currentWeekEnd,
+        )
 
         return {
           period,
@@ -421,6 +467,8 @@ export function createChatTools(organizationId: string) {
           activeProjectsCount: activeProjectIds.size,
           activeAreasCount: activeAreaNames.size,
           totalExpectedWeeklyHours,
+          adjustedExpectedWeeklyHours,
+          outOfOfficeDays: outOfOfficeDateKeys.length,
         }
       },
     }),

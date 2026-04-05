@@ -16,6 +16,7 @@ interface StatsCardsProps {
   activeProjectsCount: number
   monthlyChange: number
   monthlyHours: number
+  outOfOfficeDaysCount: number
   totalExpectedWeeklyHours: number
   weekLabel?: string
   weeklyChange: number
@@ -56,6 +57,7 @@ export function StatsCards({
   monthlyChange,
   activeAreasCount,
   activeProjectsCount,
+  outOfOfficeDaysCount,
   totalExpectedWeeklyHours,
   weekLabel,
 }: StatsCardsProps) {
@@ -133,6 +135,12 @@ export function StatsCards({
                 <p className="hidden text-muted-foreground text-xs sm:block">
                   {weeklyHours}h / {totalExpectedWeeklyHours}h target
                 </p>
+                {outOfOfficeDaysCount > 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                    Adjusted for {outOfOfficeDaysCount} out-of-office{' '}
+                    {outOfOfficeDaysCount === 1 ? 'day' : 'days'}
+                  </p>
+                ) : null}
                 <span
                   className={cn(
                     'text-xs',

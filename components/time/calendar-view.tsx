@@ -18,11 +18,14 @@ import { CalendarClock, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ColorDot } from '@/components/color-indicator'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
+import { OutOfOfficeDayDialog } from '@/components/time/out-of-office-day-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
+import { getDateKey } from '@/lib/out-of-office'
 import { cn } from '@/lib/utils'
 
 type TimeEntryWithDetails = TimeEntry & {
@@ -36,6 +39,7 @@ interface CalendarViewProps {
   entries: TimeEntryWithDetails[]
   googleEvents: GoogleCalendarEvent[]
   organizationSlug: string
+  outOfOfficeDateKeys: string[]
   projects: (Project & { area: Area })[]
   view: 'month' | 'week'
 }
@@ -142,6 +146,7 @@ function CalendarDayCell({
   entries,
   formatTime,
   googleEvents,
+  isOutOfOffice,
   projects,
   view,
 }: {
@@ -152,6 +157,7 @@ function CalendarDayCell({
   entries: TimeEntryWithDetails[]
   formatTime: (date: Date | string) => string
   googleEvents: GoogleCalendarEvent[]
+  isOutOfOffice: boolean
   projects: (Project & { area: Area })[]
   view: 'month' | 'week'
 }) {
@@ -173,23 +179,53 @@ function CalendarDayCell({
       className={cn(
         'min-h-[80px] min-w-0 border-r border-b p-1 transition-colors hover:bg-muted/50 sm:min-h-[140px] sm:p-2',
         isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
+        isOutOfOffice
+          ? 'bg-amber-50/70 dark:bg-amber-950/20'
+          : '',
         isToday && isCurrentMonth ? 'bg-primary/5 dark:bg-primary/10' : '',
         isLastRow ? 'border-b-0' : '',
         isLastCol ? 'border-r-0' : '',
       )}
     >
       <div className="mb-1 flex items-start justify-between sm:mb-2">
-        <span
-          className={cn(
-            'flex size-5 items-center justify-center rounded-full font-medium text-xs sm:size-7 sm:text-sm',
-            isToday ? 'bg-primary text-primary-foreground' : '',
-          )}
-        >
-          {format(day, 'd')}
-        </span>
+        <OutOfOfficeDayDialog
+          date={day}
+          entryCount={dayEntries.length}
+          isOutOfOffice={isOutOfOffice}
+          trigger={
+            <button
+              aria-label={`Manage availability for ${format(day, 'MMMM d, yyyy')}`}
+              className="flex items-center gap-1 rounded-md p-0.5 text-left transition-colors hover:bg-background/80"
+              type="button"
+            >
+              <span
+                className={cn(
+                  'flex size-5 items-center justify-center rounded-full font-medium text-xs sm:size-7 sm:text-sm',
+                  isToday ? 'bg-primary text-primary-foreground' : '',
+                )}
+              >
+                {format(day, 'd')}
+              </span>
+              {isOutOfOffice ? (
+                <Badge className="h-5 px-1.5 text-[9px] sm:text-[10px]" variant="secondary">
+                  OOO
+                </Badge>
+              ) : (
+                <span className="hidden text-[10px] text-muted-foreground sm:inline">
+                  Mark
+                </span>
+              )}
+            </button>
+          }
+        />
       </div>
 
       <div className="min-w-0 space-y-0.5 overflow-hidden sm:space-y-1">
+        {isOutOfOffice ? (
+          <div className="rounded bg-amber-100/80 px-1 py-0.5 text-[9px] font-medium text-amber-900 sm:text-[10px] dark:bg-amber-400/10 dark:text-amber-200">
+            Out of office
+          </div>
+        ) : null}
         {dayGoogleEvents.slice(0, eventSlice).map((event) => (
           <GoogleCalendarEventRow
             event={event}
@@ -234,6 +270,7 @@ export function CalendarView({
   currentDate,
   googleEvents,
   organizationSlug,
+  outOfOfficeDateKeys,
   projects,
   view,
 }: CalendarViewProps) {
@@ -303,6 +340,7 @@ export function CalendarView({
     0,
   )
   const totalHours = Math.round((totalMinutes / 60) * 10) / 10
+  const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
 
   return (
     <div className="space-y-4">
@@ -314,6 +352,9 @@ export function CalendarView({
           </h2>
           <p className="text-muted-foreground text-sm sm:text-base">
             Total time this {view === 'week' ? 'week' : 'month'}
+          </p>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Tap a day to manage out-of-office status.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -378,6 +419,7 @@ export function CalendarView({
                 entries={entries}
                 formatTime={formatTime}
                 googleEvents={googleEvents}
+                isOutOfOffice={outOfOfficeDateKeySet.has(getDateKey(day))}
                 key={day.toString()}
                 projects={projects}
                 view={view}
