@@ -143,15 +143,5 @@ export const auth = betterAuth({
   advanced: {
     // Use secure cookies when served over HTTPS (production or Vercel environments)
     useSecureCookies: isProduction || isVercelEnvironment,
-    // Only enable cross-site cookie settings for Vercel environments (iframes like v0 preview)
-    ...(isVercelEnvironment && {
-      crossSubDomainCookies: {
-        enabled: true,
-      },
-      defaultCookieAttributes: {
-        sameSite: 'none' as const,
-        secure: true,
-      },
-    }),
   },
 })
