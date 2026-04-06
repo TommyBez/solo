@@ -25,23 +25,31 @@ const viewer = ac.newRole({
   invitation: [],
 })
 
-const appUrl = process.env.BETTER_AUTH_URL
-// VERCEL_URL is provided by Vercel and contains the deployment URL without protocol
-const vercelUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : undefined
+// Determine the base URL for auth - prioritize explicit config, then Vercel URL, then localhost
+function getBaseURL() {
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL
+  }
+  // VERCEL_URL is auto-set by Vercel for all deployments (preview and production)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  return 'http://localhost:3000'
+}
+
+const baseURL = getBaseURL()
 const trustedOrigins = [
   'http://localhost:3000',
-  ...(appUrl ? [appUrl] : []),
-  ...(vercelUrl ? [vercelUrl] : []),
-  // Trust Vercel preview deployments - pattern matches solo-*.vercel.app
-  'https://solo-*.vercel.app',
-  'https://*-tommasos-projects-bb9d6551.vercel.app',
+  // Trust the configured/detected base URL
+  baseURL,
+  // Trust all Vercel preview deployments for this project
+  'https://*.vercel.app',
 ]
 const isProduction = process.env.NODE_ENV === 'production'
 
 export const auth = betterAuth({
   appName: 'Solo',
+  baseURL,
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
@@ -79,7 +87,7 @@ export const auth = betterAuth({
       creatorRole: 'owner',
       sendInvitationEmail: async (data) => {
         const { sendEmail } = await import('@/lib/email')
-        const baseUrl = appUrl || 'http://localhost:3000'
+        const baseUrl = baseURL
         const acceptUrl = `${baseUrl}/invitation/${data.invitation.id}`
 
         await sendEmail({
