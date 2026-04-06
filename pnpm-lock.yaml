@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
-      '@flags-sdk/vercel':
-        specifier: ^1.2.1
-        version: 1.2.1(@aws-sdk/credential-provider-web-identity@3.948.0)(flags@4.0.5(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
       '@ai-sdk/react':
         specifier: ^3.0.143
         version: 3.0.143(react@19.2.0)(zod@3.25.76)
+      '@flags-sdk/vercel':
+        specifier: ^1.2.1
+        version: 1.2.1(@aws-sdk/credential-provider-web-identity@3.948.0)(flags@4.0.5(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.60.0(react@19.2.0))
