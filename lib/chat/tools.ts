@@ -1,8 +1,11 @@
 import { tool } from 'ai'
 import {
   eachDayOfInterval,
+  endOfDay,
   endOfMonth,
   endOfWeek,
+  parseISO,
+  startOfDay,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -59,12 +62,9 @@ export function createChatTools(organizationId: string, userId: string) {
       }),
       execute: async ({ startDate, endDate, projectId, limit }) => {
         const orgProjectIds = await getOrgProjectIds(organizationId)
-        if (orgProjectIds.length === 0) {
-          return { entries: [], outOfOfficeDays: [] }
-        }
 
-        const rangeStart = new Date(startDate)
-        const rangeEnd = new Date(endDate)
+        const rangeStart = startOfDay(parseISO(startDate))
+        const rangeEnd = endOfDay(parseISO(endDate))
         const conditions = [
           inArray(timeEntries.projectId, orgProjectIds),
           gte(timeEntries.startTime, rangeStart),
@@ -382,14 +382,12 @@ export function createChatTools(organizationId: string, userId: string) {
             ? Math.round(((totalHours - prevHours) / prevHours) * 100)
             : 0
 
-        const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 })
-        const currentWeekEnd = endOfWeek(now, { weekStartsOn: 1 })
         const outOfOfficeDateKeys =
           await getOutOfOfficeDateKeysForDateRangeByUser(
             organizationId,
             userId,
-            currentWeekStart,
-            currentWeekEnd,
+            periodStart,
+            periodEnd,
           )
         const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
 
@@ -453,8 +451,8 @@ export function createChatTools(organizationId: string, userId: string) {
         const adjustedExpectedWeeklyHours = getAdjustedExpectedHours(
           totalExpectedWeeklyHours,
           outOfOfficeDateKeys,
-          currentWeekStart,
-          currentWeekEnd,
+          periodStart,
+          periodEnd,
         )
 
         return {

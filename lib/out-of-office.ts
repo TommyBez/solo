@@ -19,6 +19,17 @@ export function isDateKey(value: string) {
   return DATE_KEY_REGEX.test(value)
 }
 
+/** Calendar day as yyyy-MM-dd in UTC — stable across server timezones for `Date` values. */
+export function getUtcDateKey(date: Date): string {
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Invalid date')
+  }
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(date.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export function countWeekdaysInRange(startDate: Date, endDate: Date) {
   return eachDayOfInterval({ start: startDate, end: endDate }).filter(
     (day) => !isWeekend(day),

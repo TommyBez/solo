@@ -7,15 +7,12 @@ import { requireRole } from '@/lib/auth/permissions'
 import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, outOfOfficeDays, projects, timeEntries } from '@/lib/db/schema'
-import { getDateKey, isDateKey } from '@/lib/out-of-office'
+import { getUtcDateKey, isDateKey } from '@/lib/out-of-office'
 
+/** Resolves to a stable yyyy-MM-dd key: ISO date strings pass through; other inputs use UTC calendar day. */
 function normalizeDateKey(value: Date | string) {
   if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) {
-      throw new Error('Invalid date')
-    }
-
-    return getDateKey(value)
+    return getUtcDateKey(value)
   }
 
   if (isDateKey(value)) {
@@ -28,21 +25,27 @@ function normalizeDateKey(value: Date | string) {
     throw new Error('Invalid date')
   }
 
-  return getDateKey(parsedDate)
+  return getUtcDateKey(parsedDate)
 }
 
-async function getOrgProjectIds(organizationId: string) {
+async function getOrgProjectIdsForUser(organizationId: string, userId: string) {
   const orgProjects = await db
     .select({ id: projects.id })
     .from(projects)
     .innerJoin(areas, eq(projects.areaId, areas.id))
-    .where(eq(areas.organizationId, organizationId))
+    .where(
+      and(eq(areas.organizationId, organizationId), eq(areas.userId, userId)),
+    )
 
   return orgProjects.map((project) => project.id)
 }
 
-async function hasTrackedTimeOnDate(dateKey: string, organizationId: string) {
-  const orgProjectIds = await getOrgProjectIds(organizationId)
+async function hasTrackedTimeOnDate(
+  dateKey: string,
+  organizationId: string,
+  userId: string,
+) {
+  const orgProjectIds = await getOrgProjectIdsForUser(organizationId, userId)
 
   if (orgProjectIds.length === 0) {
     return false
@@ -78,7 +81,7 @@ export async function markOutOfOfficeDay(dateValue: Date | string) {
     return existingDay
   }
 
-  if (await hasTrackedTimeOnDate(dateKey, organizationId)) {
+  if (await hasTrackedTimeOnDate(dateKey, organizationId, session.user.id)) {
     throw new Error(
       'This day already has tracked time. Remove those entries before marking it out of office.',
     )

@@ -14,6 +14,7 @@ import {
   removeOutOfOfficeDay,
 } from '@/lib/actions/out-of-office'
 import { useSettingsContext } from '@/lib/context/settings-context'
+import { getDateKey } from '@/lib/out-of-office'
 
 interface OutOfOfficeDayDialogProps {
   date: Date
@@ -76,10 +77,10 @@ export function OutOfOfficeDayDialog({
           startTransition(async () => {
             try {
               if (isOutOfOffice) {
-                await removeOutOfOfficeDay(date)
+                await removeOutOfOfficeDay(getDateKey(date))
                 toast.success('Day marked as available again')
               } else {
-                await markOutOfOfficeDay(date)
+                await markOutOfOfficeDay(getDateKey(date))
                 toast.success('Day marked as out of office')
               }
               router.refresh()
