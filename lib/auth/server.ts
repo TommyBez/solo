@@ -26,7 +26,19 @@ const viewer = ac.newRole({
 })
 
 const appUrl = process.env.BETTER_AUTH_URL
-const trustedOrigins = ['http://localhost:3000', ...(appUrl ? [appUrl] : [])]
+const vercelUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : null
+const vercelBranchUrl = process.env.VERCEL_BRANCH_URL
+  ? `https://${process.env.VERCEL_BRANCH_URL}`
+  : null
+
+const trustedOrigins = [
+  'http://localhost:3000',
+  ...(appUrl ? [appUrl] : []),
+  ...(vercelUrl ? [vercelUrl] : []),
+  ...(vercelBranchUrl ? [vercelBranchUrl] : []),
+]
 const isProduction = process.env.NODE_ENV === 'production'
 
 export const auth = betterAuth({
