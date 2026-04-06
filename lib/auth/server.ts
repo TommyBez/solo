@@ -43,6 +43,7 @@ const trustedOrigins: string[] = [
   ...(vercelBranchUrl ? [vercelBranchUrl] : []),
 ]
 const isProduction = process.env.NODE_ENV === 'production'
+const isVercelEnvironment = !!process.env.VERCEL
 
 export const auth = betterAuth({
   appName: 'Solo',
@@ -139,18 +140,17 @@ export const auth = betterAuth({
   },
   trustedOrigins,
   advanced: {
-    // Use secure cookies when served over HTTPS (production or preview environments)
-    useSecureCookies:
-      process.env.NODE_ENV === 'production' ||
-      !!process.env.VERCEL_URL ||
-      !!process.env.VERCEL,
-    // Allow cross-site cookies for v0 preview and other iframe contexts
-    crossSubDomainCookies: {
-      enabled: true,
-    },
-    defaultCookieAttributes: {
-      sameSite: 'none',
-      secure: true,
-    },
+    // Use secure cookies when served over HTTPS (production or Vercel environments)
+    useSecureCookies: isProduction || isVercelEnvironment,
+    // Only enable cross-site cookie settings for Vercel environments (iframes like v0 preview)
+    ...(isVercelEnvironment && {
+      crossSubDomainCookies: {
+        enabled: true,
+      },
+      defaultCookieAttributes: {
+        sameSite: 'none' as const,
+        secure: true,
+      },
+    }),
   },
 })

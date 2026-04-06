@@ -63,22 +63,15 @@ function SignInForm() {
       const result = await signIn.email({
         email: values.email,
         password: values.password,
-        fetchOptions: {
-          credentials: 'include',
-        },
       })
-
-      console.log('[v0] Sign in result:', result)
-      console.log('[v0] Document cookies after sign in:', document.cookie)
 
       if (result.error) {
         setError(result.error.message || 'Failed to sign in')
       } else {
-        // Force a hard navigation to ensure cookies are sent
-        window.location.href = redirectTo
+        router.push(redirectTo)
+        router.refresh()
       }
-    } catch (err) {
-      console.log('[v0] Sign in error:', err)
+    } catch {
       setError('An unexpected error occurred')
     }
   })
