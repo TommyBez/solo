@@ -86,6 +86,28 @@ export const timeEntries = pgTable('time_entries', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+export const outOfOfficeDays = pgTable(
+  'out_of_office_days',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    dateKey: varchar('date_key', { length: 10 }).notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('out_of_office_days_user_org_date_key_unique').on(
+      table.userId,
+      table.organizationId,
+      table.dateKey,
+    ),
+  ],
+)
+
 // User Settings - personal preferences (per-user)
 export const userSettings = pgTable('user_settings', {
   userId: text('user_id')
@@ -160,6 +182,20 @@ export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
   }),
 }))
 
+export const outOfOfficeDaysRelations = relations(
+  outOfOfficeDays,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [outOfOfficeDays.userId],
+      references: [user.id],
+    }),
+    organization: one(organization, {
+      fields: [outOfOfficeDays.organizationId],
+      references: [organization.id],
+    }),
+  }),
+)
+
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   user: one(user, {
     fields: [userSettings.userId],
@@ -227,6 +263,8 @@ export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
 export type TimeEntry = typeof timeEntries.$inferSelect
 export type NewTimeEntry = typeof timeEntries.$inferInsert
+export type OutOfOfficeDay = typeof outOfOfficeDays.$inferSelect
+export type NewOutOfOfficeDay = typeof outOfOfficeDays.$inferInsert
 export type UserSettings = typeof userSettings.$inferSelect
 export type NewUserSettings = typeof userSettings.$inferInsert
 export type OrganizationSettings = typeof organizationSettings.$inferSelect

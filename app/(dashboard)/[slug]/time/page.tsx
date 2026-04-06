@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/page-header'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { CalendarView } from '@/components/time/calendar-view'
 import { GoogleCalendarBanner } from '@/components/time/google-calendar-banner'
+import { OutOfOfficeDayDialog } from '@/components/time/out-of-office-day-dialog'
 import { ScheduleNextWeekDialog } from '@/components/time/schedule-next-week-dialog'
 import { TimeEntriesList } from '@/components/time/time-entries-list'
 import { TimerWidget } from '@/components/time/timer-widget'
@@ -25,12 +26,14 @@ import {
   getEffectiveAiSettings,
 } from '@/lib/ai/access'
 import { getActiveOrganizationSlug, getSession } from '@/lib/auth/session'
+import { getDateKey } from '@/lib/out-of-office'
 import { getAreas } from '@/lib/queries/areas'
 import { getGitHubStatus } from '@/lib/queries/github'
 import {
   getGoogleCalendarEventsForDateRange,
   getGoogleCalendarStatus,
 } from '@/lib/queries/google-calendar'
+import { getOutOfOfficeDateKeysForDateRange } from '@/lib/queries/out-of-office'
 import { getProjects } from '@/lib/queries/projects'
 import { defaultSettings, getSettings } from '@/lib/queries/settings'
 import { getTimeEntriesForDateRange } from '@/lib/queries/time-entries'
@@ -106,6 +109,7 @@ async function TimeTrackingContent({
     slug,
     areas,
     githubStatus,
+    outOfOfficeDateKeys,
   ] = await Promise.all([
     getTimeEntriesForDateRange(startDate, endDate),
     getProjects(),
@@ -114,9 +118,15 @@ async function TimeTrackingContent({
     getActiveOrganizationSlug(),
     getAreas(),
     getGitHubStatus(),
+    getOutOfOfficeDateKeysForDateRange(startDate, endDate),
   ])
 
   const activeProjects = projects.filter((p) => p.status === 'active')
+  const currentDateKey = getDateKey(currentDate)
+  const currentDateEntries = entries.filter(
+    (entry) => getDateKey(entry.startTime) === currentDateKey,
+  )
+  const currentDateIsOutOfOffice = outOfOfficeDateKeys.includes(currentDateKey)
 
   // Prepare areas data for weekly audit
   const areasWithExpectedHours = areas.map((area) => ({
@@ -134,6 +144,7 @@ async function TimeTrackingContent({
       {aiEnabled && (
         <WeeklyAuditBanner
           areasWithExpectedHours={areasWithExpectedHours}
+          outOfOfficeDateKeys={outOfOfficeDateKeys}
           weekCalendarEvents={googleCalendarEvents}
           weekEntries={entries}
           weekStartsOn={weekStartsOn as 0 | 1}
@@ -155,6 +166,11 @@ async function TimeTrackingContent({
             referenceDateIso={currentDate.toISOString()}
           />
         ) : null}
+        <OutOfOfficeDayDialog
+          date={currentDate}
+          entryCount={currentDateEntries.length}
+          isOutOfOffice={currentDateIsOutOfOffice}
+        />
         <AddTimeEntryDialog projects={activeProjects} />
       </div>
 
@@ -163,6 +179,7 @@ async function TimeTrackingContent({
         entries={entries}
         googleEvents={googleCalendarEvents}
         organizationSlug={slug ?? ''}
+        outOfOfficeDateKeys={outOfOfficeDateKeys}
         projects={activeProjects}
         view={viewParam as 'month' | 'week'}
       />
@@ -184,7 +201,11 @@ async function TimeTrackingContent({
             <TimerWidget aiEnabled={aiEnabled} projects={activeProjects} />
           </div>
           <div className="lg:col-span-2" data-catchup-module>
-            <TimeEntriesList entries={entries} projects={activeProjects} />
+            <TimeEntriesList
+              entries={entries}
+              outOfOfficeDateKeys={outOfOfficeDateKeys}
+              projects={activeProjects}
+            />
           </div>
         </div>
       )}

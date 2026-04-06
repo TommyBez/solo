@@ -1,6 +1,6 @@
 'use client'
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts'
 import {
   ChartContainer,
   ChartTooltip,
@@ -12,6 +12,7 @@ interface DailyBreakdownChartContentProps {
     date: string
     dayName: string
     hours: number
+    isOutOfOffice: boolean
   }>
 }
 
@@ -48,7 +49,19 @@ export function DailyBreakdownChartContent({
           tickLine={false}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="hours" fill="var(--color-hours)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
+          {data.map((day) => (
+            <Cell
+              fill={
+                day.isOutOfOffice
+                  ? 'var(--muted-foreground)'
+                  : 'var(--color-hours)'
+              }
+              fillOpacity={day.isOutOfOffice ? 0.35 : 1}
+              key={day.date}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ChartContainer>
   )

@@ -14,7 +14,11 @@ import { TimeEntryForm, type TimeEntryInitialValues } from './time-entry-form'
 interface AddTimeEntryDialogProps {
   buttonLabel?: string
   description?: string
+  /** When set, dialog open state is controlled by the parent (e.g. calendar day menu). */
+  disableShortcut?: boolean
   initialValues?: TimeEntryInitialValues
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
   projects: (Project & { area: Area })[]
   title?: string
   trigger?: ReactNode
@@ -27,20 +31,39 @@ export function AddTimeEntryDialog({
   title,
   description,
   buttonLabel,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  disableShortcut = false,
 }: AddTimeEntryDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (isControlled) {
+        controlledOnOpenChange?.(next)
+      } else {
+        setInternalOpen(next)
+      }
+    },
+    [controlledOnOpenChange, isControlled],
+  )
 
   // Handle keyboard shortcut to open dialog
   const handleOpenDialog = useCallback(() => {
     if (projects.length > 0) {
       setOpen(true)
     }
-  }, [projects.length])
+  }, [projects.length, setOpen])
 
-  useShortcutEvent(SHORTCUT_EVENTS.NEW_ENTRY, handleOpenDialog)
+  useShortcutEvent(
+    SHORTCUT_EVENTS.NEW_ENTRY,
+    handleOpenDialog,
+    !disableShortcut,
+  )
 
   if (projects.length === 0) {
-    if (trigger) {
+    if (trigger !== undefined) {
       return null
     }
 
@@ -52,12 +75,13 @@ export function AddTimeEntryDialog({
     )
   }
 
-  const triggerButton = trigger ?? (
+  const defaultTrigger = (
     <Button>
       <Plus className="mr-2 size-4" />
       {buttonLabel ?? 'Add Entry'}
     </Button>
   )
+  const triggerButton = trigger === undefined ? defaultTrigger : trigger
 
   const form = (
     <TimeEntryForm

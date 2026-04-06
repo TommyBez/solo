@@ -1,11 +1,12 @@
 'use client'
 
-import { format } from 'date-fns'
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { MoreHorizontal, Pencil, Plane, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ColorDot } from '@/components/color-indicator'
+import { OutOfOfficeDayDialog } from '@/components/time/out-of-office-day-dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,10 +52,15 @@ interface TimeEntry {
 
 interface TimeEntriesListProps {
   entries: TimeEntry[]
+  outOfOfficeDateKeys: string[]
   projects: (Project & { area: Area })[]
 }
 
-export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
+export function TimeEntriesList({
+  entries,
+  outOfOfficeDateKeys,
+  projects,
+}: TimeEntriesListProps) {
   const router = useRouter()
   const { formatDate, formatTime } = useSettingsContext()
   const [editEntry, setEditEntry] = useState<TimeEntry | null>(null)
@@ -125,6 +131,10 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
   const sortedDates = Object.keys(entriesByDate).sort((a, b) =>
     b.localeCompare(a),
   )
+  const allDates = Array.from(
+    new Set([...sortedDates, ...outOfOfficeDateKeys]),
+  ).sort((a, b) => b.localeCompare(a))
+  const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
 
   return (
     <>
@@ -132,107 +142,140 @@ export function TimeEntriesList({ entries, projects }: TimeEntriesListProps) {
         <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="text-base sm:text-lg">Time Entries</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Your recent time tracking records
+            Your recent time tracking records and away days
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-2 sm:p-6 sm:pt-2">
-          {entries.length === 0 ? (
+          {allDates.length === 0 ? (
             <p className="py-6 text-center text-muted-foreground text-sm sm:py-8">
               No time entries yet. Start tracking!
             </p>
           ) : (
             <div className="space-y-4 sm:space-y-6">
-              {sortedDates.map((dateKey) => {
-                const dayEntries = entriesByDate[dateKey]
+              {allDates.map((dateKey) => {
+                const dayEntries = entriesByDate[dateKey] ?? []
                 const totalMinutes = dayEntries.reduce(
                   (sum, e) => sum + e.durationMinutes,
                   0,
                 )
+                const isOutOfOffice = outOfOfficeDateKeySet.has(dateKey)
 
                 return (
                   <div className="space-y-2 sm:space-y-3" key={dateKey}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-medium text-xs sm:text-sm">
-                        <span className="sm:hidden">
-                          {formatDate(dateKey, 'EEE, MMM d')}
-                        </span>
-                        <span className="hidden sm:inline">
-                          {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
-                        </span>
-                      </h3>
-                      <Badge
-                        className="font-mono text-[10px] tabular-nums sm:text-xs"
-                        variant="secondary"
-                      >
-                        {formatDuration(totalMinutes)}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      {dayEntries.map((entry) => (
-                        <div
-                          className="flex items-start justify-between gap-2 rounded-lg border p-2 sm:gap-4 sm:p-3"
-                          key={entry.id}
-                        >
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <div className="flex items-center gap-1.5 sm:gap-2">
-                              <ColorDot color={entry.project.area.color} />
-                              <span className="truncate font-medium text-xs sm:text-sm">
-                                {entry.project.name}
-                              </span>
-                            </div>
-                            {entry.description ? (
-                              <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm">
-                                {entry.description}
-                              </p>
-                            ) : null}
-                            <p className="text-[10px] text-muted-foreground sm:text-xs">
-                              {formatTime(entry.startTime)}
-                              {entry.endTime
-                                ? ` - ${formatTime(entry.endTime)}`
-                                : null}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                            <Badge
-                              className="hidden font-mono tabular-nums sm:inline-flex"
-                              variant="outline"
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-medium text-xs sm:text-sm">
+                          <span className="sm:hidden">
+                            {formatDate(dateKey, 'EEE, MMM d')}
+                          </span>
+                          <span className="hidden sm:inline">
+                            {formatDate(dateKey, 'EEEE, MMMM d, yyyy')}
+                          </span>
+                        </h3>
+                        {isOutOfOffice ? (
+                          <Badge variant="outline">OOO</Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {dayEntries.length > 0 ? (
+                          <Badge
+                            className="font-mono text-[10px] tabular-nums sm:text-xs"
+                            variant="secondary"
+                          >
+                            {formatDuration(totalMinutes)}
+                          </Badge>
+                        ) : null}
+                        <OutOfOfficeDayDialog
+                          date={parseISO(dateKey)}
+                          entryCount={dayEntries.length}
+                          isOutOfOffice={isOutOfOffice}
+                          trigger={
+                            <Button
+                              size="sm"
+                              variant={isOutOfOffice ? 'secondary' : 'outline'}
                             >
-                              {formatDuration(entry.durationMinutes)}
-                            </Badge>
-                            <span className="font-mono text-[10px] text-muted-foreground tabular-nums sm:hidden">
-                              {formatDuration(entry.durationMinutes)}
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  className="size-8 sm:size-8"
-                                  size="icon"
-                                  variant="ghost"
-                                >
-                                  <MoreHorizontal className="size-4" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onSelect={() => openEditDialog(entry)}
-                                >
-                                  <Pencil className="mr-2 size-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => setDeleteEntryId(entry.id)}
-                                >
-                                  <Trash2 className="mr-2 size-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      ))}
+                              <Plane data-icon="inline-start" />
+                              {isOutOfOffice ? 'OOO' : 'Mark'}
+                            </Button>
+                          }
+                        />
+                      </div>
                     </div>
+                    {dayEntries.length === 0 ? (
+                      <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm">
+                        <p className="font-medium">Out of office</p>
+                        <p className="mt-1 text-muted-foreground text-sm">
+                          No time entries are expected for this day.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {dayEntries.map((entry) => (
+                          <div
+                            className="flex items-start justify-between gap-2 rounded-lg border p-2 sm:gap-4 sm:p-3"
+                            key={entry.id}
+                          >
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <ColorDot color={entry.project.area.color} />
+                                <span className="truncate font-medium text-xs sm:text-sm">
+                                  {entry.project.name}
+                                </span>
+                              </div>
+                              {entry.description ? (
+                                <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm">
+                                  {entry.description}
+                                </p>
+                              ) : null}
+                              <p className="text-[10px] text-muted-foreground sm:text-xs">
+                                {formatTime(entry.startTime)}
+                                {entry.endTime
+                                  ? ` - ${formatTime(entry.endTime)}`
+                                  : null}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                              <Badge
+                                className="hidden font-mono tabular-nums sm:inline-flex"
+                                variant="outline"
+                              >
+                                {formatDuration(entry.durationMinutes)}
+                              </Badge>
+                              <span className="font-mono text-[10px] text-muted-foreground tabular-nums sm:hidden">
+                                {formatDuration(entry.durationMinutes)}
+                              </span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    className="size-8 sm:size-8"
+                                    size="icon"
+                                    variant="ghost"
+                                  >
+                                    <MoreHorizontal className="size-4" />
+                                    <span className="sr-only">Open menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onSelect={() => openEditDialog(entry)}
+                                  >
+                                    <Pencil className="mr-2 size-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => setDeleteEntryId(entry.id)}
+                                  >
+                                    <Trash2 className="mr-2 size-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}

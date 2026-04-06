@@ -25,6 +25,16 @@ export const catalog = defineCatalog(schema, {
         totalExpectedWeeklyHours: z
           .number()
           .describe('Sum of expected weekly hours across all areas (goal)'),
+        adjustedExpectedWeeklyHours: z
+          .number()
+          .describe(
+            'Expected weekly hours after subtracting out-of-office days for the selected week.',
+          ),
+        outOfOfficeDays: z
+          .number()
+          .describe(
+            'Number of marked out-of-office days in the selected week.',
+          ),
         weekLabel: z
           .string()
           .nullable()
@@ -43,6 +53,8 @@ export const catalog = defineCatalog(schema, {
         activeProjectsCount: 5,
         activeAreasCount: 3,
         totalExpectedWeeklyHours: 40,
+        adjustedExpectedWeeklyHours: 32,
+        outOfOfficeDays: 1,
         weekLabel: null,
       },
     },
@@ -54,6 +66,11 @@ export const catalog = defineCatalog(schema, {
             date: z.string().describe('ISO date string, e.g. "2026-03-25"'),
             dayName: z.string().describe('Short day name, e.g. "Mon", "Tue"'),
             hours: z.number().describe('Hours tracked that day, as a decimal'),
+            isOutOfOffice: z
+              .boolean()
+              .describe(
+                'Whether the day was marked out of office and should be shown as intentional time away.',
+              ),
           }),
         ),
       }),
@@ -62,11 +79,36 @@ export const catalog = defineCatalog(schema, {
         'Bar chart showing hours tracked per day of the week. Use when the user asks about daily breakdown, daily distribution, or "which days did I work most".',
       example: {
         data: [
-          { date: '2026-03-25', dayName: 'Mon', hours: 7.5 },
-          { date: '2026-03-26', dayName: 'Tue', hours: 6.0 },
-          { date: '2026-03-27', dayName: 'Wed', hours: 8.0 },
-          { date: '2026-03-28', dayName: 'Thu', hours: 5.5 },
-          { date: '2026-03-29', dayName: 'Fri', hours: 4.0 },
+          {
+            date: '2026-03-25',
+            dayName: 'Mon',
+            hours: 7.5,
+            isOutOfOffice: false,
+          },
+          {
+            date: '2026-03-26',
+            dayName: 'Tue',
+            hours: 0,
+            isOutOfOffice: true,
+          },
+          {
+            date: '2026-03-27',
+            dayName: 'Wed',
+            hours: 8.0,
+            isOutOfOffice: false,
+          },
+          {
+            date: '2026-03-28',
+            dayName: 'Thu',
+            hours: 5.5,
+            isOutOfOffice: false,
+          },
+          {
+            date: '2026-03-29',
+            dayName: 'Fri',
+            hours: 4.0,
+            isOutOfOffice: false,
+          },
         ],
       },
     },

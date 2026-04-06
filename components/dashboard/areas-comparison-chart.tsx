@@ -27,9 +27,13 @@ interface AreasComparisonChartProps {
     expected: number
     actual: number
   }>
+  outOfOfficeDaysCount: number
 }
 
-export function AreasComparisonChart({ data }: AreasComparisonChartProps) {
+export function AreasComparisonChart({
+  data,
+  outOfOfficeDaysCount,
+}: AreasComparisonChartProps) {
   if (data.length === 0) {
     return (
       <Card className="col-span-full">
@@ -55,7 +59,9 @@ export function AreasComparisonChart({ data }: AreasComparisonChartProps) {
           Expected vs Actual Hours
         </CardTitle>
         <CardDescription className="text-xs sm:text-sm">
-          Weekly goal progress by area
+          {outOfOfficeDaysCount > 0
+            ? 'Weekly goal progress by area, adjusted for out-of-office days'
+            : 'Weekly goal progress by area'}
         </CardDescription>
       </CardHeader>
       <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">

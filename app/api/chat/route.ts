@@ -16,10 +16,10 @@ import { createChatTools } from '@/lib/chat/tools'
 
 export async function POST(req: Request) {
   await requireAiAccess()
-  const { organizationId } = await requireOrganization()
+  const { organizationId, session } = await requireOrganization()
   const { messages }: { messages: UIMessage[] } = await req.json()
 
-  const tools = createChatTools(organizationId)
+  const tools = createChatTools(organizationId, session.user.id)
   const systemPrompt = `${buildChatSystemPrompt()}\n\n${catalog.prompt({ mode: 'inline' })}`
 
   const result = streamText({

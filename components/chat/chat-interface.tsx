@@ -53,11 +53,7 @@ export function ChatInterface() {
   )
 }
 
-function ChatSession({
-  onStartNewChat,
-}: {
-  onStartNewChat: () => void
-}) {
+function ChatSession({ onStartNewChat }: { onStartNewChat: () => void }) {
   const [input, setInput] = useState('')
   const { messages, sendMessage, status, stop, error, clearError, regenerate } =
     useChat({ transport })

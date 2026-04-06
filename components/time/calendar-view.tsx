@@ -14,15 +14,33 @@ import {
   subMonths,
   subWeeks,
 } from 'date-fns'
-import { CalendarClock, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import {
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  Plane,
+  Plus,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { ColorDot } from '@/components/color-indicator'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
+import { OutOfOfficeDayDialog } from '@/components/time/out-of-office-day-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSettingsContext } from '@/lib/context/settings-context'
 import type { Area, Project, TimeEntry } from '@/lib/db/schema'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
+import { getDateKey } from '@/lib/out-of-office'
 import { cn } from '@/lib/utils'
 
 type TimeEntryWithDetails = TimeEntry & {
@@ -36,6 +54,7 @@ interface CalendarViewProps {
   entries: TimeEntryWithDetails[]
   googleEvents: GoogleCalendarEvent[]
   organizationSlug: string
+  outOfOfficeDateKeys: string[]
   projects: (Project & { area: Area })[]
   view: 'month' | 'week'
 }
@@ -59,6 +78,19 @@ function getEventDescription(event: GoogleCalendarEvent) {
 
 const googleEventTriggerClassName =
   'group flex w-full min-w-0 cursor-pointer items-start gap-1 rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-left text-[9px] active:opacity-70 sm:cursor-default sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10 overflow-hidden'
+
+const APPLE_PLATFORM_RE = /Mac|iPhone|iPad|iPod/
+
+function useNewEntryShortcutLabel() {
+  const [label, setLabel] = useState('Ctrl+N')
+  useEffect(() => {
+    const isApple =
+      typeof navigator !== 'undefined' &&
+      APPLE_PLATFORM_RE.test(navigator.platform ?? '')
+    setLabel(isApple ? '⌘N' : 'Ctrl+N')
+  }, [])
+  return label
+}
 
 function GoogleCalendarEventRow({
   event,
@@ -104,6 +136,7 @@ function GoogleCalendarEventRow({
       <AddTimeEntryDialog
         buttonLabel="Create Entry"
         description="Prefilled from your Google Calendar event."
+        disableShortcut
         initialValues={{
           date: event.startTime,
           description: getEventDescription(event),
@@ -142,6 +175,8 @@ function CalendarDayCell({
   entries,
   formatTime,
   googleEvents,
+  isOutOfOffice,
+  newEntryShortcutLabel,
   projects,
   view,
 }: {
@@ -152,9 +187,13 @@ function CalendarDayCell({
   entries: TimeEntryWithDetails[]
   formatTime: (date: Date | string) => string
   googleEvents: GoogleCalendarEvent[]
+  isOutOfOffice: boolean
+  newEntryShortcutLabel: string
   projects: (Project & { area: Area })[]
   view: 'month' | 'week'
 }) {
+  const [availabilityOpen, setAvailabilityOpen] = useState(false)
+  const [addEntryOpen, setAddEntryOpen] = useState(false)
   const dayEntries = entries.filter((entry) =>
     isSameDay(new Date(entry.startTime), day),
   )
@@ -173,23 +212,87 @@ function CalendarDayCell({
       className={cn(
         'min-h-[80px] min-w-0 border-r border-b p-1 transition-colors hover:bg-muted/50 sm:min-h-[140px] sm:p-2',
         isCurrentMonth ? '' : 'bg-muted/10 text-muted-foreground',
+        isOutOfOffice ? 'bg-amber-50/70 dark:bg-amber-950/20' : '',
         isToday && isCurrentMonth ? 'bg-primary/5 dark:bg-primary/10' : '',
         isLastRow ? 'border-b-0' : '',
         isLastCol ? 'border-r-0' : '',
       )}
     >
-      <div className="mb-1 flex items-start justify-between sm:mb-2">
-        <span
-          className={cn(
-            'flex size-5 items-center justify-center rounded-full font-medium text-xs sm:size-7 sm:text-sm',
-            isToday ? 'bg-primary text-primary-foreground' : '',
-          )}
-        >
-          {format(day, 'd')}
-        </span>
+      <div className="mb-1 flex items-start justify-between gap-1 sm:mb-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <span
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded-full font-medium text-xs sm:size-7 sm:text-sm',
+              isToday ? 'bg-primary text-primary-foreground' : '',
+            )}
+          >
+            {format(day, 'd')}
+          </span>
+          {isOutOfOffice ? (
+            <Badge
+              className="h-5 px-1.5 text-[9px] sm:text-[10px]"
+              variant="secondary"
+            >
+              OOO
+            </Badge>
+          ) : null}
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label={`Actions for ${format(day, 'MMMM d, yyyy')}`}
+              className="size-7 shrink-0 sm:size-8"
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <MoreVertical className="size-4" />
+              <span className="sr-only">Day actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem
+              disabled={projects.length === 0}
+              onSelect={() => setAddEntryOpen(true)}
+            >
+              <Plus />
+              Add entry
+              <DropdownMenuShortcut>
+                {newEntryShortcutLabel}
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setAvailabilityOpen(true)}>
+              <Plane />
+              Day availability
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <OutOfOfficeDayDialog
+          date={day}
+          entryCount={dayEntries.length}
+          isOutOfOffice={isOutOfOffice}
+          onOpenChange={setAvailabilityOpen}
+          open={availabilityOpen}
+          trigger={null}
+        />
+        <AddTimeEntryDialog
+          disableShortcut
+          initialValues={{ date: day }}
+          onOpenChange={setAddEntryOpen}
+          open={addEntryOpen}
+          projects={projects}
+          trigger={null}
+        />
       </div>
 
       <div className="min-w-0 space-y-0.5 overflow-hidden sm:space-y-1">
+        {isOutOfOffice ? (
+          <div className="rounded bg-amber-100/80 px-1 py-0.5 font-medium text-[9px] text-amber-900 sm:text-[10px] dark:bg-amber-400/10 dark:text-amber-200">
+            Out of office
+          </div>
+        ) : null}
         {dayGoogleEvents.slice(0, eventSlice).map((event) => (
           <GoogleCalendarEventRow
             event={event}
@@ -234,6 +337,7 @@ export function CalendarView({
   currentDate,
   googleEvents,
   organizationSlug,
+  outOfOfficeDateKeys,
   projects,
   view,
 }: CalendarViewProps) {
@@ -303,6 +407,8 @@ export function CalendarView({
     0,
   )
   const totalHours = Math.round((totalMinutes / 60) * 10) / 10
+  const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
+  const newEntryShortcutLabel = useNewEntryShortcutLabel()
 
   return (
     <div className="space-y-4">
@@ -314,6 +420,9 @@ export function CalendarView({
           </h2>
           <p className="text-muted-foreground text-sm sm:text-base">
             Total time this {view === 'week' ? 'week' : 'month'}
+          </p>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Use the menu on a day to add an entry or set availability.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -378,7 +487,9 @@ export function CalendarView({
                 entries={entries}
                 formatTime={formatTime}
                 googleEvents={googleEvents}
+                isOutOfOffice={outOfOfficeDateKeySet.has(getDateKey(day))}
                 key={day.toString()}
+                newEntryShortcutLabel={newEntryShortcutLabel}
                 projects={projects}
                 view={view}
               />

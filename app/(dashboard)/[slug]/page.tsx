@@ -53,6 +53,7 @@ async function DashboardContent({ week }: { week: number }) {
         activeProjectsCount={stats.activeProjectsCount}
         monthlyChange={stats.monthlyChange}
         monthlyHours={stats.monthlyHours}
+        outOfOfficeDaysCount={stats.outOfOfficeDaysCount}
         totalExpectedWeeklyHours={stats.totalExpectedWeeklyHours}
         weekLabel={weekLabel}
         weeklyChange={stats.weeklyChange}
@@ -66,7 +67,10 @@ async function DashboardContent({ week }: { week: number }) {
 
       <div className="stagger-children grid gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <AreasComparisonChart data={stats.areasComparison} />
+          <AreasComparisonChart
+            data={stats.areasComparison}
+            outOfOfficeDaysCount={stats.outOfOfficeDaysCount}
+          />
         </div>
         <RecentEntries entries={recentEntries} />
       </div>
