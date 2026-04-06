@@ -33,12 +33,17 @@ const vercelBranchUrl = process.env.VERCEL_BRANCH_URL
   ? `https://${process.env.VERCEL_BRANCH_URL}`
   : null
 
-const trustedOrigins = [
+// Build trusted origins dynamically based on environment
+const trustedOrigins: string[] = [
   'http://localhost:3000',
   ...(appUrl ? [appUrl] : []),
   ...(vercelUrl ? [vercelUrl] : []),
   ...(vercelBranchUrl ? [vercelBranchUrl] : []),
 ]
+
+// Allow any vusercontent.net subdomain for v0 preview environments
+const isVucontentOrigin = (origin: string) =>
+  /^https:\/\/[a-z0-9-]+\.vusercontent\.net$/.test(origin)
 const isProduction = process.env.NODE_ENV === 'production'
 
 export const auth = betterAuth({
@@ -134,7 +139,8 @@ export const auth = betterAuth({
     max: 5,
     storage: isProduction ? 'database' : 'memory',
   },
-  trustedOrigins,
+  trustedOrigins: (origin) =>
+    trustedOrigins.includes(origin) || isVucontentOrigin(origin),
   advanced: {
     useSecureCookies: process.env.NODE_ENV === 'production',
   },
