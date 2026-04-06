@@ -139,6 +139,18 @@ export const auth = betterAuth({
   },
   trustedOrigins,
   advanced: {
-    useSecureCookies: process.env.NODE_ENV === 'production',
+    // Use secure cookies when served over HTTPS (production or preview environments)
+    useSecureCookies:
+      process.env.NODE_ENV === 'production' ||
+      !!process.env.VERCEL_URL ||
+      !!process.env.VERCEL,
+    // Allow cross-site cookies for v0 preview and other iframe contexts
+    crossSubDomainCookies: {
+      enabled: true,
+    },
+    defaultCookieAttributes: {
+      sameSite: 'none',
+      secure: true,
+    },
   },
 })
