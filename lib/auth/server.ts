@@ -33,17 +33,18 @@ const vercelBranchUrl = process.env.VERCEL_BRANCH_URL
   ? `https://${process.env.VERCEL_BRANCH_URL}`
   : null
 
-// Build trusted origins - using wildcards for dynamic environments
+const isProduction = process.env.NODE_ENV === 'production'
+const isVercelEnvironment = !!process.env.VERCEL
+
+// Build trusted origins using only project-specific URLs
 const trustedOrigins: string[] = [
-  'http://localhost:3000',
-  'https://*.vusercontent.net', // v0 preview environments
-  'https://*.vercel.app', // Vercel preview deployments
+  // Only include localhost in non-production environments
+  ...(!isProduction ? ['http://localhost:3000'] : []),
+  // Project-specific URLs from environment variables
   ...(appUrl ? [appUrl] : []),
   ...(vercelUrl ? [vercelUrl] : []),
   ...(vercelBranchUrl ? [vercelBranchUrl] : []),
 ]
-const isProduction = process.env.NODE_ENV === 'production'
-const isVercelEnvironment = !!process.env.VERCEL
 
 export const auth = betterAuth({
   appName: 'Solo',
