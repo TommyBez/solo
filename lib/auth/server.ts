@@ -46,6 +46,15 @@ const trustedOrigins: string[] = [
   ...(vercelBranchUrl ? [vercelBranchUrl] : []),
 ]
 
+// Debug logging for trusted origins (remove after debugging)
+console.log('[v0] Auth trustedOrigins config:', {
+  appUrl,
+  vercelUrl,
+  vercelBranchUrl,
+  isProduction,
+  trustedOrigins,
+})
+
 export const auth = betterAuth({
   appName: 'Solo',
   database: drizzleAdapter(db, {
