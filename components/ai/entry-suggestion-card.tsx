@@ -3,14 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { TimeEntryForm } from '@/components/time/time-entry-form'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { createTimeEntry } from '@/lib/actions/time-entries'
 import type { EntrySuggestion, SuggestionStatus } from '@/lib/ai/schemas'
 import { dismissSuggestion, suggestEntryFromEvent } from '@/lib/ai/time-capture'
 import { generateSuggestionHash } from '@/lib/ai/utils'
 import type { Area, Project } from '@/lib/db/schema'
 import type { GoogleCalendarEvent } from '@/lib/google-calendar/types'
-import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
-import { TimeEntryForm } from '@/components/time/time-entry-form'
 import { SuggestionCard } from './suggestion-card'
 
 interface EntrySuggestionCardProps {

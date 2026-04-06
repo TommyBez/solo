@@ -19,6 +19,9 @@ interface OutOfOfficeDayDialogProps {
   date: Date
   entryCount?: number
   isOutOfOffice: boolean
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
+  /** Pass `null` to omit a trigger (e.g. open only from a parent menu). */
   trigger?: ReactNode
 }
 
@@ -27,10 +30,21 @@ export function OutOfOfficeDayDialog({
   entryCount = 0,
   isOutOfOffice,
   trigger,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: OutOfOfficeDayDialogProps) {
   const router = useRouter()
   const { formatDate } = useSettingsContext()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = (next: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(next)
+    } else {
+      setInternalOpen(next)
+    }
+  }
   const [isPending, startTransition] = useTransition()
 
   const formattedDate = useMemo(
@@ -94,7 +108,7 @@ export function OutOfOfficeDayDialog({
       onOpenChange={setOpen}
       open={open}
       title="Day availability"
-      trigger={trigger ?? defaultTrigger}
+      trigger={trigger === undefined ? defaultTrigger : trigger}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
