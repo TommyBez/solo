@@ -30,6 +30,20 @@ export function getUtcDateKey(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/** Inclusive UTC calendar-day bounds for a `yyyy-MM-dd` key (matches `getUtcDateKey`). */
+export function getUtcDayBoundsFromDateKey(dateKey: string): {
+  start: Date
+  end: Date
+} {
+  if (!isDateKey(dateKey)) {
+    throw new Error('Invalid date key')
+  }
+  const [y, m, d] = dateKey.split('-').map(Number)
+  const start = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0))
+  const end = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999))
+  return { start, end }
+}
+
 export function countWeekdaysInRange(startDate: Date, endDate: Date) {
   return eachDayOfInterval({ start: startDate, end: endDate }).filter(
     (day) => !isWeekend(day),

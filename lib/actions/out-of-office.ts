@@ -1,13 +1,16 @@
 'use server'
 
-import { endOfDay, parseISO, startOfDay } from 'date-fns'
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
 import { requireRole } from '@/lib/auth/permissions'
 import { requireOrganization } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { areas, outOfOfficeDays, projects, timeEntries } from '@/lib/db/schema'
-import { getUtcDateKey, isDateKey } from '@/lib/out-of-office'
+import {
+  getUtcDateKey,
+  getUtcDayBoundsFromDateKey,
+  isDateKey,
+} from '@/lib/out-of-office'
 
 /** Resolves to a stable yyyy-MM-dd key: ISO date strings pass through; other inputs use UTC calendar day. */
 function normalizeDateKey(value: Date | string) {
@@ -51,12 +54,13 @@ async function hasTrackedTimeOnDate(
     return false
   }
 
-  const date = parseISO(dateKey)
+  const { start: utcDayStart, end: utcDayEnd } =
+    getUtcDayBoundsFromDateKey(dateKey)
   const entry = await db.query.timeEntries.findFirst({
     where: and(
       inArray(timeEntries.projectId, orgProjectIds),
-      gte(timeEntries.startTime, startOfDay(date)),
-      lte(timeEntries.startTime, endOfDay(date)),
+      gte(timeEntries.startTime, utcDayStart),
+      lte(timeEntries.startTime, utcDayEnd),
     ),
     columns: { id: true },
   })

@@ -77,8 +77,12 @@ export function OutOfOfficeDayDialog({
           startTransition(async () => {
             try {
               if (isOutOfOffice) {
-                await removeOutOfOfficeDay(getDateKey(date))
-                toast.success('Day marked as available again')
+                const removed = await removeOutOfOfficeDay(getDateKey(date))
+                if (removed !== null) {
+                  toast.success('Day marked as available again')
+                } else {
+                  toast.info('This day was already available.')
+                }
               } else {
                 await markOutOfOfficeDay(getDateKey(date))
                 toast.success('Day marked as out of office')
