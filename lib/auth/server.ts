@@ -26,7 +26,18 @@ const viewer = ac.newRole({
 })
 
 const appUrl = process.env.BETTER_AUTH_URL
-const trustedOrigins = ['http://localhost:3000', ...(appUrl ? [appUrl] : [])]
+// VERCEL_URL is provided by Vercel and contains the deployment URL without protocol
+const vercelUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : undefined
+const trustedOrigins = [
+  'http://localhost:3000',
+  ...(appUrl ? [appUrl] : []),
+  ...(vercelUrl ? [vercelUrl] : []),
+  // Trust Vercel preview deployments - pattern matches solo-*.vercel.app
+  'https://solo-*.vercel.app',
+  'https://*-tommasos-projects-bb9d6551.vercel.app',
+]
 const isProduction = process.env.NODE_ENV === 'production'
 
 export const auth = betterAuth({
