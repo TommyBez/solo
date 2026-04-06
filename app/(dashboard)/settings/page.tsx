@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/page-header'
 import { GitHubCard } from '@/components/settings/github-card'
 import { GoogleCalendarCard } from '@/components/settings/google-calendar-card'
+import { KeyboardShortcutsCard } from '@/components/settings/keyboard-shortcuts-card'
 import { SettingsForm } from '@/components/settings/settings-form'
 import { ThemeSwitcherCard } from '@/components/settings/theme-switcher-card'
 import { getAiFeatureAvailability } from '@/lib/ai/access'
@@ -44,6 +45,8 @@ export default async function SettingsPage(props: {
         callbackStatus={googleCalendarParam}
         status={googleCalendarStatus}
       />
+
+      <KeyboardShortcutsCard />
     </div>
   )
 }
