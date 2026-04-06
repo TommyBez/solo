@@ -37,7 +37,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 const isVercelEnvironment = !!process.env.VERCEL
 
 // Build trusted origins using only project-specific URLs
-const trustedOrigins: string[] = [
+const staticTrustedOrigins: string[] = [
   // Only include localhost in non-production environments
   ...(!isProduction ? ['http://localhost:3000'] : []),
   // Project-specific URLs from environment variables
@@ -45,6 +45,20 @@ const trustedOrigins: string[] = [
   ...(vercelUrl ? [vercelUrl] : []),
   ...(vercelBranchUrl ? [vercelBranchUrl] : []),
 ]
+
+// Function to validate origins - allows static list + v0 preview in development
+function isValidOrigin(origin: string): boolean {
+  // Check static trusted origins first
+  if (staticTrustedOrigins.includes(origin)) {
+    return true
+  }
+  // In non-production, allow v0 preview URLs (vusercontent.net)
+  // These are dynamically generated sandbox URLs
+  if (!isProduction && /^https:\/\/vm-[a-z0-9]+\.vusercontent\.net$/.test(origin)) {
+    return true
+  }
+  return false
+}
 
 export const auth = betterAuth({
   appName: 'Solo',
@@ -139,7 +153,7 @@ export const auth = betterAuth({
     max: 5,
     storage: isProduction ? 'database' : 'memory',
   },
-  trustedOrigins,
+  trustedOrigins: isValidOrigin,
   advanced: {
     // Use secure cookies when served over HTTPS (production or Vercel environments)
     useSecureCookies: isProduction || isVercelEnvironment,
