@@ -136,6 +136,7 @@ function GoogleCalendarEventRow({
       <AddTimeEntryDialog
         buttonLabel="Create Entry"
         description="Prefilled from your Google Calendar event."
+        disableShortcut
         initialValues={{
           date: event.startTime,
           description: getEventDescription(event),
