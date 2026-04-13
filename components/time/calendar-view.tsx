@@ -23,7 +23,7 @@ import {
   Plus,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ColorDot } from '@/components/color-indicator'
 import { AddTimeEntryDialog } from '@/components/time/add-time-entry-dialog'
 import { OutOfOfficeDayDialog } from '@/components/time/out-of-office-day-dialog'
@@ -207,6 +207,19 @@ function CalendarDayCell({
 }) {
   const [availabilityOpen, setAvailabilityOpen] = useState(false)
   const [addEntryOpen, setAddEntryOpen] = useState(false)
+
+  const openAddEntryDialog = useCallback(() => {
+    window.setTimeout(() => {
+      setAddEntryOpen(true)
+    }, 0)
+  }, [])
+
+  const openAvailabilityDialog = useCallback(() => {
+    window.setTimeout(() => {
+      setAvailabilityOpen(true)
+    }, 0)
+  }, [])
+
   const dayEntries = entries.filter((entry) =>
     isSameDay(new Date(entry.startTime), day),
   )
@@ -267,7 +280,7 @@ function CalendarDayCell({
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem
               disabled={projects.length === 0}
-              onSelect={() => setAddEntryOpen(true)}
+              onSelect={openAddEntryDialog}
             >
               <Plus />
               Add entry
@@ -275,7 +288,7 @@ function CalendarDayCell({
                 {newEntryShortcutLabel}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setAvailabilityOpen(true)}>
+            <DropdownMenuItem onSelect={openAvailabilityDialog}>
               <Plane />
               Day availability
             </DropdownMenuItem>
