@@ -310,7 +310,7 @@ function CalendarDayCell({
           <GoogleCalendarEventRow
             event={event}
             formatTime={formatTime}
-            key={`google-event-${event.id}`}
+            key={`google-event-${event.accountEmail}-${event.id}`}
             projects={projects}
             showAccountEmail={showAccountEmail}
           />
