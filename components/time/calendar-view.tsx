@@ -96,13 +96,19 @@ function GoogleCalendarEventRow({
   event,
   projects,
   formatTime,
+  showAccountEmail,
 }: {
   event: GoogleCalendarEvent
   formatTime: (date: Date | string) => string
   projects: (Project & { area: Area })[]
+  showAccountEmail: boolean
 }) {
   const eventStart = new Date(event.startTime)
   const eventEnd = new Date(event.endTime)
+  const titleWithAccount =
+    showAccountEmail && event.accountEmail
+      ? `${event.title} (${event.accountEmail})`
+      : event.title
 
   const eventContent = (
     <>
@@ -113,6 +119,11 @@ function GoogleCalendarEventRow({
           {event.allDay
             ? 'All day'
             : `${formatTime(eventStart)} - ${formatTime(eventEnd)}`}
+          {showAccountEmail && event.accountEmail ? (
+            <span className="ml-1 text-blue-500/60 dark:text-blue-400/50">
+              · {event.accountEmail}
+            </span>
+          ) : null}
         </p>
       </div>
       <Plus className="size-3 shrink-0 text-blue-700/80 opacity-0 transition-opacity group-hover:opacity-100 sm:hidden dark:text-blue-300/80" />
@@ -147,7 +158,7 @@ function GoogleCalendarEventRow({
         trigger={
           <button
             className={googleEventTriggerClassName}
-            title={event.title}
+            title={titleWithAccount}
             type="button"
           >
             {eventContent}
@@ -160,7 +171,7 @@ function GoogleCalendarEventRow({
   return (
     <div
       className="group flex w-full min-w-0 items-start gap-1 overflow-hidden rounded border border-blue-200/80 bg-blue-50/60 p-0.5 text-[9px] sm:p-1 sm:text-[11px] dark:border-blue-500/40 dark:bg-blue-500/10"
-      title={event.title}
+      title={titleWithAccount}
     >
       {eventContent}
     </div>
@@ -178,6 +189,7 @@ function CalendarDayCell({
   isOutOfOffice,
   newEntryShortcutLabel,
   projects,
+  showAccountEmail,
   view,
 }: {
   currentDate: Date
@@ -190,6 +202,7 @@ function CalendarDayCell({
   isOutOfOffice: boolean
   newEntryShortcutLabel: string
   projects: (Project & { area: Area })[]
+  showAccountEmail: boolean
   view: 'month' | 'week'
 }) {
   const [availabilityOpen, setAvailabilityOpen] = useState(false)
@@ -299,6 +312,7 @@ function CalendarDayCell({
             formatTime={formatTime}
             key={`google-event-${event.id}`}
             projects={projects}
+            showAccountEmail={showAccountEmail}
           />
         ))}
         {dayGoogleEvents.length > eventSlice && (
@@ -410,6 +424,12 @@ export function CalendarView({
   const outOfOfficeDateKeySet = new Set(outOfOfficeDateKeys)
   const newEntryShortcutLabel = useNewEntryShortcutLabel()
 
+  // Show account email on events when events come from multiple accounts
+  const uniqueAccountEmails = new Set(
+    googleEvents.map((e) => e.accountEmail).filter(Boolean),
+  )
+  const showAccountEmail = uniqueAccountEmails.size > 1
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -491,6 +511,7 @@ export function CalendarView({
                 key={day.toString()}
                 newEntryShortcutLabel={newEntryShortcutLabel}
                 projects={projects}
+                showAccountEmail={showAccountEmail}
                 view={view}
               />
             ))}

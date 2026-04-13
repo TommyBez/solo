@@ -24,11 +24,21 @@ function isTokenStillValid(expiresAt: Date | null) {
   return expiresAt.getTime() > expiryThreshold
 }
 
-function getGoogleCalendarAccount(userId: string) {
+function getGoogleCalendarAccounts(userId: string) {
+  return db.query.account.findMany({
+    where: and(
+      eq(account.userId, userId),
+      eq(account.providerId, GOOGLE_CALENDAR_PROVIDER_ID),
+    ),
+  })
+}
+
+function getGoogleCalendarAccountByEmail(userId: string, email: string) {
   return db.query.account.findFirst({
     where: and(
       eq(account.userId, userId),
       eq(account.providerId, GOOGLE_CALENDAR_PROVIDER_ID),
+      eq(account.accountId, email),
     ),
   })
 }
@@ -38,7 +48,10 @@ export async function saveGoogleCalendarConnection(params: {
   tokenPayload: GoogleTokenPayload
   userId: string
 }) {
-  const existing = await getGoogleCalendarAccount(params.userId)
+  const existing = await getGoogleCalendarAccountByEmail(
+    params.userId,
+    params.email,
+  )
   const refreshToken =
     params.tokenPayload.refreshToken ?? existing?.refreshToken
   if (!refreshToken) {
@@ -83,7 +96,22 @@ export async function saveGoogleCalendarConnection(params: {
   return insertedRows[0]
 }
 
-export async function disconnectGoogleCalendarForUser(userId: string) {
+export async function disconnectGoogleCalendarAccount(
+  userId: string,
+  accountId: string,
+) {
+  await db
+    .delete(account)
+    .where(
+      and(
+        eq(account.id, accountId),
+        eq(account.userId, userId),
+        eq(account.providerId, GOOGLE_CALENDAR_PROVIDER_ID),
+      ),
+    )
+}
+
+export async function disconnectAllGoogleCalendarAccounts(userId: string) {
   await db
     .delete(account)
     .where(
@@ -102,24 +130,25 @@ export async function getGoogleCalendarStatusForUser(
     return {
       enabled: false,
       connected: false,
+      accounts: [],
     }
   }
 
-  const calendarAccount = await getGoogleCalendarAccount(userId)
+  const calendarAccounts = await getGoogleCalendarAccounts(userId)
+  const connectedAccounts = calendarAccounts
+    .filter((a) => a.accessToken)
+    .map((a) => ({ id: a.id, email: a.accountId }))
+
   return {
     enabled: true,
-    connected: Boolean(calendarAccount?.accessToken),
-    connectedEmail: calendarAccount?.accountId || undefined,
+    connected: connectedAccounts.length > 0,
+    accounts: connectedAccounts,
   }
 }
 
-async function ensureValidAccessTokenForUser(userId: string) {
-  const calendarAccount = await getGoogleCalendarAccount(userId)
-  if (!calendarAccount) {
-    console.warn('[Google Calendar] No account found for user', userId)
-    return null
-  }
-
+async function ensureValidAccessToken(
+  calendarAccount: Awaited<ReturnType<typeof getGoogleCalendarAccounts>>[number],
+) {
   if (
     calendarAccount.accessToken &&
     isTokenStillValid(calendarAccount.accessTokenExpiresAt)
@@ -128,7 +157,9 @@ async function ensureValidAccessTokenForUser(userId: string) {
   }
 
   if (!calendarAccount.refreshToken) {
-    console.warn('[Google Calendar] No refresh token available')
+    console.warn(
+      `[Google Calendar] No refresh token available for ${calendarAccount.accountId}`,
+    )
     return null
   }
 
@@ -152,7 +183,10 @@ async function ensureValidAccessTokenForUser(userId: string) {
 
     return updatedRows[0]?.accessToken ?? null
   } catch (error) {
-    console.error('[Google Calendar] Token refresh failed:', error)
+    console.error(
+      `[Google Calendar] Token refresh failed for ${calendarAccount.accountId}:`,
+      error,
+    )
     return null
   }
 }
@@ -167,24 +201,53 @@ export async function getGoogleCalendarEventsForUser(params: {
     return []
   }
 
-  const accessToken = await ensureValidAccessTokenForUser(params.userId)
-  if (!accessToken) {
+  const calendarAccounts = await getGoogleCalendarAccounts(params.userId)
+  if (calendarAccounts.length === 0) {
     console.warn(
-      '[Google Calendar] No valid access token, skipping event fetch',
+      '[Google Calendar] No accounts found, skipping event fetch',
     )
     return []
   }
 
-  try {
-    const events = await fetchGoogleCalendarEvents(
-      accessToken,
-      params.startDate,
-      params.endDate,
-    )
-    console.log(`[Google Calendar] Fetched ${events.length} events`)
-    return events
-  } catch (error) {
-    console.error('[Google Calendar] Failed to fetch events:', error)
-    return []
-  }
+  const allEvents: GoogleCalendarEvent[] = []
+
+  await Promise.all(
+    calendarAccounts.map(async (calendarAccount) => {
+      const accessToken = await ensureValidAccessToken(calendarAccount)
+      if (!accessToken) {
+        console.warn(
+          `[Google Calendar] No valid access token for ${calendarAccount.accountId}, skipping`,
+        )
+        return
+      }
+
+      try {
+        const events = await fetchGoogleCalendarEvents(
+          accessToken,
+          params.startDate,
+          params.endDate,
+        )
+        const taggedEvents = events.map((event) => ({
+          ...event,
+          accountEmail: calendarAccount.accountId,
+        }))
+        allEvents.push(...taggedEvents)
+        console.log(
+          `[Google Calendar] Fetched ${events.length} events from ${calendarAccount.accountId}`,
+        )
+      } catch (error) {
+        console.error(
+          `[Google Calendar] Failed to fetch events from ${calendarAccount.accountId}:`,
+          error,
+        )
+      }
+    }),
+  )
+
+  // Sort merged events by start time
+  allEvents.sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+  )
+
+  return allEvents
 }

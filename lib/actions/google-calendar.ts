@@ -2,10 +2,17 @@
 
 import { revalidateTag } from 'next/cache'
 import { requireSession } from '@/lib/auth/session'
-import { disconnectGoogleCalendarForUser } from '@/lib/google-calendar/service'
+import {
+  disconnectAllGoogleCalendarAccounts,
+  disconnectGoogleCalendarAccount,
+} from '@/lib/google-calendar/service'
 
-export async function disconnectGoogleCalendar() {
+export async function disconnectGoogleCalendar(accountId?: string) {
   const session = await requireSession()
-  await disconnectGoogleCalendarForUser(session.user.id)
+  if (accountId) {
+    await disconnectGoogleCalendarAccount(session.user.id, accountId)
+  } else {
+    await disconnectAllGoogleCalendarAccounts(session.user.id)
+  }
   revalidateTag('google-calendar', 'max')
 }

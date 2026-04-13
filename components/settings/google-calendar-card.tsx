@@ -52,9 +52,9 @@ export function GoogleCalendarCard({
 
   const callback = callbackStatus ? callbackMessages[callbackStatus] : undefined
 
-  const handleDisconnect = () => {
+  const handleDisconnect = (accountId: string) => {
     startTransition(() => {
-      disconnectGoogleCalendar()
+      disconnectGoogleCalendar(accountId)
         .then(() => {
           toast.success('Google Calendar disconnected')
           router.refresh()
@@ -73,7 +73,7 @@ export function GoogleCalendarCard({
           Google Calendar
         </CardTitle>
         <CardDescription>
-          Connect your calendar to view events alongside tracked time and turn
+          Connect your calendars to view events alongside tracked time and turn
           events into time entries.
         </CardDescription>
       </CardHeader>
@@ -89,31 +89,39 @@ export function GoogleCalendarCard({
           </p>
         ) : null}
 
-        {status.connected ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm">
-              Connected as{' '}
-              <span className="font-medium">{status.connectedEmail}</span>
-            </p>
-            <Button
-              disabled={isPending}
-              onClick={handleDisconnect}
-              variant="outline"
-            >
-              <Link2Off className="mr-2 size-4" />
-              {isPending ? 'Disconnecting...' : 'Disconnect'}
-            </Button>
+        {status.accounts.length > 0 ? (
+          <div className="space-y-2">
+            {status.accounts.map((account) => (
+              <div
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                key={account.id}
+              >
+                <p className="text-sm">
+                  Connected as{' '}
+                  <span className="font-medium">{account.email}</span>
+                </p>
+                <Button
+                  disabled={isPending}
+                  onClick={() => handleDisconnect(account.id)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Link2Off className="mr-2 size-4" />
+                  {isPending ? 'Disconnecting...' : 'Disconnect'}
+                </Button>
+              </div>
+            ))}
           </div>
         ) : null}
 
-        {status.connected ? null : (
-          <Button asChild disabled={!status.enabled}>
-            <Link href="/api/google-calendar/connect">
-              <Link2 className="mr-2 size-4" />
-              Connect Google Calendar
-            </Link>
-          </Button>
-        )}
+        <Button asChild disabled={!status.enabled}>
+          <Link href="/api/google-calendar/connect">
+            <Link2 className="mr-2 size-4" />
+            {status.accounts.length > 0
+              ? 'Connect another account'
+              : 'Connect Google Calendar'}
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   )
