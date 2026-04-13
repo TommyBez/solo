@@ -1,12 +1,18 @@
 export const GOOGLE_CALENDAR_PROVIDER_ID = 'google-calendar'
 
+export interface GoogleCalendarAccount {
+  id: string
+  email: string
+}
+
 export interface GoogleCalendarConnectionStatus {
+  accounts: GoogleCalendarAccount[]
   connected: boolean
-  connectedEmail?: string
   enabled: boolean
 }
 
 export interface GoogleCalendarEvent {
+  accountEmail?: string
   allDay: boolean
   description?: string
   endTime: string
