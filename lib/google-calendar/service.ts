@@ -147,7 +147,9 @@ export async function getGoogleCalendarStatusForUser(
 }
 
 async function ensureValidAccessToken(
-  calendarAccount: Awaited<ReturnType<typeof getGoogleCalendarAccounts>>[number],
+  calendarAccount: Awaited<
+    ReturnType<typeof getGoogleCalendarAccounts>
+  >[number],
 ) {
   if (
     calendarAccount.accessToken &&
@@ -203,9 +205,7 @@ export async function getGoogleCalendarEventsForUser(params: {
 
   const calendarAccounts = await getGoogleCalendarAccounts(params.userId)
   if (calendarAccounts.length === 0) {
-    console.warn(
-      '[Google Calendar] No accounts found, skipping event fetch',
-    )
+    console.warn('[Google Calendar] No accounts found, skipping event fetch')
     return []
   }
 

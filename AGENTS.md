@@ -32,7 +32,6 @@ The app was originally built for Neon serverless PostgreSQL (cloud). For local d
 - **Next.js 16 uses `proxy.ts` instead of `middleware.ts`**: The auth middleware is in `proxy.ts` (not `middleware.ts`). Do NOT rename it or create a `middleware.ts` — that will cause a conflict error.
 - **`pnpm lint` does not work**: The `ultracite lint` subcommand does not exist. Use `pnpm check` for linting and `pnpm fix` for auto-fixing.
 - **Build scripts need approval**: `package.json` has `pnpm.onlyBuiltDependencies` configured. If new native dependencies are added, they must be listed there.
-- **Pre-existing lint warnings**: `pnpm check` may show a few pre-existing formatting/lint issues in the codebase (e.g., CSS class sorting, import ordering). These are not regressions.
 
 ### Standard Commands
 

@@ -10,9 +10,9 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd'
 import { Separator } from '@/components/ui/separator'
 
 interface ShortcutEntry {
-  keys: string[]
-  description: string
   context?: string
+  description: string
+  keys: string[]
 }
 
 const SHORTCUT_GROUPS: { label: string; shortcuts: ShortcutEntry[] }[] = [
@@ -47,22 +47,24 @@ export function KeyboardShortcutsCard() {
       </CardHeader>
       <CardContent className="space-y-6">
         {SHORTCUT_GROUPS.map((group, groupIndex) => (
-          <div key={group.label} className="space-y-3">
-            <p className="text-sm font-medium text-muted-foreground">
+          <div className="space-y-3" key={group.label}>
+            <p className="font-medium text-muted-foreground text-sm">
               {group.label}
             </p>
-            <ul className="space-y-1" role="list">
+            <ul className="space-y-1">
               {group.shortcuts.map((shortcut, i) => (
-                <li key={i}>
+                <li
+                  key={`${group.label}-${shortcut.description}-${shortcut.context ?? ''}`}
+                >
                   {i > 0 && <Separator className="mb-3" />}
                   <div className="flex items-center justify-between gap-4 py-1">
                     <div className="min-w-0 space-y-0.5">
                       <p className="text-sm">{shortcut.description}</p>
-                      {shortcut.context && (
-                        <p className="text-xs text-muted-foreground">
+                      {shortcut.context ? (
+                        <p className="text-muted-foreground text-xs">
                           {shortcut.context}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                     <KbdGroup className="shrink-0">
                       {shortcut.keys.map((key) => (
