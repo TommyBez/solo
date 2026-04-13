@@ -29,6 +29,7 @@ export async function getGoogleCalendarStatus(): Promise<GoogleCalendarConnectio
     return {
       enabled,
       connected: false,
+      accounts: [],
     }
   }
 
