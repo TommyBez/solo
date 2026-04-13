@@ -1,8 +1,8 @@
 export const GOOGLE_CALENDAR_PROVIDER_ID = 'google-calendar'
 
 export interface GoogleCalendarAccount {
-  id: string
   email: string
+  id: string
 }
 
 export interface GoogleCalendarConnectionStatus {
